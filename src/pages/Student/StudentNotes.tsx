@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { FaFilePdf, FaDownload, FaSearch } from 'react-icons/fa';
+import { FaFilePdf, FaDownload } from 'react-icons/fa';
 
 interface Note {
     id: number;
     title: string;
     description: string;
-    file_url: string;
-    created_at: string;
+    file_path: string;
+    uploaded_at: string;
 }
 
 const StudentNotes: React.FC = () => {
@@ -17,7 +17,7 @@ const StudentNotes: React.FC = () => {
     useEffect(() => {
         const fetchNotes = async () => {
             try {
-                const res = await api.get('/notes');
+                const res = await api.get('/api/notes/student');
                 setNotes(res.data);
             } catch (err) {
                 console.error("Failed to fetch notes");
@@ -51,14 +51,14 @@ const StudentNotes: React.FC = () => {
                                 <div className="bg-red-50 p-2.5 rounded-lg text-red-600">
                                     <FaFilePdf size={24} />
                                 </div>
-                                <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">{new Date(note.created_at).toLocaleDateString()}</span>
+                                <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">{new Date(note.uploaded_at).toLocaleDateString()}</span>
                             </div>
                             <h3 className="font-bold text-gray-900 line-clamp-2">{note.title}</h3>
                             <p className="text-sm text-gray-500 mt-2 line-clamp-2">{note.description}</p>
                         </div>
 
                         <a
-                            href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${note.file_url}`}
+                            href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${note.file_path}`}
                             target="_blank"
                             rel="noreferrer"
                             className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition font-medium text-sm"

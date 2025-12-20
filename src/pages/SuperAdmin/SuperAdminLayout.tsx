@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { FaUserShield, FaUsers, FaMoneyBillWave, FaSignOutAlt, FaChartPie } from 'react-icons/fa';
+import logo from '../../assets/logo.png';
 
 const SuperAdminLayout: React.FC = () => {
     const { logout, user } = useContext(AuthContext)!;
@@ -22,7 +23,7 @@ const SuperAdminLayout: React.FC = () => {
             {/* Sidebar */}
             <div className="w-64 bg-indigo-900 text-white flex flex-col">
                 <div className="p-4 text-2xl font-bold flex items-center gap-2 border-b border-indigo-800">
-                    <FaUserShield /> Super Admin
+                    <img src={logo} alt="EduTalks" className="h-8 filter brightness-0 invert" />
                 </div>
                 <div className="p-4 border-b border-indigo-800 text-sm">
                     Welcome, {user?.name}

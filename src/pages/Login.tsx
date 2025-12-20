@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
+import logo from '../assets/logo.png';
 
 const Login: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -47,7 +48,7 @@ const Login: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
             <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-gray-900">EduTalks</h2>
+                    <img src={logo} alt="EduTalks" className="h-16 mx-auto mb-4" />
                     <p className="text-gray-600 mt-2">Sign in to your account</p>
                 </div>
 

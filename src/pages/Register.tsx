@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { FaUserGraduate, FaEye, FaEyeSlash } from 'react-icons/fa';
+import logo from '../assets/logo.png';
 
 const Register: React.FC = () => {
     const navigate = useNavigate();
@@ -36,7 +37,7 @@ const Register: React.FC = () => {
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-4">
             <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
                 <div className="bg-indigo-600 py-6 px-8 text-center">
-                    <FaUserGraduate className="mx-auto text-white text-4xl mb-2" />
+                    <img src={logo} alt="EduTalks" className="h-12 mx-auto mb-2 filter brightness-0 invert" />
                     <h2 className="text-2xl font-bold text-white">Create Account</h2>
                     <p className="text-indigo-200 text-sm mt-1">Join EduTalks today</p>
                 </div>
@@ -97,9 +98,11 @@ const Register: React.FC = () => {
                             />
                         </div>
 
-                        {formData.role === 'student' && (
+                        {(formData.role === 'student' || formData.role === 'instructor' || formData.role === 'super_instructor') && (
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Grade / Class</label>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    {formData.role === 'student' ? 'Grade / Class' : 'Teaching Grade'}
+                                </label>
                                 <select
                                     name="grade"
                                     className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"

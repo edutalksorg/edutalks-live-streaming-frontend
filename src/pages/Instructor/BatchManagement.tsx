@@ -33,12 +33,12 @@ const BatchManagement: React.FC = () => {
     const fetchData = async () => {
         try {
             const [batchesRes, usersRes] = await Promise.all([
-                api.get('/batches'),
-                api.get('/users')
+                api.get('/api/batches'),
+                api.get('/api/super-instructor/instructors')
             ]);
 
             setBatches(batchesRes.data);
-            setInstructors(usersRes.data.filter((u: any) => u.role_name === 'instructor'));
+            setInstructors(usersRes.data);
         } catch (err) {
             console.error('Failed to fetch data', err);
         } finally {
@@ -81,7 +81,7 @@ const BatchManagement: React.FC = () => {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{batch.name}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${batch.student_count >= 30 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                                        {batch.student_count} / {batch.max_students}
+                                        {batch.student_count} / {batch.max_students || 2}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

@@ -27,7 +27,7 @@ const StudentClasses: React.FC = () => {
                 // For now, I'll assume we can view all or I will create a new endpoint.
                 // Let's create a temporary backend 'getAllClasses' for students or modify 'getInstructorClasses'.
                 // Actually, I'll add a 'getAllClasses' endpoint in ClassController for students.
-                const res = await api.get('/classes/all');
+                const res = await api.get('/api/classes/student');
                 setClasses(res.data);
             } catch (err) {
                 console.error("Failed to fetch classes");
@@ -42,7 +42,6 @@ const StudentClasses: React.FC = () => {
 
     const liveClasses = classes.filter(c => c.status === 'live');
     const upcomingClasses = classes.filter(c => c.status === 'scheduled');
-    const completedClasses = classes.filter(c => c.status === 'completed');
 
     return (
         <div className="space-y-10">

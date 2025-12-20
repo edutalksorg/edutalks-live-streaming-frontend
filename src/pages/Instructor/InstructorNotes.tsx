@@ -9,12 +9,14 @@ interface Note {
     description: string;
     file_path: string;
     uploaded_at: string;
+    subject_name?: string;
 }
 
 const InstructorNotes: React.FC = () => {
     const { user } = useContext(AuthContext)!;
     const [notes, setNotes] = useState<Note[]>([]);
-    const [newNote, setNewNote] = useState({ title: '', description: '' });
+    const [batches, setBatches] = useState<any[]>([]);
+    const [newNote, setNewNote] = useState({ title: '', description: '', subject_id: '' });
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -24,10 +26,18 @@ const InstructorNotes: React.FC = () => {
 
     const fetchNotes = async () => {
         try {
-            const res = await api.get(`/notes/instructor/${user?.id}`);
-            setNotes(res.data);
+            const [notesRes, dashboardRes] = await Promise.all([
+                api.get(`/api/notes/instructor/${user?.id}`),
+                api.get('/api/instructor/dashboard')
+            ]);
+            setNotes(notesRes.data);
+            const batchData = dashboardRes.data.batches;
+            setBatches(batchData);
+            if (batchData.length > 0 && !newNote.subject_id) {
+                setNewNote(prev => ({ ...prev, subject_id: batchData[0].subject_id?.toString() || '' }));
+            }
         } catch (err) {
-            console.error('Failed to fetch notes');
+            console.error('Failed to fetch initial data');
         }
     };
 
@@ -40,13 +50,14 @@ const InstructorNotes: React.FC = () => {
         formData.append('description', newNote.description);
         formData.append('file', file);
         formData.append('instructor_id', user?.id?.toString() || '');
+        formData.append('subject_id', newNote.subject_id);
 
         setLoading(true);
         try {
-            await api.post('/notes', formData, {
+            await api.post('/api/notes', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            setNewNote({ title: '', description: '' });
+            setNewNote({ title: '', description: '', subject_id: newNote.subject_id });
             setFile(null);
             fetchNotes();
         } catch (err: any) {
@@ -60,7 +71,7 @@ const InstructorNotes: React.FC = () => {
     const handleDelete = async (id: number) => {
         if (!window.confirm('Are you sure?')) return;
         try {
-            await api.delete(`/notes/${id}`);
+            await api.delete(`/api/notes/${id}`);
             fetchNotes();
         } catch (err) {
             console.error('Failed to delete note');
@@ -81,6 +92,16 @@ const InstructorNotes: React.FC = () => {
                             className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none"
                             value={newNote.title} onChange={e => setNewNote({ ...newNote, title: e.target.value })}
                         />
+                        <select
+                            required
+                            className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                            value={newNote.subject_id} onChange={e => setNewNote({ ...newNote, subject_id: e.target.value })}
+                        >
+                            <option value="">Select Subject (Batch)</option>
+                            {batches.map(b => (
+                                <option key={b.id} value={b.subject_id?.toString() || ''}>{b.subject_name} ({b.name})</option>
+                            ))}
+                        </select>
                         <textarea
                             placeholder="Description (optional)"
                             className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none"

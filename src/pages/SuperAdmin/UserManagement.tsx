@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { FaPlus, FaCheck, FaTimes } from 'react-icons/fa';
 
@@ -18,11 +19,17 @@ const UserManagement: React.FC = () => {
     const [filter, setFilter] = useState<'all' | 'pending'>('all');
 
     // New User State
-    const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'admin' });
+    const [newUser, setNewUser] = useState<{ name: string, email: string, password: string, role: string, grade?: string, phone?: string }>({ name: '', email: '', password: '', role: 'admin', grade: '', phone: '' });
+
+    const location = useLocation();
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+        if (location.state?.openCreateModal) {
+            setShowModal(true);
+            // Clear state to prevent reopening on refresh (optional, but good practice requires history manipulation which we might skip for simplicity or do: window.history.replaceState({}, document.title) if critical)
+        }
+    }, [location]);
 
     const fetchUsers = async () => {
         try {
@@ -40,7 +47,7 @@ const UserManagement: React.FC = () => {
         try {
             await api.post('/api/users', newUser);
             setShowModal(false);
-            setNewUser({ name: '', email: '', password: '', role: 'admin' });
+            setNewUser({ name: '', email: '', password: '', role: 'admin', grade: '', phone: '' });
             fetchUsers();
         } catch (err: any) {
             alert(err.response?.data?.message || 'Failed to create user');
@@ -167,6 +174,11 @@ const UserManagement: React.FC = () => {
                                 className="w-full p-2 border rounded"
                                 value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })}
                             />
+                            <input
+                                type="text" placeholder="Phone Number" required
+                                className="w-full p-2 border rounded"
+                                value={newUser.phone || ''} onChange={e => setNewUser({ ...newUser, phone: e.target.value })}
+                            />
                             <select
                                 className="w-full p-2 border rounded"
                                 value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })}
@@ -174,7 +186,27 @@ const UserManagement: React.FC = () => {
                                 <option value="admin">Admin</option>
                                 <option value="super_instructor">Super Instructor</option>
                                 <option value="instructor">Instructor</option>
+                                <option value="student">Student</option>
                             </select>
+
+                            {(newUser.role === 'instructor' || newUser.role === 'super_instructor' || newUser.role === 'student') && (
+                                <select
+                                    className="w-full p-2 border rounded"
+                                    value={newUser.grade || ''}
+                                    onChange={e => setNewUser({ ...newUser, grade: e.target.value })}
+                                >
+                                    <option value="">{newUser.role === 'student' ? 'Select Grade / Class' : 'Select Teaching Grade'}</option>
+                                    <option value="6th">6th Grade</option>
+                                    <option value="7th">7th Grade</option>
+                                    <option value="8th">8th Grade</option>
+                                    <option value="9th">9th Grade</option>
+                                    <option value="10th">10th Grade</option>
+                                    <option value="11th">11th Grade</option>
+                                    <option value="12th">12th Grade</option>
+                                    <option value="NEET">NEET Dropper</option>
+                                    <option value="JEE">JEE Mains</option>
+                                </select>
+                            )}
                             <div className="flex justify-end gap-2">
                                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
                                 <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create</button>

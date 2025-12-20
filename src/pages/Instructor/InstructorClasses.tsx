@@ -27,7 +27,7 @@ const InstructorClasses: React.FC = () => {
 
     const fetchClasses = async () => {
         try {
-            const res = await api.get(`/classes/instructor/${user?.id}`);
+            const res = await api.get(`/api/classes/instructor/${user?.id}`);
             setClasses(res.data);
         } catch (err) {
             console.error('Failed to fetch classes');
@@ -37,7 +37,7 @@ const InstructorClasses: React.FC = () => {
     const handleCreateClass = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post('/classes', { ...newClass, instructor_id: user?.id });
+            await api.post('/api/classes', { ...newClass, instructor_id: user?.id });
             setShowModal(false);
             fetchClasses();
         } catch (err) {

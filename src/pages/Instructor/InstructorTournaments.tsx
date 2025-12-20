@@ -19,7 +19,7 @@ const InstructorTournaments: React.FC = () => {
 
     const fetchTournaments = async () => {
         try {
-            const res = await api.get('/tournaments');
+            const res = await api.get('/api/tournaments');
             setTournaments(res.data);
         } catch (err) { }
     };
@@ -27,7 +27,7 @@ const InstructorTournaments: React.FC = () => {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post('/tournaments', { title, prize, date, instructor_id: user?.id, questions: [] }); // Empty questions for now
+            await api.post('/api/tournaments', { title, prize, date, instructor_id: user?.id, questions: [] }); // Empty questions for now
             setShowModal(false);
             fetchTournaments();
         } catch (err) { }

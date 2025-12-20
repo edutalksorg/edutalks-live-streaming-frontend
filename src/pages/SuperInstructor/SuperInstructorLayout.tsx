@@ -1,7 +1,8 @@
 import React, { useContext } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { FaUserTie, FaChalkboardTeacher, FaCalendarAlt, FaClipboardList, FaSignOutAlt, FaChartLine } from 'react-icons/fa';
+import { FaChalkboardTeacher, FaClipboardList, FaSignOutAlt, FaChartLine } from 'react-icons/fa';
+import logo from '../../assets/logo.png';
 
 const SuperInstructorLayout: React.FC = () => {
     const { logout, user } = useContext(AuthContext)!;
@@ -22,7 +23,7 @@ const SuperInstructorLayout: React.FC = () => {
             {/* Sidebar with distinct color for Super Instructor */}
             <div className="w-64 bg-purple-900 text-white flex flex-col">
                 <div className="p-4 text-2xl font-bold flex items-center gap-2 border-b border-purple-800">
-                    <FaUserTie /> Super Instructor
+                    <img src={logo} alt="EduTalks" className="h-8 filter brightness-0 invert" />
                 </div>
                 <div className="p-4 border-b border-purple-800 text-sm">
                     {user?.name}
@@ -31,15 +32,8 @@ const SuperInstructorLayout: React.FC = () => {
                     <Link to="/super-instructor" className={`block py-2.5 px-4 rounded transition duration-200 ${isActive('/super-instructor')}`}>
                         <div className="flex items-center gap-2"><FaChartLine /> Analytics & Overview</div>
                     </Link>
-                    <Link to="/super-instructor/classes" className={`block py-2.5 px-4 rounded transition duration-200 ${isActive('/super-instructor/classes')}`}>
-                        <div className="flex items-center gap-2"><FaCalendarAlt /> All Classes</div>
-                    </Link>
-                    <Link to="/super-instructor/exams" className={`block py-2.5 px-4 rounded transition duration-200 ${isActive('/super-instructor/exams')}`}>
-                        <div className="flex items-center gap-2"><FaClipboardList /> Exam Management</div>
-                    </Link>
-                    <Link to="/super-instructor/users" className={`block py-2.5 px-4 rounded transition duration-200 ${isActive('/super-instructor/users')}`}>
-                        <div className="flex items-center gap-2"><FaUserTie /> Users</div>
-                    </Link>
+
+
                 </nav>
                 <div className="p-4 border-t border-purple-800">
                     <button onClick={handleLogout} className="w-full flex items-center gap-2 py-2 px-4 rounded hover:bg-red-600 transition duration-200">

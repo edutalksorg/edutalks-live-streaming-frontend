@@ -13,7 +13,7 @@ const StudentTournaments: React.FC = () => {
 
     const fetchTournaments = async () => {
         try {
-            const res = await api.get('/tournaments');
+            const res = await api.get('/api/tournaments/student');
             setTournaments(res.data);
         } catch (err) { }
     };

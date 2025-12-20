@@ -1,6 +1,6 @@
-import React from 'react';
+import logo from '../assets/logo.png';
 import { Link } from 'react-router-dom';
-import { FaChalkboardTeacher, FaVideo, FaChartLine, FaLaptopCode } from 'react-icons/fa';
+import { FaVideo, FaChalkboardTeacher, FaChartLine } from 'react-icons/fa';
 
 const LandingPage: React.FC = () => {
     return (
@@ -10,12 +10,7 @@ const LandingPage: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
                         <div className="flex items-center gap-2">
-                            <div className="bg-indigo-600 p-2 rounded-lg text-white">
-                                <FaLaptopCode size={20} />
-                            </div>
-                            <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
-                                EduTalks
-                            </span>
+                            <img src={logo} alt="EduTalks Logo" className="h-10 w-auto" />
                         </div>
                         <div className="hidden md:flex space-x-8 items-center">
                             <a href="#features" className="text-gray-600 hover:text-indigo-600 transition">Features</a>
@@ -207,8 +202,7 @@ const LandingPage: React.FC = () => {
             <footer className="bg-gray-50 py-12 border-t border-gray-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="flex items-center gap-2">
-                        <div className="bg-indigo-600 p-1.5 rounded text-white"><FaLaptopCode /></div>
-                        <span className="text-xl font-bold text-gray-900">EduTalks</span>
+                        <img src={logo} alt="EduTalks Logo" className="h-8 w-auto" />
                     </div>
                     <p className="text-gray-500 text-sm">© 2025 EduTalks Platform. All rights reserved.</p>
                 </div>
