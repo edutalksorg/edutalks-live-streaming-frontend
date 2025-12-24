@@ -7,6 +7,7 @@ interface User {
     email: string;
     role: string;
     role_id: number;
+    grade?: string;
 }
 
 interface AuthContextType {

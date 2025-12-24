@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
-import { FaCheckCircle, FaChevronLeft, FaChevronRight, FaFileUpload, FaTrash, FaEye } from 'react-icons/fa';
+import { FaCheckCircle, FaChevronLeft, FaChevronRight, FaFileUpload, FaTrash, FaEye, FaTimes, FaHourglassHalf } from 'react-icons/fa';
 
 const ExamRunner: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -16,9 +16,17 @@ const ExamRunner: React.FC = () => {
     const [timeLeft, setTimeLeft] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Upload State
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    // Custom Modal State
+    const [modal, setModal] = useState<{
+        show: boolean;
+        type: 'success' | 'error' | 'confirm';
+        title: string;
+        message: string;
+        onConfirm?: () => void;
+    }>({ show: false, type: 'success', title: '', message: '' });
 
     useEffect(() => {
         const fetchExam = async () => {
@@ -84,15 +92,30 @@ const ExamRunner: React.FC = () => {
             const { submissionId, status, score } = res.data;
 
             if (status === 'graded') {
-                alert(`Exam Submitted Successfully! Your Score: ${score}`);
-                navigate(`/student/exam-result/${submissionId}`);
+                setModal({
+                    show: true,
+                    type: 'success',
+                    title: 'EXTRACTION COMPLETE',
+                    message: `Exam Submitted Successfully! Final Score: ${score}`,
+                    onConfirm: () => navigate(`/student/exam-result/${submissionId}`)
+                });
             } else {
-                alert('Exam Submitted Successfully! Your digital answers are graded, but handwritten parts are pending instructor review.');
-                navigate('/student/tests');
+                setModal({
+                    show: true,
+                    type: 'success',
+                    title: 'INTEL SYNCED',
+                    message: 'Exam Submitted Successfully! Digital answers are graded, handwritten parts are pending review.',
+                    onConfirm: () => navigate('/student/tests')
+                });
             }
         } catch (err) {
             console.error(err);
-            alert('Submission Failed.');
+            setModal({
+                show: true,
+                type: 'error',
+                title: 'UPLINK FAILURE',
+                message: 'Submission failed. Please check your connection and retry extraction.'
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -108,190 +131,258 @@ const ExamRunner: React.FC = () => {
     const currentQuestion = questions[currentQuestionIndex];
 
     return (
-        <div className="min-h-screen bg-[#F9FAFB] flex flex-col">
-            {/* Header Sticky */}
-            <header className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
-                <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="fixed inset-0 z-[100] bg-surface-dark flex flex-col lg:flex-row animate-in fade-in duration-700 overflow-hidden">
+            {/* Mobile Header with Timer */}
+            <div className="lg:hidden flex items-center justify-between px-4 h-16 bg-surface border-b border-surface-border shrink-0 z-50">
+                <div className="flex items-center gap-2 truncate">
+                    <div className="bg-primary/10 text-primary p-1.5 rounded-lg border border-primary/20">
+                        <FaCheckCircle size={14} />
+                    </div>
+                    <h2 className="text-sm font-black text-accent-white truncate uppercase italic tracking-tighter">{exam.title}</h2>
+                </div>
+                <div className={`px-4 py-1.5 rounded-xl font-black text-lg italic tracking-tight border shadow-sm transition-all duration-500 ${timeLeft < 300 ? 'text-primary bg-primary/10 border-primary animate-pulse' : 'text-accent-blue bg-accent-blue/10 border-accent-blue/20'}`}>
+                    {formatTime(timeLeft)}
+                </div>
+            </div>
+
+            {/* Left Operational Area: Question Content */}
+            <main className="flex-1 flex flex-col min-w-0 bg-surface-dark relative min-h-0 overflow-hidden">
+                {/* Desktop Top Info Area */}
+                <div className="hidden lg:flex p-8 pb-4 items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="bg-indigo-600 text-white p-2 rounded-xl">
-                            <FaCheckCircle size={20} />
+                        <div className="bg-primary/10 text-primary p-2.5 rounded-xl border border-primary/20 shadow-sm">
+                            <FaCheckCircle size={18} />
                         </div>
                         <div>
-                            <h2 className="font-bold text-gray-900 leading-tight">{exam.title}</h2>
-                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{exam.type}</p>
+                            <h2 className="text-2xl font-black text-accent-white leading-none italic tracking-tighter uppercase">{exam.title}</h2>
+                            <p className="text-[10px] text-primary font-black uppercase tracking-[0.3em] opacity-80 italic mt-1">{exam.type} ASSESSMENT</p>
                         </div>
                     </div>
-
-                    <div className={`px-5 py-2 rounded-2xl font-mono text-2xl font-black ${timeLeft < 300 ? 'text-red-500 bg-red-50 animate-pulse' : 'text-indigo-600 bg-indigo-50'}`}>
-                        {formatTime(timeLeft)}
-                    </div>
-
-                    <button
-                        onClick={() => { if (window.confirm('Are you sure you want to exit? Your progress may not be saved.')) navigate('/student/tests') }}
-                        className="text-gray-400 hover:text-gray-600 font-bold text-sm transition"
-                    >
-                        Exit
-                    </button>
                 </div>
-                {/* Progress Bar */}
-                <div className="w-full h-1.5 bg-gray-100">
-                    <div className="h-full bg-indigo-600 transition-all duration-500" style={{ width: `${progress}%` }}></div>
-                </div>
-            </header>
 
-            <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-12 pb-32">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    {/* Questions Area */}
-                    <div className="lg:col-span-2 space-y-8 text-white text-3xl font-bold bg-[#1E293B]">
-                        {/* Placeholder for actual premium question card */}
-                        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-gray-100 min-h-[400px] flex flex-col">
-                            <div className="mb-10">
-                                <span className="inline-block px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-xs font-black uppercase tracking-widest mb-4">
-                                    Question {currentQuestionIndex + 1} of {questions.length}
+                {/* Question Area (Scrollable) */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 lg:px-12 pb-32 pt-4 lg:pt-0">
+                    <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
+                        <div className="premium-card p-6 md:p-10 lg:p-12 border-surface-border relative overflow-hidden group min-h-[250px] md:min-h-[400px] flex flex-col justify-center shadow-2xl">
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl -z-10"></div>
+
+                            <div className="mb-6 md:mb-10">
+                                <span className="inline-block px-3 py-1 md:px-4 md:py-1.5 bg-surface-light text-accent-white/40 border border-surface-border rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] mb-4 md:mb-6 italic">
+                                    BLOCK {currentQuestionIndex + 1} <span className="text-primary mx-2">/</span> {questions.length}
                                 </span>
-                                <h3 className="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight">
+                                <h3 className="text-xl md:text-3xl lg:text-5xl font-black text-accent-white leading-tight italic uppercase tracking-tighter">
                                     {currentQuestion?.text}
                                 </h3>
                             </div>
 
-                            <div className="space-y-4 flex-1">
-                                {currentQuestion?.type === 'mcq' && currentQuestion?.options?.map((opt: string, idx: number) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => handleOptionSelect(idx)}
-                                        className={`w-full text-left p-6 rounded-2xl border-2 transition-all duration-200 group flex items-start gap-4 ${answers[currentQuestionIndex] === idx
-                                            ? 'border-indigo-600 bg-indigo-50 shadow-md shadow-indigo-100'
-                                            : 'border-gray-50 bg-[#F8FAFC] hover:border-indigo-200'
-                                            }`}
-                                    >
-                                        <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${answers[currentQuestionIndex] === idx ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300'
-                                            }`}>
-                                            {answers[currentQuestionIndex] === idx && <div className="w-2 h-2 bg-white rounded-full"></div>}
-                                        </div>
-                                        <span className={`font-bold ${answers[currentQuestionIndex] === idx ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'}`}>
-                                            {opt}
-                                        </span>
-                                    </button>
-                                ))}
+                            <div className="space-y-4 flex-1 w-full max-w-2xl">
+                                {currentQuestion?.type === 'mcq' && (
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {currentQuestion?.options?.map((opt: string, idx: number) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => handleOptionSelect(idx)}
+                                                className={`w-full text-left p-4 md:p-5 rounded-xl md:rounded-2xl border-2 transition-all duration-300 group/opt flex items-center gap-3 md:gap-5 ${answers[currentQuestionIndex] === idx
+                                                    ? 'border-primary bg-primary/5 shadow-xl shadow-primary/10 scale-[1.01]'
+                                                    : 'border-surface-border bg-surface-dark/50 hover:border-primary/40 hover:bg-surface-light'
+                                                    }`}
+                                            >
+                                                <div className={`w-4 h-4 md:w-5 md:h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-500 ${answers[currentQuestionIndex] === idx ? 'border-primary bg-primary rotate-90' : 'border-surface-border bg-surface-dark group-hover/opt:border-primary/60'
+                                                    }`}>
+                                                    {answers[currentQuestionIndex] === idx && <div className="w-2 md:w-2.5 h-2 md:h-2.5 bg-white rounded-full"></div>}
+                                                </div>
+                                                <span className={`text-sm md:text-lg font-bold italic tracking-tight transition-colors ${answers[currentQuestionIndex] === idx ? 'text-accent-white' : 'text-accent-gray group-hover/opt:text-accent-white'}`}>
+                                                    {opt.toUpperCase()}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
 
                                 {currentQuestion?.type === 'fib' && (
-                                    <div className="space-y-4">
-                                        <p className="text-gray-500 font-bold mb-2">Type your answer below:</p>
+                                    <div className="bg-surface-dark/50 p-6 rounded-3xl border border-surface-border">
                                         <input
                                             type="text"
                                             value={answers[currentQuestionIndex] || ''}
-                                            onChange={(e) => setAnswers({ ...answers, [currentQuestionIndex]: e.target.value })}
-                                            className="w-full p-6 bg-white border-2 border-indigo-100 rounded-3xl text-2xl font-black text-indigo-700 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 outline-none transition-all placeholder:text-gray-200"
-                                            placeholder="Write here..."
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setAnswers(prev => ({ ...prev, [currentQuestionIndex]: val }));
+                                            }}
+                                            className="w-full p-6 bg-surface-light border-2 border-surface-border rounded-xl text-xl md:text-2xl font-black text-primary italic focus:border-primary focus:shadow-[0_0_30px_rgba(238,29,35,0.1)] outline-none transition-all placeholder:text-accent-gray/20 uppercase tracking-tighter"
+                                            placeholder="TYPE RESPONSE..."
                                             autoFocus
                                         />
                                     </div>
                                 )}
-
-                                {currentQuestion?.type === 'photo' && (
-                                    <div className="bg-orange-50 p-10 rounded-3xl border-2 border-dashed border-orange-200 text-center space-y-4">
-                                        <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto text-2xl">
-                                            <FaFileUpload />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-orange-900 font-black">Handwriting Required</h4>
-                                            <p className="text-orange-700/70 text-sm font-medium">Please solve this on paper and upload the photo using the sidebar panel before finishing.</p>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </div>
-                    </div>
 
-                    {/* Sidebar: Navigation & Upload */}
-                    <div className="space-y-8">
-                        {/* Question Grid */}
-                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                            <h4 className="font-bold text-gray-900 mb-4">Questions Overview</h4>
-                            <div className="grid grid-cols-5 gap-2">
-                                {questions.map((_, idx) => (
+                        {/* Integrated Navigation below question area */}
+                        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 pb-8 lg:pb-0">
+                            <button
+                                disabled={currentQuestionIndex === 0}
+                                onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
+                                className="w-full sm:w-auto flex items-center justify-center gap-2 md:gap-3 px-6 md:px-8 py-3 md:py-4 rounded-xl bg-surface-dark border border-surface-border text-accent-gray font-black uppercase tracking-widest text-[8px] md:text-[10px] hover:text-accent-white hover:border-primary/40 disabled:opacity-20 transition-all active:scale-95"
+                            >
+                                <FaChevronLeft size={10} className="md:w-[12px]" /> REWIND
+                            </button>
+
+                            <div className="flex gap-2 md:gap-4 w-full sm:w-auto">
+                                {currentQuestionIndex < questions.length - 1 ? (
                                     <button
-                                        key={idx}
-                                        onClick={() => setCurrentQuestionIndex(idx)}
-                                        className={`h-10 rounded-xl font-bold flex items-center justify-center text-sm transition ${currentQuestionIndex === idx ? 'bg-indigo-600 text-white' :
-                                            answers[idx] !== undefined ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-50 text-gray-400'
+                                        onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
+                                        className="flex-1 sm:flex-none flex items-center justify-center gap-3 md:gap-4 px-8 md:px-12 py-3.5 md:py-5 rounded-xl md:rounded-2xl bg-accent-blue text-white font-black uppercase tracking-widest text-[8px] md:text-[10px] hover:bg-accent-blue/80 shadow-[0_15px_30px_-5px_rgba(42,157,244,0.4)] transition-all active:scale-95 leading-none"
+                                    >
+                                        FORWARD <FaChevronRight size={10} className="md:w-[12px]" />
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={isSubmitting}
+                                        className={`flex-1 sm:flex-none flex items-center justify-center gap-3 md:gap-4 px-10 md:px-16 py-3.5 md:py-5 rounded-xl md:rounded-2xl text-white font-black uppercase tracking-widest text-[9px] md:text-[11px] shadow-2xl transition-all active:scale-95 leading-none ${isSubmitting ? 'bg-surface-dark text-accent-gray cursor-not-allowed opacity-50' : 'bg-primary hover:bg-primary-hover shadow-[0_15px_30px_-5px_rgba(238,29,35,0.4)] md:scale-105'
                                             }`}
                                     >
-                                        {idx + 1}
+                                        {isSubmitting ? 'UPLOADING...' : 'COMPLETE'}
                                     </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Photo Upload Section */}
-                        {exam.allow_upload && (
-                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 space-y-4">
-                                <h4 className="font-bold text-gray-900 flex items-center gap-2">
-                                    <FaFileUpload className="text-indigo-600" /> Handwriting Upload
-                                </h4>
-                                <p className="text-xs text-gray-400 font-medium leading-relaxed">
-                                    Please write your subjective answers on paper, take a photo, and upload it here before submitting.
-                                </p>
-
-                                {!previewUrl ? (
-                                    <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-gray-200 rounded-3xl hover:border-indigo-400 hover:bg-indigo-50 cursor-pointer transition group">
-                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <FaFileUpload size={32} className="text-gray-300 group-hover:text-indigo-400 transition" />
-                                            <p className="mt-2 text-sm text-gray-500 font-bold group-hover:text-indigo-600 transition">Select Image</p>
-                                        </div>
-                                        <input type='file' className="hidden" accept="image/*" onChange={handleFileChange} />
-                                    </label>
-                                ) : (
-                                    <div className="relative group rounded-3xl overflow-hidden border border-gray-100 shadow-md">
-                                        <img src={previewUrl} alt="Preview" className="w-full h-48 object-cover" />
-                                        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => window.open(previewUrl)} className="p-3 bg-white bg-opacity-20 backdrop-blur-md rounded-full text-white hover:bg-opacity-30 transition">
-                                                <FaEye />
-                                            </button>
-                                            <button onClick={() => { setUploadFile(null); setPreviewUrl(null); }} className="p-3 bg-red-500 rounded-full text-white hover:bg-red-600 transition">
-                                                <FaTrash />
-                                            </button>
-                                        </div>
-                                    </div>
                                 )}
                             </div>
-                        )}
+                        </div>
                     </div>
+                </div>
+
+                {/* Lateral Progress Bar (Visual depth) */}
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-surface-light overflow-hidden z-20">
+                    <div className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(238,29,35,0.8)]" style={{ width: `${progress}%` }}></div>
                 </div>
             </main>
 
-            {/* Bottom Sticky Controls */}
-            <footer className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 p-6 z-40">
-                <div className="max-w-6xl mx-auto flex justify-between items-center gap-4">
-                    <button
-                        disabled={currentQuestionIndex === 0}
-                        onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
-                        className="flex items-center gap-2 px-8 py-3 rounded-2xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 disabled:opacity-50 transition"
-                    >
-                        <FaChevronLeft /> Previous
-                    </button>
-
-                    <div className="flex gap-4">
-                        {currentQuestionIndex < questions.length - 1 ? (
-                            <button
-                                onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
-                                className="flex items-center gap-2 px-10 py-3 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition"
-                            >
-                                Next Question <FaChevronRight />
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleSubmit}
-                                disabled={isSubmitting}
-                                className={`flex items-center gap-2 px-12 py-3 rounded-2xl text-white font-black uppercase tracking-widest shadow-xl transition-all ${isSubmitting ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700 shadow-green-100 scale-105'
-                                    }`}
-                            >
-                                {isSubmitting ? 'Submitting...' : 'Finish Exam'}
-                            </button>
-                        )}
+            {/* Sidebar: Integrated Controls & Matrix (Right Column) */}
+            <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-surface-border bg-surface flex flex-col shrink-0 overflow-y-auto lg:overflow-visible h-[250px] lg:h-auto">
+                {/* Timer Section (Hidden on mobile as it is in header) */}
+                <div className="hidden lg:block p-8 border-b border-surface-border">
+                    <div className="mb-6 flex items-center justify-between">
+                        <span className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] italic opacity-50">Operation Time</span>
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <div className="w-2 h-2 rounded-full bg-primary animate-ping"></div>
+                        </div>
+                    </div>
+                    <div className={`px-6 py-4 rounded-2xl font-black text-4xl tracking-tighter italic border-2 transition-all duration-500 text-center ${timeLeft < 300 ? 'text-primary bg-primary/10 border-primary shadow-[0_0_30px_rgba(238,29,35,0.3)] animate-pulse' : 'text-accent-blue bg-accent-blue/10 border-accent-blue/20'}`}>
+                        {formatTime(timeLeft)}
                     </div>
                 </div>
-            </footer>
+
+                {/* Matrix Section (Small & Scrollable) */}
+                <div className="flex-1 flex flex-col min-h-0">
+                    <div className="px-6 md:px-8 py-4 lg:py-6 flex items-center justify-between">
+                        <h4 className="text-[10px] font-black text-accent-white uppercase tracking-[0.3em] italic opacity-50">Operational Matrix</h4>
+                        <span className="text-[10px] font-black text-primary italic uppercase">{progress.toFixed(0)}%</span>
+                    </div>
+
+                    {/* Matrix Grid with Scroll Container */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-8 pb-4 lg:pb-8">
+                        <div className="grid grid-cols-6 sm:grid-cols-10 lg:grid-cols-5 gap-2">
+                            {questions.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setCurrentQuestionIndex(idx)}
+                                    className={`h-8 lg:h-10 rounded-lg font-black italic text-xs transition-all duration-300 hover:scale-110 ${currentQuestionIndex === idx ? 'bg-primary text-white shadow-lg shadow-primary/30 border border-white/20' :
+                                        answers[idx] !== undefined ? 'bg-accent-blue/20 text-accent-blue border border-accent-blue/30' : 'bg-surface-dark text-accent-gray/40 border border-surface-border hover:bg-surface-light'
+                                        }`}
+                                >
+                                    {idx + 1}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Integrated Extraction / Exit at Bottom Partition */}
+                    <div className="p-6 md:p-8 border-t border-surface-border space-y-4">
+                        {exam.allow_upload && !previewUrl && (
+                            <label className="flex flex-col items-center justify-center p-4 md:p-6 border-2 border-dashed border-surface-border rounded-xl md:rounded-2xl hover:border-primary/40 hover:bg-primary/5 cursor-pointer transition-all duration-500 group shadow-inner bg-surface-dark/30">
+                                <FaFileUpload size={20} className="md:size-[24px] text-accent-gray/30 group-hover:text-primary transition-colors mb-2" />
+                                <p className="text-[8px] md:text-[9px] text-accent-gray font-black uppercase tracking-widest group-hover:text-accent-white text-center">Attach Intel (Photo)</p>
+                                <input type='file' className="hidden" accept="image/*" onChange={handleFileChange} />
+                            </label>
+                        )}
+                        {previewUrl && (
+                            <div className="relative group rounded-xl md:rounded-2xl overflow-hidden border border-surface-border shadow-lg">
+                                <img src={previewUrl} alt="Preview" className="w-full h-24 md:h-32 object-cover" />
+                                <div className="absolute inset-0 bg-surface-dark/80 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
+                                    <button onClick={() => window.open(previewUrl)} className="p-2 bg-white/10 border border-white/20 rounded-full text-white hover:bg-primary transition-all">
+                                        <FaEye size={12} />
+                                    </button>
+                                    <button onClick={() => { setUploadFile(null); setPreviewUrl(null); }} className="p-2 bg-red-500/80 border border-red-500 rounded-full text-white hover:bg-red-600 transition-all">
+                                        <FaTrash size={12} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        <button
+                            onClick={() => {
+                                setModal({
+                                    show: true,
+                                    type: 'confirm',
+                                    title: 'ABORT OPERATION?',
+                                    message: 'Operational progress will be lost. Are you sure you want to terminate the session?',
+                                    onConfirm: () => navigate('/student/tests')
+                                });
+                            }}
+                            className="w-full text-accent-gray hover:text-primary font-black text-[10px] uppercase tracking-[0.4em] transition-colors py-3 md:py-4 bg-surface-dark border border-surface-border rounded-xl hover:bg-surface-light flex items-center justify-center gap-2 group"
+                        >
+                            <span className="group-hover:translate-x-[-4px] transition-transform">←</span> ABORT MISSION
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Custom Tactical Modal */}
+            {modal.show && (
+                <div className="fixed inset-0 z-[200] bg-background/80 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-surface border border-surface-border p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center space-y-8 animate-in zoom-in duration-300 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -z-10"></div>
+
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border-4 ${modal.type === 'success' ? 'bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20' :
+                            modal.type === 'error' ? 'bg-primary/10 text-primary border-primary/20' :
+                                'bg-accent-blue/10 text-accent-blue border-accent-blue/20'
+                            }`}>
+                            {modal.type === 'success' ? <FaCheckCircle size={32} /> :
+                                modal.type === 'error' ? <FaTimes size={32} /> :
+                                    <FaHourglassHalf size={32} className="animate-pulse" />}
+                        </div>
+
+                        <div>
+                            <h3 className="text-2xl font-black text-accent-white uppercase tracking-tighter mb-3 italic">
+                                {modal.title}
+                            </h3>
+                            <p className="text-accent-gray font-medium italic leading-relaxed">
+                                {modal.message}
+                            </p>
+                        </div>
+
+                        <div className="flex gap-4">
+                            {modal.type === 'confirm' && (
+                                <button
+                                    onClick={() => setModal({ ...modal, show: false })}
+                                    className="flex-1 px-8 py-4 bg-surface-light text-accent-gray font-black uppercase tracking-widest text-[10px] rounded-2xl hover:text-accent-white transition-all shadow-lg"
+                                >
+                                    BACK TO MISSION
+                                </button>
+                            )}
+                            <button
+                                onClick={() => {
+                                    setModal({ ...modal, show: false });
+                                    if (modal.onConfirm) modal.onConfirm();
+                                }}
+                                className={`flex-1 px-10 py-4 font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-xl transition-all active:scale-95 ${modal.type === 'error' ? 'bg-primary hover:bg-primary-hover shadow-primary/20' :
+                                    'bg-accent-blue hover:bg-accent-blue/80 shadow-accent-blue/20'
+                                    } text-white`}
+                            >
+                                {modal.type === 'confirm' ? 'CONFIRM ABORT' : 'ACKNOWLEDGE'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -79,82 +79,128 @@ const InstructorNotes: React.FC = () => {
     };
 
     return (
-        <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Study Material & Notes</h2>
+        <div className="animate-in fade-in duration-700">
+            <div className="mb-10">
+                <h2 className="text-4xl font-black text-accent-white italic mb-2 tracking-tighter">STUDY <span className="text-primary">MATERIAL</span> & NOTES</h2>
+                <p className="text-accent-gray uppercase tracking-[0.3em] text-[10px] font-black opacity-70">Academic Resource Management</p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
                 {/* Upload Section */}
-                <div className="bg-white p-6 rounded-lg shadow-md h-fit">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><FaFileUpload /> Upload New Material</h3>
-                    <form onSubmit={handleUpload} className="space-y-4">
-                        <input
-                            type="text" placeholder="Title" required
-                            className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none"
-                            value={newNote.title} onChange={e => setNewNote({ ...newNote, title: e.target.value })}
-                        />
-                        <select
-                            required
-                            className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
-                            value={newNote.subject_id} onChange={e => setNewNote({ ...newNote, subject_id: e.target.value })}
-                        >
-                            <option value="">Select Subject (Batch)</option>
-                            {batches.map(b => (
-                                <option key={b.id} value={b.subject_id?.toString() || ''}>{b.subject_name} ({b.name})</option>
-                            ))}
-                        </select>
-                        <textarea
-                            placeholder="Description (optional)"
-                            className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none"
-                            value={newNote.description} onChange={e => setNewNote({ ...newNote, description: e.target.value })}
-                        />
-                        <input
-                            type="file" required
-                            className="w-full p-2 border rounded bg-gray-50"
-                            onChange={e => setFile(e.target.files ? e.target.files[0] : null)}
-                        />
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className={`w-full py-2 rounded text-white font-bold transition ${loading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
-                        >
-                            {loading ? 'Uploading...' : 'Upload Material'}
-                        </button>
-                    </form>
+                <div className="md:col-span-2 space-y-6">
+                    <div className="premium-card p-8">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="p-3 bg-primary/10 rounded-2xl">
+                                <FaFileUpload className="text-primary text-xl" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-black text-accent-white italic leading-tight">UPLOAD</h3>
+                                <p className="text-[10px] text-accent-gray font-black uppercase tracking-widest opacity-70">New Resource</p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleUpload} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Title</label>
+                                <input
+                                    type="text" placeholder="e.g. Calculus Basics" required
+                                    className="w-full"
+                                    value={newNote.title} onChange={e => setNewNote({ ...newNote, title: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Subject Node</label>
+                                <select
+                                    required
+                                    className="w-full"
+                                    value={newNote.subject_id} onChange={e => setNewNote({ ...newNote, subject_id: e.target.value })}
+                                >
+                                    <option value="">Select Target Batch</option>
+                                    {batches.map(b => (
+                                        <option key={b.id} value={b.subject_id?.toString() || ''}>{b.subject_name} ({b.name})</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Description</label>
+                                <textarea
+                                    placeholder="Brief overview of content..."
+                                    className="w-full h-32"
+                                    value={newNote.description} onChange={e => setNewNote({ ...newNote, description: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Binary File</label>
+                                <input
+                                    type="file" required
+                                    className="w-full file:bg-primary/10 file:text-primary file:border-none file:px-4 file:py-2 file:rounded-xl file:mr-4 file:font-black file:text-[10px] file:uppercase file:tracking-widest"
+                                    onChange={e => setFile(e.target.files ? e.target.files[0] : null)}
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full btn-primary py-4"
+                            >
+                                {loading ? 'INITIALIZING UPLOAD...' : 'UPLOAD RESOURCE'}
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
                 {/* List Section */}
-                <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-gray-700">Uploaded Materials</h3>
+                <div className="md:col-span-3 space-y-8">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-black text-accent-white italic">UPLOADED <span className="text-primary">MATERIALS</span></h3>
+                        <span className="bg-surface-light border border-surface-border px-4 py-1.5 rounded-full text-[10px] font-bold text-accent-gray uppercase tracking-widest">
+                            {notes.length} Total Files
+                        </span>
+                    </div>
+
                     {notes.length === 0 ? (
-                        <p className="text-gray-500 italic">No notes uploaded yet.</p>
+                        <div className="premium-card p-12 text-center opacity-70">
+                            <p className="text-accent-gray italic font-medium">No resources have been deployed yet.</p>
+                        </div>
                     ) : (
-                        notes.map(note => (
-                            <div key={note.id} className="bg-white p-4 rounded-lg shadow border-l-4 border-indigo-400 flex justify-between items-start">
-                                <div>
-                                    <h4 className="font-bold text-gray-800">{note.title}</h4>
-                                    <p className="text-sm text-gray-600 mb-1">{note.description}</p>
-                                    <p className="text-xs text-gray-400">{new Date(note.uploaded_at).toLocaleDateString()}</p>
+                        <div className="grid grid-cols-1 gap-4">
+                            {notes.map(note => (
+                                <div key={note.id} className="premium-card p-6 flex justify-between items-center group">
+                                    <div className="flex items-center gap-5">
+                                        <div className="p-4 bg-accent-blue/10 rounded-2xl group-hover:scale-110 transition-transform duration-500">
+                                            <FaDownload className="text-accent-blue text-xl" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-black text-accent-white italic text-lg leading-tight uppercase">{note.title}</h4>
+                                            <p className="text-[10px] text-accent-gray font-black uppercase tracking-widest opacity-70 mb-2">{note.subject_name || 'General'}</p>
+                                            <p className="text-sm text-accent-gray italic font-medium max-w-md line-clamp-1">{note.description}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <p className="text-[10px] text-accent-gray font-black mr-4 uppercase tracking-tighter opacity-50">{new Date(note.uploaded_at).toLocaleDateString()}</p>
+                                        <a
+                                            href={`http://localhost:5000/${note.file_path}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-3 bg-surface-light hover:bg-accent-blue/20 text-accent-blue rounded-xl transition-all duration-300"
+                                            title="Download"
+                                        >
+                                            <FaDownload size={18} />
+                                        </a>
+                                        <button
+                                            onClick={() => handleDelete(note.id)}
+                                            className="p-3 bg-surface-light hover:bg-primary/20 text-primary rounded-xl transition-all duration-300 active:scale-90"
+                                            title="Delete"
+                                        >
+                                            <FaTrash size={18} />
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col gap-2">
-                                    <a
-                                        href={`http://localhost:5000/${note.file_path}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-indigo-600 hover:text-indigo-800"
-                                        title="Download"
-                                    >
-                                        <FaDownload />
-                                    </a>
-                                    <button
-                                        onClick={() => handleDelete(note.id)}
-                                        className="text-red-500 hover:text-red-700"
-                                        title="Delete"
-                                    >
-                                        <FaTrash />
-                                    </button>
-                                </div>
-                            </div>
-                        ))
+                            ))}
+                        </div>
                     )}
                 </div>
             </div>

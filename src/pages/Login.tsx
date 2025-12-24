@@ -1,93 +1,108 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import logo from '../assets/logo.png';
+import { useTheme } from '../context/ThemeContext';
+import ThemeToggle from '../components/ThemeToggle';
 
 const Login: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const { login } = useContext(AuthContext)!;
+    const { theme } = useTheme();
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setLoading(true);
         try {
-            const response = await api.post('/api/auth/login', { email, password });
-            const { token, user } = response.data;
+            const res = await api.post('/api/auth/login', { email, password });
+            const { token, user } = res.data;
             login(token, user);
 
-            // Redirect based on role
             switch (user.role) {
-                case 'super_admin':
-                    navigate('/super-admin');
-                    break;
-                case 'admin':
-                    navigate('/admin');
-                    break;
-                case 'super_instructor':
-                    navigate('/super-instructor');
-                    break;
-                case 'instructor':
-                    navigate('/instructor');
-                    break;
-                case 'student':
-                    navigate('/student');
-                    break;
-                default:
-                    navigate('/');
+                case 'super_admin': navigate('/super-admin'); break;
+                case 'admin': navigate('/admin'); break;
+                case 'super_instructor': navigate('/super-instructor'); break;
+                case 'instructor': navigate('/instructor'); break;
+                case 'student': navigate('/student'); break;
+                default: navigate('/');
             }
         } catch (err: any) {
             setError(err.response?.data?.message || 'Login failed');
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-                <div className="text-center mb-8">
-                    <img src={logo} alt="EduTalks" className="h-16 mx-auto mb-4" />
-                    <p className="text-gray-600 mt-2">Sign in to your account</p>
+        <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-surface-dark flex items-center justify-center relative overflow-hidden transition-colors duration-500`}>
+            {/* Theme Toggle Position */}
+            <div className="absolute top-8 right-8">
+                <ThemeToggle />
+            </div>
+
+            {/* Background Pattern */}
+            <div className="fixed inset-0 bg-pattern-dark pointer-events-none -z-10"></div>
+
+            <div className="max-w-md w-full premium-card p-10 animate-in fade-in zoom-in duration-700">
+                <div className="text-center mb-10">
+                    <img src={logo} alt="EduTalks" className={`h-16 mx-auto mb-6 ${theme === 'dark' ? 'brightness-110 drop-shadow-[0_0_8px_rgba(238,29,35,0.2)]' : 'hover:scale-105 transition-transform'}`} />
+                    <h2 className="text-3xl font-black text-accent-white italic mb-2">Welcome Back</h2>
+                    <p className="text-accent-gray uppercase tracking-[0.2em] text-[10px] font-black">Sign in to your account</p>
                 </div>
 
                 {error && (
-                    <div className="bg-red-50 text-red-700 p-3 rounded mb-4 text-sm">
+                    <div className="bg-primary/10 border border-primary/20 text-primary p-4 rounded-xl mb-6 text-xs font-bold animate-pulse text-center">
                         {error}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Email Address</label>
-                        <input
-                            type="email"
-                            required
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Password</label>
-                        <input
-                            type="password"
-                            required
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
+                <form onSubmit={handleSubmit} className="space-y-8">
+                    <div className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1 italic">Email Address</label>
+                            <input
+                                type="email"
+                                className="w-full bg-surface-dark border-surface-border rounded-xl px-5 py-4 focus:ring-primary transition-all"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                placeholder="name@example.com"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1 italic">Password</label>
+                            <input
+                                type="password"
+                                className="w-full bg-surface-dark border-surface-border rounded-xl px-5 py-4 focus:ring-primary transition-all"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                placeholder="••••••••"
+                            />
+                        </div>
                     </div>
 
                     <button
                         type="submit"
-                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        disabled={loading}
+                        className="w-full btn-primary py-5 text-sm font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 mt-4"
                     >
-                        Sign In
+                        {loading ? 'Authenticating...' : 'Secure Access'}
                     </button>
                 </form>
+
+                <div className="mt-10 pt-8 border-t border-surface-border text-center">
+                    <p className="text-[10px] font-black text-accent-gray uppercase tracking-[0.2em]">
+                        Don't have an account?
+                        <Link to="/register" className="text-primary hover:text-primary-hover ml-2 underline transition-all">Join EduTalks</Link>
+                    </p>
+                </div>
             </div>
         </div>
     );

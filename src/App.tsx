@@ -38,85 +38,95 @@ import StudentSubscription from './pages/Student/StudentSubscription';
 import SuperInstructorDashboard from './pages/SuperInstructor/SuperInstructorDashboard';
 import SuperInstructorUsers from './pages/SuperInstructor/SuperInstructorUsers';
 import SuperInstructorAllocation from './pages/SuperInstructor/SuperInstructorAllocation';
+import SuperInstructorClasses from './pages/SuperInstructor/SuperInstructorClasses';
+import SuperInstructorLiveClassRoom from './pages/SuperInstructor/SuperInstructorLiveClassRoom';
+import StudentSuperInstructorClasses from './pages/Student/StudentSuperInstructorClasses';
+import StudentSuperInstructorClassRoom from './pages/Student/StudentSuperInstructorClassRoom';
 import StudentExamResult from './pages/Student/StudentExamResult';
+import { ThemeProvider } from './context/ThemeContext';
 
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
 
-          {/* Super Admin */}
-          <Route element={<PrivateRoute allowedRoles={['super_admin']} />}>
-            <Route path="/super-admin" element={<SuperAdminLayout />}>
-              <Route index element={<SuperAdminDashboard />} />
-              <Route path="users" element={<UserManagement />} />
-              <Route path="payments" element={<PaymentManagement />} />
+            {/* Super Admin */}
+            <Route element={<PrivateRoute allowedRoles={['super_admin']} />}>
+              <Route path="/super-admin" element={<SuperAdminLayout />}>
+                <Route index element={<SuperAdminDashboard />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="payments" element={<PaymentManagement />} />
+              </Route>
             </Route>
-          </Route>
 
-          {/* Admin */}
-          <Route element={<PrivateRoute allowedRoles={['admin']} />}>
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="instructors" element={<div className="p-8">Instructors List Placeholder</div>} />
-              <Route path="students" element={<div className="p-8">Students List Placeholder</div>} />
+            {/* Admin */}
+            <Route element={<PrivateRoute allowedRoles={['admin']} />}>
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="instructors" element={<div className="p-8">Instructors List Placeholder</div>} />
+                <Route path="students" element={<div className="p-8">Students List Placeholder</div>} />
+              </Route>
             </Route>
-          </Route>
 
-          {/* Super Instructor */}
-          <Route element={<PrivateRoute allowedRoles={['super_instructor']} />}>
-            <Route path="/super-instructor" element={<SuperInstructorLayout />}>
-              <Route index element={<SuperInstructorDashboard />} />
-              <Route path="instructors" element={<InstructorManagement />} />
-              <Route path="batches" element={<BatchManagement />} />
-              <Route path="classes" element={<InstructorClasses />} />
-              <Route path="exams" element={<InstructorExams />} />
-              <Route path="tournaments" element={<InstructorTournaments />} />
-              <Route path="tournaments" element={<InstructorTournaments />} />
-              <Route path="users" element={<SuperInstructorUsers />} />
-              <Route path="allocation" element={<SuperInstructorAllocation />} />
-              <Route path="live/:id" element={<LiveClassRoom />} />
+            {/* Super Instructor */}
+            <Route element={<PrivateRoute allowedRoles={['super_instructor']} />}>
+              <Route path="/super-instructor" element={<SuperInstructorLayout />}>
+                <Route index element={<SuperInstructorDashboard />} />
+                <Route path="instructors" element={<InstructorManagement />} />
+                <Route path="batches" element={<BatchManagement />} />
+                <Route path="classes" element={<InstructorClasses />} />
+                <Route path="exams" element={<InstructorExams />} />
+                <Route path="tournaments" element={<InstructorTournaments />} />
+                <Route path="users" element={<SuperInstructorUsers />} />
+                <Route path="allocation" element={<SuperInstructorAllocation />} />
+                <Route path="live-classes" element={<SuperInstructorClasses />} />
+              </Route>
+              <Route path="/super-instructor/live/:id" element={<LiveClassRoom />} />
+              <Route path="/super-instructor/classroom/:id" element={<SuperInstructorLiveClassRoom />} />
             </Route>
-          </Route>
 
-          {/* Instructor */}
-          <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
-            <Route path="/instructor" element={<InstructorLayout />}>
-              <Route index element={<InstructorDashboard />} />
-              <Route path="classes" element={<InstructorClasses />} />
-              <Route path="live/:id" element={<LiveClassRoom />} />
-              <Route path="students" element={<InstructorStudents />} />
-              <Route path="exams" element={<InstructorExams />} />
-              <Route path="exams/:id/grading" element={<InstructorGrading />} />
-              <Route path="tournaments" element={<InstructorTournaments />} />
-              <Route path="notes" element={<InstructorNotes />} />
+            {/* Instructor */}
+            <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
+              <Route path="/instructor" element={<InstructorLayout />}>
+                <Route index element={<InstructorDashboard />} />
+                <Route path="classes" element={<InstructorClasses />} />
+                <Route path="students" element={<InstructorStudents />} />
+                <Route path="exams" element={<InstructorExams />} />
+                <Route path="exams/:id/grading" element={<InstructorGrading />} />
+                <Route path="tournaments" element={<InstructorTournaments />} />
+                <Route path="notes" element={<InstructorNotes />} />
+              </Route>
+              <Route path="/instructor/live/:id" element={<LiveClassRoom />} />
             </Route>
-          </Route>
 
-          {/* Student */}
-          <Route element={<PrivateRoute allowedRoles={['student']} />}>
-            <Route path="/student" element={<StudentLayout />}>
-              <Route index element={<StudentDashboard />} />
-              <Route path="classes" element={<StudentClasses />} />
-              <Route path="live/:id" element={<LiveClassRoom />} />
-              <Route path="tests" element={<StudentExamList />} />
-              <Route path="exam/:id" element={<ExamRunner />} />
-              <Route path="exam-result/:submissionId" element={<StudentExamResult />} />
-              <Route path="tournaments" element={<StudentTournaments />} />
-              <Route path="materials" element={<StudentNotes />} />
-              <Route path="subscription" element={<StudentSubscription />} />
-              <Route path="profile" element={<StudentProfile />} />
+            {/* Student */}
+            <Route element={<PrivateRoute allowedRoles={['student']} />}>
+              <Route path="/student" element={<StudentLayout />}>
+                <Route index element={<StudentDashboard />} />
+                <Route path="classes" element={<StudentClasses />} />
+                <Route path="tests" element={<StudentExamList />} />
+                <Route path="exam/:id" element={<ExamRunner />} />
+                <Route path="exam-result/:submissionId" element={<StudentExamResult />} />
+                <Route path="tournaments" element={<StudentTournaments />} />
+                <Route path="materials" element={<StudentNotes />} />
+                <Route path="subscription" element={<StudentSubscription />} />
+                <Route path="profile" element={<StudentProfile />} />
+                <Route path="super-instructor-classes" element={<StudentSuperInstructorClasses />} />
+              </Route>
+              <Route path="/student/live/:id" element={<LiveClassRoom />} />
+              <Route path="/student/super-instructor-classroom/:id" element={<StudentSuperInstructorClassRoom />} />
             </Route>
-          </Route>
 
-        </Routes>
-      </Router>
-    </AuthProvider>
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

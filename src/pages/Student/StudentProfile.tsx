@@ -43,98 +43,102 @@ const StudentProfile: React.FC = () => {
     const user = data?.user;
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8">
-            <h2 className="text-3xl font-extrabold text-gray-900">My Account</h2>
+        <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700">
+            <h2 className="text-4xl font-black text-accent-white italic tracking-tighter uppercase">OPERATIONAL <span className="text-gradient-red">PROFILE</span></h2>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 {/* User Info Card */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="bg-indigo-600 h-32 relative">
-                            <div className="absolute -bottom-10 left-8">
-                                <div className="w-24 h-24 bg-white rounded-2xl shadow-lg border-4 border-white flex items-center justify-center text-indigo-600 overflow-hidden">
-                                    <FaUser size={48} />
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="premium-card p-0 overflow-hidden border-surface-border">
+                        <div className="bg-gradient-to-r from-primary/80 to-primary-hover h-40 relative">
+                            <div className="absolute inset-0 bg-white/5 backdrop-blur-sm"></div>
+                            <div className="absolute -bottom-12 left-10">
+                                <div className="w-32 h-32 bg-surface rounded-[2rem] shadow-2xl border-4 border-surface-dark flex items-center justify-center text-primary overflow-hidden relative group">
+                                    <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors"></div>
+                                    <FaUser size={56} className="relative z-10" />
                                 </div>
                             </div>
                         </div>
-                        <div className="pt-16 pb-8 px-8">
-                            <div className="flex justify-between items-start mb-8">
+                        <div className="pt-20 pb-10 px-10">
+                            <div className="flex flex-col md:flex-row justify-between items-start mb-12 gap-6">
                                 <div>
-                                    <h3 className="text-2xl font-bold text-gray-900">{user?.name}</h3>
-                                    <p className="text-gray-500 font-medium">Student • Member since {new Date(user?.created_at || '').toLocaleDateString()}</p>
+                                    <h3 className="text-3xl font-black text-accent-white italic tracking-tighter uppercase">{user?.name}</h3>
+                                    <p className="text-accent-gray italic font-medium mt-2 opacity-60">TACTICAL STUDENT • ACTIVE SINCE {new Date(user?.created_at || '').toLocaleDateString()}</p>
                                 </div>
-                                <div className="bg-indigo-50 text-indigo-600 px-4 py-1 rounded-full text-sm font-bold border border-indigo-100 flex items-center gap-1">
-                                    <FaCrown className="text-yellow-500" /> {user?.plan_name}
+                                <div className="bg-primary/10 text-primary px-6 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] border border-primary/20 flex items-center gap-2 shadow-lg shadow-primary/5">
+                                    <FaCrown className="text-primary animate-pulse" /> {user?.plan_name} ACCESS
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-1">
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                                        <FaEnvelope /> Email Address
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] flex items-center gap-3 opacity-40">
+                                        <FaEnvelope className="text-primary" /> COMMUNICATION FREQUENCY
                                     </p>
-                                    <p className="text-gray-700 font-medium">{user?.email}</p>
+                                    <p className="text-accent-white font-black italic text-lg tracking-tight">{user?.email}</p>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                                        <FaPhone /> Phone Number
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] flex items-center gap-3 opacity-40">
+                                        <FaPhone className="text-primary" /> VOICE DOWNLINK
                                     </p>
-                                    <p className="text-gray-700 font-medium">{user?.phone || 'Not provided'}</p>
+                                    <p className="text-accent-white font-black italic text-lg tracking-tight">{user?.phone || 'NOT CONFIGURED'}</p>
                                 </div>
-                                <div className="space-y-1 relative group">
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                                        <FaSchool /> Current Grade
+                                <div className="space-y-2 relative group">
+                                    <p className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] flex items-center gap-3 opacity-40">
+                                        <FaSchool className="text-primary" /> OPERATIONAL SECTOR
                                     </p>
-                                    <p className="text-gray-900 font-bold text-lg">{user?.grade}</p>
-                                    <div className="absolute right-0 top-0 text-gray-400 opacity-0 group-hover:opacity-100 transition flex items-center gap-1 text-[10px] bg-gray-100 px-2 py-1 rounded">
-                                        <FaLock /> Read Only
+                                    <p className="text-primary font-black italic text-2xl tracking-tighter uppercase">{user?.grade}</p>
+                                    <div className="absolute right-0 top-0 text-[8px] font-black text-accent-gray uppercase tracking-widest bg-surface-dark px-3 py-1 rounded-full border border-surface-border flex items-center gap-2 opacity-60">
+                                        <FaLock /> SYSTEM LOCKED
                                     </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                                        <FaCalendarAlt /> Plan Expiry
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] flex items-center gap-3 opacity-40">
+                                        <FaCalendarAlt className="text-primary" /> DEPLOYMENT EXPIRY
                                     </p>
-                                    <p className={`font-bold ${user?.subscription_expires_at ? 'text-green-600' : 'text-gray-600'}`}>
-                                        {user?.subscription_expires_at ? new Date(user.subscription_expires_at).toLocaleDateString() : 'N/A'}
+                                    <p className={`text-lg font-black italic tracking-tight ${user?.subscription_expires_at ? 'text-accent-emerald' : 'text-accent-gray opacity-30'}`}>
+                                        {user?.subscription_expires_at ? new Date(user.subscription_expires_at).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}
                                     </p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Grade Change Notification */}
-                        <div className="bg-yellow-50 p-4 border-t border-yellow-100 flex items-start gap-3">
-                            <FaExclamationCircle className="text-yellow-600 mt-0.5" />
-                            <div>
-                                <p className="text-sm text-yellow-800 font-medium">To change your grade/class, please contact our support team.</p>
-                                <p className="text-xs text-yellow-700 mt-1 font-bold">Customer Care: +91 98765 43210</p>
+                        <div className="bg-primary/5 p-6 border-t border-surface-border flex items-center gap-4 group">
+                            <div className="bg-primary/10 p-3 rounded-xl border border-primary/20 group-hover:scale-110 transition-transform">
+                                <FaExclamationCircle className="text-primary" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-[10px] text-accent-white font-black uppercase tracking-widest leading-relaxed">Sector Reassignment Required?</p>
+                                <p className="text-[9px] text-accent-gray italic font-medium opacity-60">Operational command verification needed: <span className="text-primary font-black">+91 98765 43210</span></p>
                             </div>
                         </div>
                     </div>
 
                     {/* Payment History Card */}
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
-                        <h4 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <FaCreditCard className="text-indigo-600" /> Payment History
+                    <div className="premium-card p-10 border-surface-border">
+                        <h4 className="text-xl font-black text-accent-white italic tracking-tighter uppercase mb-8 flex items-center gap-4">
+                            <FaCreditCard className="text-primary" /> TRANSACTION LOGS
                         </h4>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                                        <th className="pb-4">Order ID</th>
-                                        <th className="pb-4">Date</th>
-                                        <th className="pb-4 text-right">Amount</th>
-                                        <th className="pb-4 text-center">Status</th>
+                                    <tr className="border-b border-surface-border text-[9px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">
+                                        <th className="pb-6">ORDER ID</th>
+                                        <th className="pb-6">TIMESTAMP</th>
+                                        <th className="pb-6 text-right">MAGNITUDE</th>
+                                        <th className="pb-6 text-center">STATUS</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50">
+                                <tbody className="divide-y divide-surface-border/50">
                                     {data?.payments.map((p, i) => (
-                                        <tr key={i} className="text-sm">
-                                            <td className="py-4 font-mono text-xs">{p.order_id}</td>
-                                            <td className="py-4 text-gray-500">{new Date(p.created_at).toLocaleDateString()}</td>
-                                            <td className="py-4 text-right font-bold text-gray-900">₹{parseFloat(p.amount).toLocaleString()}</td>
-                                            <td className="py-4 text-center">
-                                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${p.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                    p.status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+                                        <tr key={i} className="text-[11px] group hover:bg-white/5 transition-colors">
+                                            <td className="py-6 font-black text-primary italic tracking-widest">{p.order_id}</td>
+                                            <td className="py-6 text-accent-gray italic font-medium opacity-60">{new Date(p.created_at).toLocaleDateString()}</td>
+                                            <td className="py-6 text-right font-black text-accent-white text-sm italic tracking-tight">₹{parseFloat(p.amount).toLocaleString()}</td>
+                                            <td className="py-6 text-center">
+                                                <span className={`px-4 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${p.status === 'completed' ? 'bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20' :
+                                                    p.status === 'failed' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-surface-light text-accent-gray border-surface-border'
                                                     }`}>
                                                     {p.status}
                                                 </span>
@@ -143,7 +147,7 @@ const StudentProfile: React.FC = () => {
                                     ))}
                                     {data?.payments.length === 0 && (
                                         <tr>
-                                            <td colSpan={4} className="py-12 text-center text-gray-400 italic">No payment record found.</td>
+                                            <td colSpan={4} className="py-20 text-center text-accent-gray italic font-medium opacity-30">No historical data found in this sector.</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -153,30 +157,33 @@ const StudentProfile: React.FC = () => {
                 </div>
 
                 {/* Sidebar Info */}
-                <div className="space-y-6">
-                    <div className="bg-gradient-to-br from-indigo-700 to-purple-800 rounded-3xl p-8 text-white shadow-xl">
-                        <h4 className="text-xl font-bold mb-4">EduTalks Support</h4>
-                        <p className="text-indigo-100 text-sm mb-6 leading-relaxed">Need help with your subscription or have a question about your classes? Our team is here for you 24/7.</p>
-                        <ul className="space-y-4 text-sm">
-                            <li className="flex items-center gap-3">
-                                <div className="bg-white bg-opacity-10 p-2 rounded-lg"><FaPhone /></div>
-                                <span className="font-bold">+91 98765 43210</span>
+                <div className="space-y-10 lg:sticky lg:top-36 self-start">
+                    <div className="bg-gradient-to-br from-primary via-primary-hover to-primary/90 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-1000"></div>
+                        <h4 className="text-2xl font-black italic tracking-tighter uppercase mb-6 leading-tight">TACTICAL SUPPORT</h4>
+                        <p className="text-white/70 italic text-sm mb-10 font-medium leading-relaxed">Engaged in operational difficulties? Our elite response team is standing by for extraction 24/7.</p>
+                        <ul className="space-y-6">
+                            <li className="flex items-center gap-5 group/item">
+                                <div className="bg-white/10 p-3 rounded-xl border border-white/20 group-hover/item:bg-white/20 transition-colors"><FaPhone size={14} /></div>
+                                <span className="font-black italic tracking-widest text-[11px]">+91 98765 43210</span>
                             </li>
-                            <li className="flex items-center gap-3">
-                                <div className="bg-white bg-opacity-10 p-2 rounded-lg"><FaEnvelope /></div>
-                                <span className="font-bold">support@edutalks.com</span>
+                            <li className="flex items-center gap-5 group/item">
+                                <div className="bg-white/10 p-3 rounded-xl border border-white/20 group-hover/item:bg-white/20 transition-colors"><FaEnvelope size={14} /></div>
+                                <span className="font-black italic tracking-widest text-[11px]">COMMAND@EDUTALKS.NET</span>
                             </li>
                         </ul>
-                        <button className="w-full mt-8 bg-white text-indigo-600 py-3 rounded-2xl font-bold hover:bg-opacity-90 transition">
-                            Chat with us
+                        <button className="w-full mt-12 bg-white text-primary py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.3)] transition-all active:scale-95">
+                            INITIATE COMMS
                         </button>
                     </div>
 
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
-                        <h4 className="text-lg font-bold text-gray-900 mb-4">Privacy & Security</h4>
-                        <p className="text-sm text-gray-500 mb-6">Your data is secured with enterprise-grade encryption.</p>
-                        <button className="text-indigo-600 font-bold text-sm hover:underline flex items-center gap-2">
-                            Learn more <FaArrowRight size={10} />
+                    <div className="premium-card p-10 border-surface-border shadow-2xl">
+                        <h4 className="text-lg font-black text-accent-white italic tracking-tighter uppercase mb-4 flex items-center gap-3">
+                            <FaLock className="text-primary" /> ENCRYPTION
+                        </h4>
+                        <p className="text-xs text-accent-gray italic font-medium opacity-60 leading-relaxed mb-8">All operational data is secured via end-to-end proprietary protocol.</p>
+                        <button className="text-primary font-black text-[10px] uppercase tracking-widest hover:text-white transition-colors flex items-center gap-3">
+                            SECURITY MANIFEST <FaArrowRight size={10} className="animate-pulse" />
                         </button>
                     </div>
                 </div>

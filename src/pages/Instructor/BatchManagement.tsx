@@ -57,77 +57,93 @@ const BatchManagement: React.FC = () => {
         }
     };
 
-    return (
-        <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Batch Management</h2>
+    if (loading) return <div className="flex items-center justify-center min-h-[400px] text-primary font-black uppercase tracking-widest animate-pulse italic">Accessing Batch Grid...</div>;
 
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Instructor</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {batches.map((batch) => (
-                            <tr key={batch.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{batch.class_name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{batch.subject_name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{batch.name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${batch.student_count >= 30 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                                        {batch.student_count} / {batch.max_students || 2}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {batch.instructor_name ? (
-                                        <div>
-                                            <div className="font-medium">{batch.instructor_name}</div>
-                                            <div className="text-xs text-gray-400">{batch.instructor_email}</div>
-                                        </div>
-                                    ) : (
-                                        <span className="text-red-500 italic">Unassigned</span>
-                                    )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button
-                                        onClick={() => { setEditingBatch(batch); setSelectedInstructor(batch.instructor_id?.toString() || ''); }}
-                                        className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
-                                    >
-                                        <FaEdit /> Assign
-                                    </button>
-                                </td>
+    return (
+        <div className="animate-fadeIn">
+            <h2 className="text-3xl font-black text-accent-white tracking-tighter italic mb-10">Batch <span className="text-gradient-red">Management</span></h2>
+
+            <div className="premium-card overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-surface-border">
+                        <thead className="bg-surface-dark/50">
+                            <tr>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Class</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Subject</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Batch Name</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Students</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Instructor</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-surface-border">
+                            {batches.map((batch) => (
+                                <tr key={batch.id} className="hover:bg-white/5 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-accent-white italic">{batch.class_name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-accent-gray/70 font-medium">{batch.subject_name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-accent-gray/70 font-medium">{batch.name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg border shadow-sm ${batch.student_count >= (batch.max_students || 30) ? 'bg-primary/20 text-primary border-primary/20' : 'bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20'}`}>
+                                            {batch.student_count} / {batch.max_students || 30}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {batch.instructor_name ? (
+                                            <div>
+                                                <div className="font-black text-accent-white text-sm italic">{batch.instructor_name}</div>
+                                                <div className="text-[10px] text-accent-gray italic opacity-50">{batch.instructor_email}</div>
+                                            </div>
+                                        ) : (
+                                            <span className="text-primary text-[10px] font-black uppercase tracking-widest animate-pulse">Unassigned</span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <button
+                                            onClick={() => { setEditingBatch(batch); setSelectedInstructor(batch.instructor_id?.toString() || ''); }}
+                                            className="flex items-center gap-2 px-4 py-2 bg-surface-dark border border-white/5 text-accent-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:border-primary/50 transition-all shadow-lg active:scale-95"
+                                        >
+                                            <FaEdit className="text-primary" /> Assign
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {editingBatch && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-6 rounded-lg shadow-xl w-96">
-                        <h3 className="text-lg font-bold mb-4">Assign Instructor</h3>
-                        <p className="mb-4 text-sm text-gray-600">Assigning instructor to <strong>{editingBatch.name}</strong> ({editingBatch.subject_name})</p>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setEditingBatch(null)}></div>
+                    <div className="bg-surface p-8 rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 w-full max-w-md relative z-10 animate-fadeInTransform">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-2xl font-black text-accent-white italic tracking-tighter">Assign <span className="text-primary">Instructor</span></h3>
+                            <button onClick={() => setEditingBatch(null)} className="text-accent-gray hover:text-white transition-colors">✕</button>
+                        </div>
+                        <p className="mb-8 text-[10px] font-black uppercase tracking-[0.2em] text-accent-gray leading-relaxed">
+                            Assigning instructor to <span className="text-accent-white italic">{editingBatch.name}</span> <br />
+                            Subject: <span className="text-primary italic">{editingBatch.subject_name}</span>
+                        </p>
 
-                        <select
-                            className="w-full p-2 border rounded mb-4"
-                            value={selectedInstructor}
-                            onChange={(e) => setSelectedInstructor(e.target.value)}
-                        >
-                            <option value="">Select Instructor</option>
-                            {instructors.map(inst => (
-                                <option key={inst.id} value={inst.id}>{inst.name}</option>
-                            ))}
-                        </select>
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-2">Available Instructors</label>
+                                <select
+                                    className="w-full bg-surface-dark border border-white/5 rounded-2xl p-4 text-accent-white focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer"
+                                    value={selectedInstructor}
+                                    onChange={(e) => setSelectedInstructor(e.target.value)}
+                                >
+                                    <option value="">Select Instructor...</option>
+                                    {instructors.map(inst => (
+                                        <option key={inst.id} value={inst.id}>{inst.name}</option>
+                                    ))}
+                                </select>
+                            </div>
 
-                        <div className="flex justify-end gap-2">
-                            <button onClick={() => setEditingBatch(null)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
-                            <button onClick={handleAssign} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Save</button>
+                            <div className="flex gap-4 pt-4">
+                                <button onClick={() => setEditingBatch(null)} className="flex-1 px-4 py-4 text-[10px] font-black uppercase tracking-widest text-accent-gray hover:text-white transition-colors border border-white/5 rounded-2xl hover:bg-white/5">Cancel</button>
+                                <button onClick={handleAssign} className="flex-1 btn-primary py-4 scale-100 hover:scale-105 active:scale-95 transition-all">SAVE CHANGES</button>
+                            </div>
                         </div>
                     </div>
                 </div>

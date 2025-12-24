@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { Link } from 'react-router-dom';
-import { FaPlayCircle, FaCalendarDay } from 'react-icons/fa';
+import { FaPlayCircle, FaCalendarDay, FaUserGraduate } from 'react-icons/fa';
+import { io } from 'socket.io-client';
+
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
 interface ClassSession {
     id: number;
@@ -10,60 +13,116 @@ interface ClassSession {
     start_time: string;
     duration: number;
     status: 'scheduled' | 'live' | 'completed';
-    instructor_id: number;
+    instructor_id?: number;
+    super_instructor_id?: number;
+    instructor_name?: string;
+    subject_name?: string;
+    is_super_instructor?: boolean;
 }
 
 const StudentClasses: React.FC = () => {
     const [classes, setClasses] = useState<ClassSession[]>([]);
+    const [siClasses, setSiClasses] = useState<ClassSession[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const fetchClasses = async () => {
+        try {
+            const [regularRes, siRes] = await Promise.all([
+                api.get('/api/classes/student'),
+                api.get('/api/student/super-instructor-classes')
+            ]);
+
+            setClasses(regularRes.data.map((c: any) => ({ ...c, is_super_instructor: false })));
+            setSiClasses(siRes.data.map((c: any) => ({ ...c, is_super_instructor: true })));
+        } catch (err) {
+            console.error("Failed to fetch classes");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        // Fetch all classes for now (Assume student enrolled in all)
-        // Ideally: GET /classes/student/enrolled
-        const fetchClasses = async () => {
-            try {
-                // Determine API endpoint to simulated getting all classes
-                // We'll just generic GET /classes (need to implement in backend if not exists) 
-                // For now, I'll assume we can view all or I will create a new endpoint.
-                // Let's create a temporary backend 'getAllClasses' for students or modify 'getInstructorClasses'.
-                // Actually, I'll add a 'getAllClasses' endpoint in ClassController for students.
-                const res = await api.get('/api/classes/student');
-                setClasses(res.data);
-            } catch (err) {
-                console.error("Failed to fetch classes");
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchClasses();
+
+        // Socket for real-time updates
+        const socket = io(SOCKET_URL);
+        socket.on('class_live', () => {
+            console.log("Live update received from socket (Classes Page)");
+            fetchClasses();
+        });
+        socket.on('class_ended', () => {
+            console.log("Class end received from socket (Classes Page)");
+            fetchClasses();
+        });
+        socket.on('si_class_live', () => {
+            console.log("SI Live update received");
+            fetchClasses();
+        });
+        socket.on('si_class_ended', () => {
+            console.log("SI Class end received");
+            fetchClasses();
+        });
+
+        return () => {
+            socket.disconnect();
+        };
     }, []);
 
     if (loading) return <div>Loading your schedule...</div>;
 
-    const liveClasses = classes.filter(c => c.status === 'live');
-    const upcomingClasses = classes.filter(c => c.status === 'scheduled');
+    // Combine both regular and SI classes
+    const allClasses = [...classes, ...siClasses];
+    const liveClasses = allClasses.filter(c => c.status === 'live');
+    const upcomingClasses = allClasses.filter(c => c.status === 'scheduled');
 
     return (
-        <div className="space-y-10">
+        <div className="animate-in fade-in duration-700 space-y-20">
             {/* Live Now Section */}
             {liveClasses.length > 0 && (
                 <section>
-                    <h2 className="text-2xl font-bold text-red-600 flex items-center gap-2 mb-6">
-                        <span className="animate-pulse">●</span> Live Now
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="mb-8">
+                        <h2 className="text-3xl font-black text-primary italic flex items-center gap-4 tracking-tighter uppercase">
+                            <span className="relative flex h-4 w-4">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-4 w-4 bg-primary"></span>
+                            </span>
+                            LIVE <span className="text-accent-white">ENGAGEMENTS</span>
+                        </h2>
+                        <p className="text-accent-gray text-[10px] font-black uppercase tracking-[0.3em] opacity-60 mt-1 ml-8">Active combat training sessions</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                         {liveClasses.map(cls => (
-                            <Link key={cls.id} to={`/student/live/${cls.id}`} className="block group">
-                                <div className="bg-white rounded-xl shadow-lg border border-red-100 overflow-hidden hover:shadow-2xl transition transform hover:-translate-y-1">
-                                    <div className="h-32 bg-gradient-to-r from-red-500 to-pink-600 flex items-center justify-center text-white">
-                                        <FaPlayCircle size={48} className="opacity-80 group-hover:scale-110 transition" />
+                            <Link
+                                key={`${cls.is_super_instructor ? 'si' : 'reg'}-${cls.id}`}
+                                to={cls.is_super_instructor ? `/student/super-instructor-classroom/${cls.id}` : `/student/live/${cls.id}`}
+                                className="block group"
+                            >
+                                <div className="premium-card p-0 overflow-hidden border-primary/30 hover:border-primary transition-all duration-500 hover:scale-[1.02]">
+                                    <div className="h-40 bg-surface-dark relative flex items-center justify-center overflow-hidden border-b border-surface-border">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent"></div>
+                                        <FaPlayCircle size={56} className="text-primary relative z-10 group-hover:scale-125 transition-transform duration-700 shadow-2xl" />
+                                        <div className="absolute bottom-4 right-4 bg-primary text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest animate-pulse">TRANSMITTING</div>
+                                        {cls.is_super_instructor && (
+                                            <div className="absolute top-4 left-4 bg-blue-600 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1">
+                                                <FaUserGraduate size={10} /> SI CLASS
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="p-6">
-                                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-red-600 transition">{cls.title}</h3>
-                                        <p className="text-sm text-gray-500 mt-2">{cls.description}</p>
-                                        <button className="mt-4 w-full py-2 bg-red-600 text-white rounded font-medium hover:bg-red-700">
-                                            Join Class
-                                        </button>
+                                    <div className="p-8">
+                                        <h3 className="text-xl font-black text-accent-white italic tracking-tight uppercase group-hover:text-primary transition-colors">{cls.title}</h3>
+                                        <p className="text-accent-gray text-sm italic font-medium mt-3 opacity-70 line-clamp-1">{cls.description}</p>
+                                        {cls.is_super_instructor && cls.subject_name && (
+                                            <p className="text-xs text-blue-400 mt-2 font-bold">{cls.subject_name}</p>
+                                        )}
+                                        {cls.is_super_instructor && cls.instructor_name && (
+                                            <p className="text-[10px] text-accent-gray mt-1">Instructor: {cls.instructor_name}</p>
+                                        )}
+                                        <div className="mt-8">
+                                            <div className="btn-primary w-full py-4 text-[10px] flex items-center justify-center gap-2">
+                                                JOIN FREQUENCY
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </Link>
@@ -74,24 +133,60 @@ const StudentClasses: React.FC = () => {
 
             {/* Upcoming Section */}
             <section>
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <FaCalendarDay className="text-indigo-600" /> Upcoming Classes
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="mb-8">
+                    <h2 className="text-3xl font-black text-accent-white italic flex items-center gap-4 tracking-tighter uppercase">
+                        <FaCalendarDay className="text-accent-blue" /> UPTIME <span className="text-primary">SCHEDULE</span>
+                    </h2>
+                    <p className="text-accent-gray text-[10px] font-black uppercase tracking-[0.3em] opacity-60 mt-1 ml-10">Future operational briefings</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                     {upcomingClasses.map(cls => (
-                        <div key={cls.id} className="bg-white rounded-xl shadow border-l-4 border-indigo-500 p-6">
-                            <h3 className="text-lg font-bold text-gray-900">{cls.title}</h3>
-                            <div className="text-indigo-600 text-sm font-semibold mt-1">
-                                {new Date(cls.start_time).toLocaleString()}
+                        <div key={`${cls.is_super_instructor ? 'si' : 'reg'}-${cls.id}`} className="premium-card p-10 flex flex-col justify-between group border-surface-border hover:border-accent-blue/30 transition-all duration-500 relative">
+                            {cls.is_super_instructor && (
+                                <div className="absolute top-4 right-4 bg-blue-600/20 text-blue-400 text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-blue-600/30">
+                                    <FaUserGraduate className="inline mr-1" size={10} /> SI
+                                </div>
+                            )}
+                            <div>
+                                <div className="flex justify-between items-start mb-6">
+                                    <h3 className="text-xl font-black text-accent-white italic tracking-tight uppercase group-hover:text-accent-blue transition-colors leading-tight">{cls.title}</h3>
+                                    <div className="bg-accent-blue/10 p-2 rounded-xl text-accent-blue border border-accent-blue/20">
+                                        <FaCalendarDay size={14} />
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-surface-light border border-surface-border rounded-2xl mb-6">
+                                    <div className="text-accent-blue text-[10px] font-black uppercase tracking-widest mb-1 italic">
+                                        {new Date(cls.start_time).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </div>
+                                    <div className="text-accent-white text-lg font-black italic tracking-tighter">
+                                        {new Date(cls.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                </div>
+                                <p className="text-accent-gray text-sm italic font-medium opacity-60 line-clamp-2">{cls.description}</p>
+                                {cls.is_super_instructor && cls.subject_name && (
+                                    <p className="text-xs text-blue-400 mt-3 font-bold">{cls.subject_name}</p>
+                                )}
+                                {cls.is_super_instructor && cls.instructor_name && (
+                                    <p className="text-[10px] text-accent-gray mt-1">Instructor: {cls.instructor_name}</p>
+                                )}
                             </div>
-                            <p className="text-gray-500 text-sm mt-3">{cls.description}</p>
-                            <div className="mt-4 flex justify-between items-center text-sm text-gray-400">
-                                <span>Duration: {cls.duration} mins</span>
+
+                            <div className="mt-8 pt-6 border-t border-surface-border flex justify-between items-center">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-accent-gray opacity-40 italic">Duration: {cls.duration}M</span>
+                                <span className="bg-surface-light px-3 py-1 rounded-full border border-surface-border text-[8px] font-black text-accent-gray uppercase tracking-widest">LOCKED</span>
                             </div>
                         </div>
                     ))}
-                    {upcomingClasses.length === 0 && <p className="text-gray-500">No upcoming classes scheduled.</p>}
                 </div>
+
+                {upcomingClasses.length === 0 && (
+                    <div className="premium-card p-24 text-center opacity-50 border-dashed border-2">
+                        <FaCalendarDay className="mx-auto text-accent-gray/20 text-7xl mb-6" />
+                        <h3 className="text-2xl font-black text-accent-white italic uppercase tracking-tight">No upcoming briefings</h3>
+                        <p className="text-accent-gray italic font-medium mt-3">Tactical calendar remains clear for this sector.</p>
+                    </div>
+                )}
             </section>
         </div>
     );

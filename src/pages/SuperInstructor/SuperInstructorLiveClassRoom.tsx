@@ -76,7 +76,7 @@ const LiveClassRoom: React.FC = () => {
     useEffect(() => {
         const fetchDetails = async () => {
             try {
-                const res = await api.get(`/api/classes/${id}`);
+                const res = await api.get(`/api/super-instructor/classes/${id}`);
                 setClassDetails(res.data);
                 setIsLive(res.data.status === 'live');
                 if (isInstructor) {
@@ -98,6 +98,7 @@ const LiveClassRoom: React.FC = () => {
 
         socket.on('receive_message', (data) => {
             setMessages(prev => [...prev, data]);
+            // Only increment if chat is NOT open AND I am not the sender
             if (showTrayRef.current !== 'chat' && data.senderName !== user?.name) {
                 setUnreadMsgCount(prev => prev + 1);
             }
@@ -200,9 +201,9 @@ const LiveClassRoom: React.FC = () => {
             setOnlineUsers(prev => prev.filter(u => u.userId !== data.userId));
         });
 
-        socket.on('class_ended', () => {
+        socket.on('si_class_ended', () => {
             if (!isInstructor) {
-                alert("The instructor has ended the live session.");
+                alert("The Super Instructor has ended the live session.");
                 navigate('/student');
             }
         });
@@ -291,7 +292,7 @@ const LiveClassRoom: React.FC = () => {
             if (diff <= 0) {
                 setTimeLeft('STARTING NOW');
                 if (!isInstructor) {
-                    api.get(`/api/classes/${id}`).then(res => {
+                    api.get(`/api/super-instructor/classes/${id}`).then(res => {
                         if (res.data.status === 'live') setIsLive(true);
                     });
                 }
@@ -323,7 +324,7 @@ const LiveClassRoom: React.FC = () => {
             });
 
             try {
-                const tokenRes = await api.get(`/api/classes/${id}/token`);
+                const tokenRes = await api.get(`/api/super-instructor/classes/${id}/token`);
                 const { token, channelName, uid } = tokenRes.data;
 
                 const syncRemoteUsers = () => {
@@ -386,7 +387,7 @@ const LiveClassRoom: React.FC = () => {
                 }
 
                 if (isInstructor) {
-                    await api.post(`/api/classes/${id}/start`);
+                    await api.post(`/api/super-instructor/classes/${id}/start`);
                 }
 
             } catch (error) {
@@ -501,7 +502,7 @@ const LiveClassRoom: React.FC = () => {
 
     const handleHandRaise = () => {
         if (isHandRaised) {
-            socketRef.current?.emit('lower_hand', { classId: id, studentName: user?.name, studentId: user?.id });
+            socketRef.current?.emit('lower_hand', { classId: id, studentName: user?.name });
         } else {
             socketRef.current?.emit('raise_hand', { classId: id, studentName: user?.name, studentId: user?.id });
         }
@@ -516,8 +517,8 @@ const LiveClassRoom: React.FC = () => {
         if (!isInstructor) return;
         if (window.confirm("Are you sure you want to end this class for everyone?")) {
             try {
-                await api.post(`/api/classes/${id}/end`);
-                navigate('/instructor');
+                await api.post(`/api/super-instructor/classes/${id}/end`);
+                navigate('/super-instructor/live-classes');
             } catch (err) {
                 console.error("Error ending class:", err);
             }
@@ -585,7 +586,7 @@ const LiveClassRoom: React.FC = () => {
             toggleScreenShare();
         } else {
             socketRef.current?.emit('request_screen_share', { classId: id, studentId: user?.id, studentName: user?.name });
-            alert("Request sent to instructor...");
+            alert("Request sent to Super Instructor...");
         }
     };
 
@@ -724,7 +725,6 @@ const LiveClassRoom: React.FC = () => {
                                     <div className="flex items-center justify-between mb-2">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Nexus Matrix</p>
                                         <div className="flex gap-1">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                             <span className="text-[8px] font-bold text-slate-400 uppercase">{onlineUsers.length} ONLINE</span>
                                         </div>
@@ -968,51 +968,90 @@ const LiveClassRoom: React.FC = () => {
                             <div className="flex-1 overflow-y-auto">
                                 {showTray === 'chat' && (
                                     <div className="flex flex-col h-full">
-                                        <div className="flex-1 p-4 space-y-4">
-                                            {messages.map((m, i) => (
-                                                <div key={i} className={`flex flex-col ${m.senderName === user?.name ? 'items-end' : 'items-start'}`}>
-                                                    <span className="text-[8px] font-bold text-slate-400 uppercase mb-1">{m.senderName}</span>
-                                                    <div className={`p-3 rounded-2xl text-xs max-w-[80%] ${m.senderName === user?.name ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-800 rounded-tl-none'}`}>
-                                                        {m.message}
-                                                    </div>
+                                        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                                            {messages.length === 0 ? (
+                                                <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                                    <FaComments size={32} className="mb-3 opacity-20" />
+                                                    <p className="text-xs font-bold">No messages yet</p>
+                                                    <p className="text-[10px] mt-1">Start the conversation!</p>
                                                 </div>
-                                            ))}
+                                            ) : (
+                                                messages.map((m, i) => (
+                                                    <div key={i} className={`flex flex-col ${m.senderName === user?.name ? 'items-end' : 'items-start'}`}>
+                                                        <span className="text-[8px] font-bold text-slate-500 uppercase mb-1 px-1">{m.senderName}</span>
+                                                        <div className={`p-3 rounded-2xl text-sm font-medium max-w-[80%] shadow-sm ${m.senderName === user?.name ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-900 rounded-tl-none border border-slate-200'}`}>
+                                                            {m.message}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
                                         </div>
-                                        <form onSubmit={sendMessage} className="p-4 border-t border-slate-100 flex gap-2">
+                                        <form onSubmit={sendMessage} className="p-4 border-t border-slate-100 flex gap-2 bg-slate-50">
                                             <input
                                                 value={chatMsg}
                                                 onChange={(e) => setChatMsg(e.target.value)}
                                                 placeholder="Type message..."
-                                                className="flex-1 bg-slate-100 px-4 py-2 rounded-xl text-xs focus:ring-2 ring-blue-500 outline-none"
+                                                disabled={chatLocked && !isInstructor}
+                                                className="flex-1 bg-white border border-slate-200 px-4 py-3 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:ring-2 ring-blue-500 outline-none disabled:opacity-50"
                                             />
-                                            <button className="bg-blue-600 text-white p-2 px-4 rounded-xl text-[10px] font-bold uppercase">Send</button>
+                                            <button
+                                                type="submit"
+                                                disabled={chatLocked && !isInstructor}
+                                                className="bg-blue-600 text-white p-3 px-5 rounded-xl text-xs font-bold uppercase hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Send
+                                            </button>
                                         </form>
                                     </div>
                                 )}
 
                                 {showTray === 'participants' && (
                                     <div className="p-4 space-y-3">
-                                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-2xl border border-blue-100">
+                                        <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
+                                            <p className="text-xs font-bold text-blue-900">Total: {onlineUsers.length} participant{onlineUsers.length !== 1 ? 's' : ''}</p>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl border-2 border-blue-200 shadow-sm">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold uppercase">ME</div>
-                                                <span className="text-xs font-bold text-slate-900">{user?.name} (You)</span>
+                                                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xs font-black uppercase shadow-md">
+                                                    {user?.name?.slice(0, 2)}
+                                                </div>
+                                                <div>
+                                                    <span className="text-sm font-bold text-slate-900 block">{user?.name}</span>
+                                                    <span className="text-[10px] font-bold text-blue-600 uppercase">(You)</span>
+                                                </div>
                                             </div>
                                             <div className="flex gap-2 text-slate-400">
-                                                {micOn ? <FaMicrophone size={12} className="text-emerald-500" /> : <FaMicrophoneSlash size={12} />}
-                                                {cameraOn ? <FaVideo size={12} className="text-emerald-500" /> : <FaVideoSlash size={12} />}
+                                                {micOn ? <FaMicrophone size={14} className="text-emerald-500" /> : <FaMicrophoneSlash size={14} className="text-rose-500" />}
+                                                {cameraOn ? <FaVideo size={14} className="text-emerald-500" /> : <FaVideoSlash size={14} className="text-rose-500" />}
                                             </div>
                                         </div>
-                                        {onlineUsers.filter(u => String(u.userId) !== String(user?.id)).map(u => (
-                                            <div key={u.userId} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase">{u.userName?.charAt(0)}</div>
-                                                    <span className="text-xs font-bold text-slate-600">{u.userName}</span>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    {remoteUsers.find(ru => String(ru.uid) === String(u.userId))?.hasAudio ? <FaMicrophone size={12} className="text-emerald-500" /> : <FaMicrophoneSlash size={12} className="text-slate-300" />}
-                                                </div>
+                                        {onlineUsers.filter(u => String(u.userId) !== String(user?.id)).length === 0 ? (
+                                            <div className="h-32 flex flex-col items-center justify-center text-slate-400">
+                                                <FaUsers size={28} className="mb-2 opacity-20" />
+                                                <p className="text-xs font-bold">Waiting for others...</p>
                                             </div>
-                                        ))}
+                                        ) : (
+                                            onlineUsers.filter(u => String(u.userId) !== String(user?.id)).map(u => {
+                                                const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId));
+                                                return (
+                                                    <div key={u.userId} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200 hover:bg-slate-100 transition-colors">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-slate-700 text-xs font-black uppercase shadow-sm">
+                                                                {u.userName?.slice(0, 2) || '??'}
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-sm font-bold text-slate-900 block">{u.userName || 'Unknown'}</span>
+                                                                <span className="text-[10px] font-bold text-slate-500 uppercase">{u.role || 'Student'}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            {rUser?.hasAudio ? <FaMicrophone size={14} className="text-emerald-500" /> : <FaMicrophoneSlash size={14} className="text-slate-300" />}
+                                                            {rUser?.hasVideo ? <FaVideo size={14} className="text-emerald-500" /> : <FaVideoSlash size={14} className="text-slate-300" />}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
                                     </div>
                                 )}
 

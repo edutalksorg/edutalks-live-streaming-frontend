@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { FaUserGraduate, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import logo from '../assets/logo.png';
+import { useTheme } from '../context/ThemeContext';
+import ThemeToggle from '../components/ThemeToggle';
 
 const Register: React.FC = () => {
     const navigate = useNavigate();
+    const { theme } = useTheme();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -34,78 +37,88 @@ const Register: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-4">
-            <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
-                <div className="bg-indigo-600 py-6 px-8 text-center">
-                    <img src={logo} alt="EduTalks" className="h-12 mx-auto mb-2 filter brightness-0 invert" />
-                    <h2 className="text-2xl font-bold text-white">Create Account</h2>
-                    <p className="text-indigo-200 text-sm mt-1">Join EduTalks today</p>
+        <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-surface-dark flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500`}>
+            {/* Theme Toggle Position */}
+            <div className="absolute top-8 right-8">
+                <ThemeToggle />
+            </div>
+
+            {/* Background Pattern */}
+            <div className="fixed inset-0 bg-pattern-dark pointer-events-none -z-10"></div>
+
+            <div className="max-w-xl w-full premium-card p-10 animate-in fade-in zoom-in duration-700">
+                <div className="text-center mb-10">
+                    <img src={logo} alt="EduTalks" className="h-20 mx-auto mb-6 hover:scale-105 transition-all duration-500 drop-shadow-primary-glow" />
+                    <h2 className="text-4xl font-black text-accent-white italic mb-2 tracking-tighter">CREATE <span className="text-primary">ACCOUNT</span></h2>
+                    <p className="text-accent-gray uppercase tracking-[0.3em] text-[10px] font-black opacity-70">Join the Academic Revolution</p>
                 </div>
 
-                <div className="p-8">
-                    {error && (
-                        <div className="bg-red-50 text-red-600 p-3 rounded text-sm mb-4 border border-red-100">
-                            {error}
-                        </div>
-                    )}
+                {error && (
+                    <div className="bg-primary/10 border border-primary/20 text-primary p-5 rounded-2xl mb-8 text-[10px] font-black uppercase tracking-widest animate-pulse text-center">
+                        {error}
+                    </div>
+                )}
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Role Selection */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Register As</label>
-                            <select
-                                name="role"
-                                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
-                                value={formData.role}
-                                onChange={handleChange}
-                            >
-                                <option value="student">Student</option>
-                                <option value="instructor">Instructor</option>
-                                <option value="super_instructor">Super Instructor</option>
-                                <option value="admin">Admin</option>
-                            </select>
-                            <p className="text-xs text-gray-500 mt-1">
-                                {formData.role === 'student'
-                                    ? 'Instant access. Payment required for premium.'
-                                    : 'Account requires Super Admin approval.'}
-                            </p>
-                        </div>
+                <form onSubmit={handleSubmit} className="space-y-8">
+                    <div className="bg-surface-light/40 p-8 rounded-[2rem] border border-surface-border">
+                        <label className="block text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4 ml-1">Account Role</label>
+                        <select
+                            name="role"
+                            className="w-full"
+                            value={formData.role}
+                            onChange={handleChange}
+                        >
+                            <option value="student">Student Account</option>
+                            <option value="instructor">Instructor Account</option>
+                            <option value="super_instructor">Super Instructor</option>
+                            <option value="admin">Administrative Admin</option>
+                        </select>
+                        <p className="text-[9px] text-accent-gray mt-4 font-bold uppercase tracking-wider ml-1 opacity-70 italic font-medium">
+                            {formData.role === 'student'
+                                ? '• Instant academic access'
+                                : '• Requires Super Admin verification'}
+                        </p>
+                    </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Your Name</label>
                             <input
                                 type="text" name="name" required
-                                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                className="w-full"
                                 value={formData.name} onChange={handleChange}
+                                placeholder="Aaditya Verma"
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                        <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Email Node</label>
                             <input
                                 type="email" name="email" required
-                                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                className="w-full"
                                 value={formData.email} onChange={handleChange}
+                                placeholder="aaditya@edutalks.com"
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                        <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Phone Line</label>
                             <input
                                 type="tel" name="phone" required
-                                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                className="w-full"
                                 value={formData.phone} onChange={handleChange}
+                                placeholder="+91 00000 00000"
                             />
                         </div>
 
                         {(formData.role === 'student' || formData.role === 'instructor' || formData.role === 'super_instructor') && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    {formData.role === 'student' ? 'Grade / Class' : 'Teaching Grade'}
+                            <div className="space-y-3">
+                                <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">
+                                    {formData.role === 'student' ? 'Current Grade' : 'Teaching Level'}
                                 </label>
                                 <select
                                     name="grade"
-                                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                    className="w-full"
                                     value={formData.grade} onChange={handleChange}
                                 >
                                     <option value="6th">6th Grade</option>
@@ -115,44 +128,48 @@ const Register: React.FC = () => {
                                     <option value="10th">10th Grade</option>
                                     <option value="11th">11th Grade</option>
                                     <option value="12th">12th Grade</option>
-                                    <option value="NEET">NEET Dropper</option>
+                                    <option value="NEET">NEET Prep</option>
                                     <option value="JEE">JEE Mains</option>
                                 </select>
                             </div>
                         )}
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Password</label>
+                        <div className="md:col-span-2 space-y-3">
+                            <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Secure Encryption</label>
                             <div className="relative">
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     name="password"
                                     required
-                                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                    className="w-full pr-16"
                                     value={formData.password}
                                     onChange={handleChange}
+                                    placeholder="••••••••"
                                 />
                                 <button
                                     type="button"
-                                    className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-indigo-600 focus:outline-none"
+                                    className="absolute inset-y-0 right-6 flex items-center text-accent-gray hover:text-primary transition-all active:scale-95"
                                     onClick={() => setShowPassword(!showPassword)}
                                 >
-                                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                    {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
                                 </button>
                             </div>
                         </div>
-
-                        <button
-                            type="submit"
-                            className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow transition duration-200"
-                        >
-                            {formData.role === 'student' ? 'Register & Pay' : 'Submit Request'}
-                        </button>
-                    </form>
-
-                    <div className="mt-6 text-center text-sm text-gray-600">
-                        Already have an account? <Link to="/login" className="text-indigo-600 hover:text-indigo-800 font-medium">Log in</Link>
                     </div>
+
+                    <button
+                        type="submit"
+                        className="w-full btn-primary py-6"
+                    >
+                        {formData.role === 'student' ? 'Access Learning Hub' : 'Initialize Registration'}
+                    </button>
+                </form>
+
+                <div className="text-center mt-10 pt-6 border-t border-surface-border">
+                    <p className="text-[10px] font-black text-accent-gray uppercase tracking-widest">
+                        Already have an account?
+                        <Link to="/login" className="text-primary hover:text-primary-hover ml-2 underline transition-all">Log in</Link>
+                    </p>
                 </div>
             </div>
         </div>

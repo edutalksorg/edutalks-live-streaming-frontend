@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
-import { FaBook, FaUserTie, FaUsers, FaCheck, FaTimes, FaEye, FaEnvelope, FaPhone, FaUserGraduate, FaTrash } from 'react-icons/fa';
+import { FaBook, FaUserTie, FaUsers, FaTimes, FaEye, FaEnvelope, FaPhone, FaUserGraduate, FaTrash } from 'react-icons/fa';
 
 interface User {
     id: number;
@@ -14,6 +14,7 @@ interface Subject {
     id: number;
     name: string;
     instructors: User[];
+    qualifiedInstructors?: User[];
     batches?: {
         id: number;
         instructor_id: number;
@@ -88,7 +89,7 @@ const SuperInstructorAllocation: React.FC = () => {
                 instructorId: selectedInstructor,
                 subjectId: selectedSubject
             });
-            alert("Instructor Assigned Successfully!");
+            alert("Instructor assigned and batch created successfully!");
             setSelectedSubject(null);
             setSelectedInstructor('');
             fetchData();
@@ -96,6 +97,7 @@ const SuperInstructorAllocation: React.FC = () => {
             alert(err.response?.data?.message || "Failed to assign instructor");
         }
     };
+
 
     const handleDistribute = async (subjectId: number) => {
         if (!window.confirm("Auto-distribute students to batches for this subject? Unassigned students will be filled into available batches sequentially.")) return;
@@ -137,6 +139,18 @@ const SuperInstructorAllocation: React.FC = () => {
         }
     };
 
+    const handleCleanupStrays = async () => {
+        if (!window.confirm("This will find and remove any batches assigned to instructors without qualification. This helps fix dashboard discrepancies. Proceed?")) return;
+        try {
+            const res = await api.post('/api/super-instructor/cleanup-strays');
+            alert(res.data.message);
+            fetchData();
+        } catch (err: any) {
+            console.error(err);
+            alert("Failed to cleanup stray batches");
+        }
+    };
+
     const filteredSubjects = subjects.filter(sub => {
         if (filter === 'All') return true;
         // Backend provides 'curriculum' field now
@@ -147,40 +161,38 @@ const SuperInstructorAllocation: React.FC = () => {
         return true;
     });
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Loading Allocations...</div>;
+    if (loading) return <div className="flex items-center justify-center min-h-[400px] text-primary font-black uppercase tracking-[0.4em] animate-pulse italic">Loading Allocation Data...</div>;
 
     return (
-        <div className="space-y-6 animate-fadeIn">
-            <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="space-y-8 animate-fadeIn transition-colors duration-500">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6 premium-card p-8">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Subject Allocation & Batching</h2>
-                    <p className="text-gray-500">Manage instructor batches for <span className="font-bold text-indigo-600">Grade {className}</span></p>
+                    <h2 className="text-3xl font-black text-accent-white italic tracking-tighter">Subject <span className="text-primary">Allocation</span></h2>
+                    <p className="text-accent-gray mt-1 font-black uppercase tracking-[0.3em] text-[10px] opacity-70">Manage instructor batches for <span className="text-primary">Grade {className}</span></p>
                 </div>
-                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-3 rounded-xl shadow-md flex items-center gap-3">
-                    <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-                        <FaUsers size={20} className="text-white" />
+                <div className="bg-gradient-to-br from-primary/10 to-primary/5 px-8 py-4 rounded-[2rem] shadow-2xl border border-primary/20 flex items-center gap-4 group">
+                    <div className="bg-primary/10 p-3 rounded-2xl border border-primary/20 group-hover:rotate-12 transition-transform shadow-[0_0_20px_rgba(238,29,35,0.1)]">
+                        <FaUsers size={24} className="text-primary" />
                     </div>
                     <div>
-                        <span className="text-xs font-medium opacity-80 uppercase tracking-wide">Total Students</span>
-                        <p className="text-2xl font-bold leading-none">{totalStudents}</p>
+                        <span className="text-[10px] font-black text-accent-gray uppercase tracking-[0.2em] opacity-80">Total Students</span>
+                        <p className="text-3xl font-black leading-none text-accent-white mt-1 italic">{totalStudents}</p>
                     </div>
                 </div>
             </div>
 
-
-
             {/* Filters & Actions */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm animate-fadeIn">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-surface p-4 rounded-[2rem] border border-white/5 shadow-2xl animate-fadeIn">
 
                 {/* Curriculum Tabs */}
-                <div className="flex p-1 bg-gray-100 rounded-lg">
+                <div className="flex p-2 bg-surface-dark rounded-2xl border border-surface-border">
                     {['All', 'State', 'Central'].map((f) => (
                         <button
                             key={f}
                             onClick={() => setFilter(f as any)}
-                            className={`px-6 py-2 rounded-md text-sm font-bold transition-all duration-200 ${filter === f
-                                ? 'bg-white text-indigo-600 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
+                            className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${filter === f
+                                ? 'bg-primary text-white shadow-xl shadow-primary/20 active:scale-95'
+                                : 'text-accent-gray hover:text-accent-white hover:bg-surface-light/50'
                                 }`}
                         >
                             {f} Subjects
@@ -188,64 +200,72 @@ const SuperInstructorAllocation: React.FC = () => {
                     ))}
                 </div>
 
-                {/* Reset Action */}
-                <button
-                    onClick={handleReset}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-bold hover:bg-red-100 transition border border-red-100 hover:border-red-200"
-                >
-                    <FaTrash size={12} /> Reset All Allocations
-                </button>
+                {/* Actions */}
+                <div className="flex gap-4">
+                    <button
+                        onClick={handleCleanupStrays}
+                        className="flex items-center gap-2 px-6 py-3 bg-emerald-500/10 text-emerald-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20 shadow-lg hover:shadow-emerald-500/20 active:scale-95"
+                    >
+                        Cleanup System
+                    </button>
+                    <button
+                        onClick={handleReset}
+                        className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all border border-red-500/20 shadow-lg hover:shadow-red-500/20 active:scale-95"
+                    >
+                        <FaTrash size={12} /> Reset System
+                    </button>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredSubjects.map(sub => (
-                    <div key={sub.id} className="border border-gray-200 rounded-xl bg-white shadow-sm hover:shadow-md transition duration-200 flex flex-col h-full relative overflow-hidden group">
+                    <div key={sub.id} className="premium-card flex flex-col h-full relative overflow-hidden group hover:border-primary/20 transition-all duration-500">
 
                         {/* Header */}
-                        <div className="p-5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                            <h4 className="font-bold text-lg flex items-center gap-2 text-gray-800 truncate" title={sub.name}>
-                                <span className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs flex-shrink-0"><FaBook /></span>
+                        <div className="p-6 border-b border-surface-border bg-white/5 flex items-center justify-between">
+                            <h4 className="font-black text-xl flex items-center gap-3 text-accent-white truncate italic" title={sub.name}>
+                                <span className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-sm flex-shrink-0 border border-primary/20 shadow-lg"><FaBook /></span>
                                 {sub.name}
                             </h4>
-                            <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider whitespace-nowrap">
-                                {sub.batches ? sub.batches.length : 0} Batches
+                            <span className="bg-surface-dark text-accent-white border border-white/10 text-[9px] px-3 py-1.5 rounded-full font-black uppercase tracking-[0.2em] whitespace-nowrap shadow-md">
+                                {sub.batches ? sub.batches.length : 0} {sub.batches?.length === 1 ? 'Batch' : 'Batches'}
                             </span>
                         </div>
 
                         {/* Batches List */}
-                        <div className="p-5 flex-1 flex flex-col gap-3 overflow-y-auto max-h-[300px]">
+                        <div className="p-6 flex-1 flex flex-col gap-4 overflow-y-auto max-h-[350px] no-scrollbar">
                             {sub.batches && sub.batches.length > 0 ? (
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     {sub.batches.map((batch: any, index: number) => (
-                                        <div key={batch.id} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-xs font-bold border border-gray-200">
+                                        <div key={batch.id} className="bg-surface-dark/50 border border-surface-border rounded-2xl p-4 shadow-xl hover:bg-surface-light/30 transition-colors group/batch">
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-sm font-black border border-primary/20 shadow-md transform group-hover/batch:scale-110 transition-transform">
                                                     {(batch.instructor_name || '?').charAt(0)}
                                                 </div>
                                                 <div className="flex-1 overflow-hidden">
-                                                    <p className="text-sm font-bold text-gray-800 truncate">{batch.instructor_name}</p>
-                                                    <p className="text-[10px] text-gray-400 truncate">Batch {index + 1}</p>
+                                                    <p className="text-sm font-black text-accent-white truncate italic tracking-tight">{batch.instructor_name}</p>
+                                                    <p className="text-[10px] text-accent-gray font-black uppercase tracking-widest mt-1 opacity-50">Batch {index + 1}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => handleViewBatch(batch.id)}
-                                                    className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition"
+                                                    className="p-2.5 text-accent-gray hover:text-primary hover:bg-primary/10 rounded-xl transition-all border border-transparent hover:border-primary/20 shadow-sm"
                                                     title="View Batch Details"
                                                 >
-                                                    <FaEye size={14} />
+                                                    <FaEye size={16} />
                                                 </button>
                                             </div>
 
                                             {/* Progress Bar */}
-                                            <div className="mt-1">
-                                                <div className="flex justify-between text-[10px] mb-1 font-medium text-gray-500">
-                                                    <span>Students Assigned</span>
-                                                    <span className={batch.student_count >= (batch.max_students || 2) ? 'text-green-600 font-bold' : 'text-indigo-600'}>
+                                            <div className="mt-2 p-3 bg-surface-dark rounded-xl border border-surface-border">
+                                                <div className="flex justify-between text-[9px] mb-2 font-black uppercase tracking-widest">
+                                                    <span className="text-accent-gray">Allocation</span>
+                                                    <span className={batch.student_count >= (batch.max_students || 2) ? 'text-emerald-400 opacity-100' : 'text-primary'}>
                                                         {batch.student_count} / {batch.max_students || 2}
                                                     </span>
                                                 </div>
-                                                <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                                                <div className="w-full bg-surface-light rounded-full h-2 overflow-hidden shadow-inner">
                                                     <div
-                                                        className={`h-full rounded-full ${batch.student_count >= (batch.max_students || 2) ? 'bg-green-500' : 'bg-indigo-500'}`}
+                                                        className={`h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(238,29,35,0.3)] ${batch.student_count >= (batch.max_students || 2) ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-primary'}`}
                                                         style={{ width: `${Math.min(100, (batch.student_count / (batch.max_students || 2)) * 100)}%` }}
                                                     ></div>
                                                 </div>
@@ -254,60 +274,63 @@ const SuperInstructorAllocation: React.FC = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="p-4 bg-gray-50 border border-gray-100 border-dashed rounded-lg text-center my-auto">
-                                    <p className="text-sm text-gray-400 font-medium">No instructors assigned yet.</p>
+                                <div className="p-8 bg-surface-dark/50 border border-surface-border border-dashed rounded-[2rem] text-center my-auto">
+                                    <p className="text-[10px] text-accent-gray font-black uppercase tracking-[0.3em] italic opacity-40">No instructors assigned yet.</p>
                                 </div>
                             )}
                         </div>
 
                         {/* Unassigned Students Info */}
-                        <div className="px-5 py-3 bg-yellow-50 border-t border-yellow-100 flex justify-between items-center">
-                            <span className="text-xs font-bold text-yellow-700 uppercase tracking-wide flex items-center gap-1">
-                                <FaTimes size={10} /> Unassigned:
+                        <div className="px-6 py-4 bg-primary/5 border-t border-white/5 flex justify-between items-center group-hover:bg-primary/10 transition-colors">
+                            <span className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] flex items-center gap-2">
+                                <FaTimes className="text-primary animate-pulse" size={10} /> Unassigned:
                             </span>
-                            <span className="text-sm font-bold text-yellow-800 bg-white px-2 py-0.5 rounded border border-yellow-200">
+                            <span className="text-sm font-black text-accent-white bg-surface-dark px-4 py-1 rounded-xl border border-white/10 shadow-lg">
                                 {sub.unassignedCount !== undefined ? sub.unassignedCount : '?'}
                             </span>
                         </div>
 
                         {/* Footer / Actions */}
-                        <div className="p-4 border-t border-gray-100 bg-gray-50 space-y-3">
+                        <div className="p-6 border-t border-surface-border bg-white/5 space-y-4">
                             {/* Distribution Button */}
                             {(sub.unassignedCount || 0) > 0 && sub.batches && sub.batches.length > 0 && (
                                 <button
                                     onClick={() => handleDistribute(sub.id)}
-                                    className="w-full py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold rounded-lg hover:shadow-md transition shadow-sm flex items-center justify-center gap-2 mb-2"
+                                    className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                                 >
-                                    <FaUsers size={12} /> Auto-Distribute Students
+                                    <FaUsers size={14} className="animate-bounce" /> Auto-Distribute Students
                                 </button>
                             )}
 
-                            {selectedSubject === sub.id ? (
-                                <div className="animate-fadeIn flex flex-col gap-2 bg-white p-3 rounded-lg border border-indigo-100 shadow-sm">
-                                    <label className="text-[10px] font-bold text-indigo-800 uppercase tracking-wide">Select Available Instructor:</label>
-                                    <select
-                                        className="text-xs border border-indigo-200 rounded px-2 py-2 outline-none focus:ring-2 ring-indigo-500 bg-gray-50 w-full"
-                                        value={selectedInstructor}
-                                        onChange={(e) => setSelectedInstructor(e.target.value)}
-                                    >
-                                        <option value="">Choose...</option>
-                                        {instructors.filter(i => i.is_active).map(i => (
-                                            <option key={i.id} value={i.id}>{i.name}</option>
-                                        ))}
-                                    </select>
-                                    <div className="flex gap-2 justify-end mt-1">
-                                        <button onClick={() => { setSelectedSubject(null); setSelectedInstructor(''); }} className="text-gray-500 px-3 py-1 text-[10px] hover:bg-gray-100 border border-gray-200 rounded transition font-medium">Cancel</button>
-                                        <button onClick={handleAssign} disabled={!selectedInstructor} className="bg-indigo-600 text-white px-4 py-1.5 rounded text-[10px] font-bold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm uppercase tracking-wide">Confirm</button>
+                            <div className="space-y-3">
+                                {/* Assign Instructor Section */}
+                                {selectedSubject === sub.id ? (
+                                    <div className="animate-fadeInScale flex flex-col gap-4 bg-surface-dark p-6 rounded-[2rem] border border-primary/20 shadow-2xl">
+                                        <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] ml-2">Assign Instructor:</label>
+                                        <select
+                                            className="text-xs bg-surface border border-surface-border rounded-2xl px-4 py-4 text-accent-white outline-none focus:border-primary/50 transition-all cursor-pointer"
+                                            value={selectedInstructor}
+                                            onChange={(e) => setSelectedInstructor(e.target.value)}
+                                        >
+                                            <option value="" className="bg-surface text-accent-white">Choose Instructor...</option>
+                                            {instructors.filter(i => i.is_active).map(i => (
+                                                <option key={i.id} value={i.id} className="bg-surface text-accent-white">{i.name}</option>
+                                            ))}
+                                        </select>
+                                        <div className="flex gap-3 justify-end pt-2">
+                                            <button onClick={() => { setSelectedSubject(null); setSelectedInstructor(''); }} className="text-accent-gray px-6 py-2 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">Cancel</button>
+                                            <button onClick={handleAssign} disabled={!selectedInstructor} className="bg-primary text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-primary/20 scale-105 active:scale-95">Assign</button>
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => setSelectedSubject(sub.id)}
-                                    className="w-full py-2 bg-white border border-indigo-200 text-indigo-600 text-sm font-bold rounded-lg hover:bg-indigo-50 hover:border-indigo-300 transition shadow-sm flex items-center justify-center gap-2"
-                                >
-                                    {sub.batches && sub.batches.length > 0 ? '+ Add Instructor (New Batch)' : '+ Assign First Instructor'}
-                                </button>
-                            )}
+                                ) : (
+                                    <button
+                                        onClick={() => setSelectedSubject(sub.id)}
+                                        className="w-full py-4 bg-surface-dark border border-primary/20 text-accent-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-primary/10 hover:border-primary/40 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3"
+                                    >
+                                        <span className="text-primary text-lg">+</span> Assign Instructor
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -317,76 +340,80 @@ const SuperInstructorAllocation: React.FC = () => {
             {
                 isDrawerOpen && (
                     <div className="fixed inset-0 z-50 overflow-hidden">
-                        <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)}></div>
+                        <div className="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity duration-500" onClick={() => setIsDrawerOpen(false)}></div>
                         <div className="absolute inset-y-0 right-0 max-w-md w-full flex">
-                            <div className="h-full w-full bg-white shadow-2xl flex flex-col animate-slideInRight">
+                            <div className="h-full w-full bg-surface border-l border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)] flex flex-col animate-slideInRight duration-500">
                                 {/* Drawer Header */}
-                                <div className="p-6 bg-indigo-600 text-white flex justify-between items-start shadow-md">
+                                <div className="p-10 bg-gradient-to-br from-primary/30 to-surface border-b border-white/5 flex justify-between items-start">
                                     <div>
-                                        <h3 className="text-xl font-bold flex items-center gap-2">
-                                            <FaBook className="opacity-80" />
+                                        <h3 className="text-3xl font-black text-accent-white flex items-center gap-4 italic tracking-tighter">
+                                            <FaBook size={32} className="text-primary shadow-glow" />
                                             {drawerLoading ? 'Loading...' : selectedBatchDetails?.subject_name}
                                         </h3>
-                                        <p className="text-indigo-200 text-sm mt-1">Batch Details & Allocation</p>
+                                        <p className="text-accent-gray font-black uppercase tracking-[0.4em] text-[10px] mt-4 opacity-70">Batch Details & Allocation</p>
                                     </div>
-                                    <button onClick={() => setIsDrawerOpen(false)} className="text-white/70 hover:text-white transition">
+                                    <button onClick={() => setIsDrawerOpen(false)} className="bg-surface-dark p-3 rounded-2xl text-accent-gray hover:text-primary transition-all hover:rotate-90">
                                         <FaTimes size={24} />
                                     </button>
                                 </div>
 
                                 {/* Drawer Content */}
-                                <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                                <div className="flex-1 overflow-y-auto p-8 space-y-10 no-scrollbar">
                                     {drawerLoading ? (
-                                        <div className="flex items-center justify-center h-40 text-gray-400">Loading details...</div>
+                                        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-6 text-primary">
+                                            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                            <p className="font-black uppercase tracking-[0.3em] text-[10px] italic">Accessing Ecosystem Data...</p>
+                                        </div>
                                     ) : selectedBatchDetails ? (
-                                        <div className="space-y-6">
+                                        <div className="animate-fadeIn space-y-10">
 
                                             {/* Instructor Info */}
-                                            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                                    <FaUserTie /> Assigned Instructor
+                                            <div className="bg-surface-dark/50 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden group">
+                                                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform -rotate-12"><FaUserTie size={120} /></div>
+                                                <h4 className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
+                                                    <span className="w-2 h-2 bg-primary rounded-full animate-ping"></span> Assigned Instructor
                                                 </h4>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xl">
+                                                <div className="flex items-center gap-6 relative z-10">
+                                                    <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary font-black text-4xl border border-primary/20 shadow-glow">
                                                         {selectedBatchDetails?.instructor_name?.charAt(0)}
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-gray-800 text-lg">{selectedBatchDetails?.instructor_name}</p>
-                                                        <div className="flex items-center gap-2 text-gray-500 text-sm">
-                                                            <FaEnvelope size={12} /> {selectedBatchDetails?.instructor_email}
+                                                        <p className="font-black text-accent-white text-2xl italic tracking-tight">{selectedBatchDetails?.instructor_name}</p>
+                                                        <div className="flex items-center gap-2 text-accent-gray text-sm mt-2 italic font-medium">
+                                                            <FaEnvelope size={12} className="text-primary/70" /> {selectedBatchDetails?.instructor_email}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* Students List */}
-                                            <div>
-                                                <div className="flex justify-between items-end mb-3">
-                                                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                                        <FaUserGraduate /> Students ({selectedBatchDetails?.students.length})
+                                            <div className="space-y-6">
+                                                <div className="flex justify-between items-center px-2">
+                                                    <h4 className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] flex items-center gap-3">
+                                                        <FaUserGraduate className="text-primary" /> Students ({selectedBatchDetails?.students.length})
                                                     </h4>
-                                                    <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">
+                                                    <span className="text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full font-black uppercase tracking-widest shadow-glow">
                                                         Active Batch
                                                     </span>
                                                 </div>
 
-                                                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                                                <div className="bg-surface-dark rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
                                                     {selectedBatchDetails?.students && selectedBatchDetails.students.length > 0 ? (
-                                                        <div className="divide-y divide-gray-100">
+                                                        <div className="divide-y divide-white/5">
                                                             {selectedBatchDetails.students.map((student, idx) => (
-                                                                <div key={student.id} className="p-3 hover:bg-gray-50 flex items-center gap-3 transition">
-                                                                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
-                                                                        {idx + 1}
+                                                                <div key={student.id} className="p-6 hover:bg-white/5 flex items-center gap-6 transition-all group/std">
+                                                                    <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center text-[10px] font-black text-accent-gray border border-white/5 group-hover/std:border-primary/30 transition-colors">
+                                                                        {String(idx + 1).padStart(2, '0')}
                                                                     </div>
                                                                     <div className="flex-1">
-                                                                        <p className="text-sm font-bold text-gray-800">{student.name}</p>
-                                                                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-0.5">
-                                                                            <span className="text-[10px] text-gray-500 flex items-center gap-1">
-                                                                                <FaEnvelope size={8} /> {student.email}
+                                                                        <p className="text-base font-black text-accent-white italic tracking-tight group-hover/std:text-primary transition-colors">{student.name}</p>
+                                                                        <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
+                                                                            <span className="text-[10px] text-accent-gray/60 flex items-center gap-2 font-medium">
+                                                                                <FaEnvelope size={10} className="text-white/20" /> {student.email}
                                                                             </span>
                                                                             {student.phone && (
-                                                                                <span className="text-[10px] text-gray-500 flex items-center gap-1">
-                                                                                    <FaPhone size={8} /> {student.phone}
+                                                                                <span className="text-[10px] text-accent-gray/60 flex items-center gap-2 font-medium">
+                                                                                    <FaPhone size={10} className="text-white/20" /> {student.phone}
                                                                                 </span>
                                                                             )}
                                                                         </div>
@@ -395,7 +422,7 @@ const SuperInstructorAllocation: React.FC = () => {
                                                             ))}
                                                         </div>
                                                     ) : (
-                                                        <div className="p-8 text-center text-gray-400 text-sm">
+                                                        <div className="p-20 text-center text-accent-gray italic font-black uppercase tracking-widest opacity-30 text-[10px]">
                                                             No students assigned to this batch yet.
                                                         </div>
                                                     )}
@@ -404,7 +431,10 @@ const SuperInstructorAllocation: React.FC = () => {
 
                                         </div>
                                     ) : (
-                                        <div className="text-center text-red-500">Failed to load details</div>
+                                        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
+                                            <FaTimes size={48} className="text-primary opacity-20" />
+                                            <p className="text-primary font-black uppercase tracking-widest italic text-[10px]">Failed to Load Ecosystem Node</p>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -412,6 +442,7 @@ const SuperInstructorAllocation: React.FC = () => {
                     </div>
                 )
             }
+
         </div >
     );
 };

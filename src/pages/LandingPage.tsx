@@ -1,23 +1,36 @@
 import logo from '../assets/logo.png';
 import { Link } from 'react-router-dom';
 import { FaVideo, FaChalkboardTeacher, FaChartLine } from 'react-icons/fa';
+import { useTheme } from '../context/ThemeContext';
+import ThemeToggle from '../components/ThemeToggle';
 
 const LandingPage: React.FC = () => {
+    const { theme } = useTheme();
+
     return (
-        <div className="font-sans text-gray-900 bg-white">
+        <div className={`font-sans ${theme === 'dark' ? 'dark text-accent-white bg-surface-dark' : 'text-foreground bg-background'} min-h-screen relative overflow-x-hidden transition-colors duration-500`}>
+            {/* Background Pattern Layer */}
+            <div className="fixed inset-0 bg-pattern-dark pointer-events-none -z-10"></div>
+
+
+
             {/* Navbar */}
-            <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md shadow-sm">
+            <nav className="fixed w-full z-50 glass-morphism border-b border-surface-border shadow-2xl">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16 items-center">
-                        <div className="flex items-center gap-2">
-                            <img src={logo} alt="EduTalks Logo" className="h-10 w-auto" />
+                    <div className="flex justify-between h-20 items-center">
+                        <div className="flex items-center">
+                            <img src={logo} alt="EduTalks Logo" className="h-10 w-auto brightness-110 drop-shadow-[0_0_8px_rgba(238,29,35,0.2)]" />
                         </div>
-                        <div className="hidden md:flex space-x-8 items-center">
-                            <a href="#features" className="text-gray-600 hover:text-indigo-600 transition">Features</a>
-                            <a href="#about" className="text-gray-600 hover:text-indigo-600 transition">About Us</a>
-                            <Link to="/login" className="text-indigo-600 font-medium hover:text-indigo-800 transition">Login</Link>
-                            <Link to="/register" className="px-5 py-2.5 bg-indigo-600 text-white rounded-full font-medium hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
-                                Get Started
+                        <div className="hidden md:flex space-x-10 items-center">
+                            <a href="#features" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">Features</a>
+                            <a href="#plans" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">Plans</a>
+                            <a href="#about" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">About</a>
+
+                            <ThemeToggle />
+
+                            <Link to="/login" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">Login</Link>
+                            <Link to="/register" className="btn-primary shadow-lg shadow-primary/30 scale-105 px-8">
+                                Join Now
                             </Link>
                         </div>
                     </div>
@@ -25,186 +38,151 @@ const LandingPage: React.FC = () => {
             </nav>
 
             {/* Hero Section */}
-            <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12">
-                    <div className="md:w-1/2 space-y-6">
-                        <h1 className="text-5xl md:text-6xl font-extrabold leading-tight tracking-tight text-gray-900">
-                            Master Your Future with <span className="text-indigo-600">Live Learning</span>
+            <section className="pt-48 pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden relative">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-16">
+                    <div className="md:w-1/2 space-y-10 animate-in fade-in slide-in-from-left duration-1000">
+                        <span className="px-5 py-2 bg-primary/10 text-primary text-[10px] font-black tracking-[0.3em] uppercase rounded-full border border-primary/20">Welcome to Future</span>
+                        <h1 className="text-7xl md:text-8xl font-black leading-[1.0] tracking-tighter text-accent-white">
+                            <span className="text-gradient-red italic">Master</span> Your <span className="text-accent-white">Future</span>
                         </h1>
-                        <p className="text-lg text-gray-600 leading-relaxed">
-                            Experience the classroom of tomorrow, today. Join India's fastest-growing live education platform.
-                            Interactive classes, real-time doubt solving, and personalized mentorship.
+                        <p className="text-xl text-accent-gray leading-relaxed max-w-lg font-medium">
+                            Experience the classroom of tomorrow. Join India's <span className="text-primary font-black">#1 Live Learning</span> platform for young achievers.
                         </p>
-                        <div className="flex gap-4 pt-4">
-                            <Link to="/register" className="px-8 py-3.5 bg-indigo-600 text-white text-lg font-semibold rounded-lg hover:bg-indigo-700 transition shadow-xl shadow-indigo-200">
+                        <div className="flex flex-wrap gap-6 pt-4">
+                            <Link to="/register" className="btn-primary text-xl px-12 py-5 shadow-2xl shadow-primary/40 transform hover:scale-110 transition-all">
                                 Join for Free
                             </Link>
-                            <Link to="/about" className="px-8 py-3.5 bg-white text-indigo-600 text-lg font-semibold rounded-lg border border-indigo-100 hover:bg-indigo-50 transition shadow-sm">
-                                Learn More
-                            </Link>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-500 pt-4">
-                            <div className="flex -space-x-2">
-                                {[1, 2, 3, 4].map(i => (
-                                    <div key={i} className="w-8 h-8 rounded-full bg-gray-300 border-2 border-white"></div>
-                                ))}
-                            </div>
-                            <p>Trusted by 10,000+ Students</p>
                         </div>
                     </div>
-                    <div className="md:w-1/2 relative">
-                        {/* Abstract Shape Background */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-300 to-purple-300 rounded-full filter blur-3xl opacity-30 animate-pulse"></div>
-                        <img
-                            src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1471&q=80"
-                            alt="Student Learning"
-                            className="relative rounded-2xl shadow-2xl transform rotate-2 hover:rotate-0 transition duration-500 border-4 border-white"
-                        />
+                    <div className="md:w-1/2 relative group animate-in fade-in slide-in-from-right duration-1000">
+                        <div className="absolute inset-0 bg-primary/20 rounded-[3rem] filter blur-[120px] opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                        <div className="relative premium-card p-3 border-[10px] border-white overflow-hidden rounded-[3rem] shadow-2xl rotate-3 group-hover:rotate-0 transition-all duration-700">
+                            <img
+                                src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1471&q=80"
+                                alt="Student Learning"
+                                className="rounded-[2rem] object-cover w-full h-[500px]"
+                            />
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* Features Section */}
-            <section id="features" className="py-20 bg-white">
+            <section id="features" className="py-32 relative">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center max-w-3xl mx-auto mb-16">
-                        <h2 className="text-base font-semibold text-indigo-600 tracking-wide uppercase">Features</h2>
-                        <h3 className="mt-2 text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                            Everything you need to excel
-                        </h3>
-                        <p className="mt-4 text-xl text-gray-500">
-                            Our platform provides a comprehensive learning ecosystem designed for student success.
-                        </p>
+                    <div className="text-center max-w-3xl mx-auto mb-24">
+                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block">Our Expertise</span>
+                        <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-accent-white">
+                            Everything <span className="text-gradient-red italic">to Excel</span>
+                        </h2>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {[
-                            { icon: FaVideo, title: "Interactive Live Classes", desc: "HD Video streaming with real-time audio/video interaction. Feel like you're in the front row." },
-                            { icon: FaChalkboardTeacher, title: "Top Educators", desc: "Learn from the best instructors in the country with years of experience and proven track records." },
-                            { icon: FaChartLine, title: "Performance Analytics", desc: "Detailed insights into your test scores and learning progress to help you improve continuously." }
+                            { icon: FaVideo, title: "Live Classes", desc: "HD Video streaming with real-time interaction. Feel the energy of real classrooms." },
+                            { icon: FaChalkboardTeacher, title: "Best Mentors", desc: "Learn from industry experts with proven success records and elite pedagogy." },
+                            { icon: FaChartLine, title: "Smart Progress", desc: "Advanced AI-driven analytics to track your growth and identify weak spots." }
                         ].map((feature, idx) => (
-                            <div key={idx} className="p-8 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-xl transition duration-300 border border-transparent hover:border-indigo-100 group">
-                                <div className="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                                    <feature.icon size={28} />
+                            <div key={idx} className="bg-surface p-12 rounded-[2.5rem] border border-white/5 hover:border-primary/40 group transition-all duration-500 hover:-translate-y-4 shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/20 transition-all"></div>
+                                <div className="w-20 h-20 bg-surface-light text-white rounded-2xl flex items-center justify-center mb-10 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-xl border border-white/5">
+                                    <feature.icon size={36} />
                                 </div>
-                                <h4 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h4>
-                                <p className="text-gray-600 leading-relaxed">{feature.desc}</p>
+                                <h4 className="text-3xl font-black text-accent-white mb-6 italic">{feature.title}</h4>
+                                <p className="text-accent-gray leading-relaxed text-lg font-medium opacity-80 group-hover:opacity-100 transition-opacity">{feature.desc}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* How It Works Section */}
-            <section id="how-it-works" className="py-20 bg-indigo-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center max-w-3xl mx-auto mb-16">
-                        <h2 className="text-base font-semibold text-indigo-600 tracking-wide uppercase">How It Works</h2>
-                        <h3 className="mt-2 text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                            Your Journey to Success
-                        </h3>
-                        <p className="mt-4 text-xl text-gray-500">
-                            Get full access to premium education in 3 simple steps.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                        <div className="relative">
-                            <div className="w-16 h-16 mx-auto bg-white text-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg mb-6 border-4 border-indigo-100">1</div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-2">Register</h4>
-                            <p className="text-gray-600">Create your account by selecting your grade and role (Student/Instructor).</p>
+            {/* Stats Section - Highlight */}
+            <section className="py-24 bg-surface-dark/80 backdrop-blur-3xl border-y border-white/5 relative overflow-hidden">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+                    {[
+                        { val: "500+", label: "Live Daily" },
+                        { val: "10k+", label: "Students" },
+                        { val: "50+", label: "Experts" },
+                        { val: "4.9", label: "Rating" }
+                    ].map((s, i) => (
+                        <div key={i} className="group cursor-default">
+                            <div className="text-6xl font-black text-primary italic tracking-tighter group-hover:scale-110 transition-transform">{s.val}</div>
+                            <div className="text-accent-gray font-black tracking-[0.3em] uppercase text-[10px] opacity-60 group-hover:opacity-100 transition-opacity mt-2">{s.label}</div>
                         </div>
-                        <div className="relative">
-                            <div className="hidden md:block absolute top-8 left-1/2 w-full h-1 bg-indigo-200 -z-10"></div>
-                            <div className="w-16 h-16 mx-auto bg-white text-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg mb-6 border-4 border-indigo-100">2</div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-2">Choose Plan & Pay</h4>
-                            <p className="text-gray-600">Select a subscription plan that suits your needs and complete the secure payment.</p>
-                        </div>
-                        <div className="relative">
-                            <div className="w-16 h-16 mx-auto bg-white text-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg mb-6 border-4 border-indigo-100">3</div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-2">Full Access</h4>
-                            <p className="text-gray-600">Get assigned to an expert instructor, join live batches, and start learning!</p>
-                        </div>
-                    </div>
+                    ))}
                 </div>
             </section>
 
             {/* Plans Section */}
-            <section id="plans" className="py-20 bg-white">
+            <section id="plans" className="py-32 relative">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center max-w-3xl mx-auto mb-16">
-                        <h2 className="text-base font-semibold text-indigo-600 tracking-wide uppercase">Pricing Plans</h2>
-                        <h3 className="mt-2 text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                            Affordable Excellence
-                        </h3>
+                    <div className="text-center max-w-3xl mx-auto mb-24">
+                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block">Pricing Plans</span>
+                        <h2 className="text-5xl md:text-7xl font-black text-accent-white tracking-tighter">
+                            Affordable <span className="text-gradient-red italic">Excellence</span>
+                        </h2>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                        <div className="border border-gray-200 rounded-2xl p-8 hover:shadow-xl transition relative">
-                            <h4 className="text-xl font-bold text-gray-900">Basic</h4>
-                            <div className="mt-4 text-4xl font-extrabold text-gray-900">₹999<span className="text-base font-medium text-gray-500">/mo</span></div>
-                            <ul className="mt-6 space-y-4 text-gray-600">
-                                <li className="flex items-center gap-2"><div className="w-2 h-2 bg-green-500 rounded-full"></div> Access to Recorded Classes</li>
-                                <li className="flex items-center gap-2"><div className="w-2 h-2 bg-green-500 rounded-full"></div> 1 Doubt Session/Week</li>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto items-stretch">
+                        {/* Monthly Card */}
+                        <div className="bg-surface p-12 flex flex-col items-start rounded-[2.5rem] border border-white/5 hover:border-primary/20 transition-all group shadow-2xl relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                            <span className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] mb-8">Standard Monthly</span>
+                            <div className="flex items-baseline gap-2 mb-10">
+                                <span className="text-6xl font-black text-accent-white tracking-tighter group-hover:text-primary transition-colors italic">₹499</span>
+                                <span className="text-accent-gray font-bold uppercase text-xs tracking-widest">/mo</span>
+                            </div>
+                            <div className="w-full h-px bg-white/5 mb-10"></div>
+                            <ul className="space-y-6 flex-grow w-full mb-10">
+                                <li className="flex items-center gap-4 text-accent-gray font-black text-[10px] uppercase tracking-widest italic opacity-70 group-hover:opacity-100 transition-opacity"><div className="w-1.5 h-1.5 bg-primary rounded-full"></div> All Live Classes</li>
+                                <li className="flex items-center gap-4 text-accent-gray font-black text-[10px] uppercase tracking-widest italic opacity-70 group-hover:opacity-100 transition-opacity"><div className="w-1.5 h-1.5 bg-primary rounded-full"></div> Recorded Backup</li>
+                                <li className="flex items-center gap-4 text-accent-gray font-black text-[10px] uppercase tracking-widest italic opacity-70 group-hover:opacity-100 transition-opacity"><div className="w-1.5 h-1.5 bg-primary rounded-full"></div> Weekly Quizzes</li>
                             </ul>
-                            <button className="mt-8 w-full py-3 bg-indigo-50 text-indigo-700 font-bold rounded-lg hover:bg-indigo-100 transition">Get Started</button>
+                            <button className="w-full py-5 bg-surface-dark border border-white/5 text-accent-white font-black rounded-2xl hover:bg-primary transition-all uppercase tracking-[0.2em] text-[10px] italic">Get Monthly</button>
                         </div>
 
-                        <div className="border-2 border-indigo-600 rounded-2xl p-8 shadow-2xl relative transform -translate-y-2 bg-white">
-                            <div className="absolute top-0 right-0 bg-indigo-600 text-white px-3 py-1 rounded-bl-lg rounded-tr-lg text-sm font-bold">POPULAR</div>
-                            <h4 className="text-xl font-bold text-gray-900">Premium Live</h4>
-                            <div className="mt-4 text-4xl font-extrabold text-gray-900">₹4999<span className="text-base font-medium text-gray-500">/year</span></div>
-                            <ul className="mt-6 space-y-4 text-gray-600">
-                                <li className="flex items-center gap-2"><div className="w-2 h-2 bg-green-500 rounded-full"></div> Daily Live Classes</li>
-                                <li className="flex items-center gap-2"><div className="w-2 h-2 bg-green-500 rounded-full"></div> Assigned Instructor Batch</li>
-                                <li className="flex items-center gap-2"><div className="w-2 h-2 bg-green-500 rounded-full"></div> Weekly Tests & Olympiads</li>
+                        {/* Yearly Card */}
+                        <div className="bg-surface-dark p-12 flex flex-col items-start rounded-[3rem] shadow-[0_30px_100px_rgba(238,29,35,0.15)] relative z-10 border-[3px] border-primary group overflow-hidden transform hover:scale-[1.02] transition-all duration-500">
+                            <div className="absolute top-0 right-0 w-48 h-full bg-primary/5 -skew-x-12 translate-x-1/2"></div>
+                            <div className="absolute top-6 right-6 bg-primary text-white px-5 py-2 rounded-full text-[10px] font-black tracking-widest uppercase shadow-[0_0_15px_#ee1d23]">Best Value</div>
+                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-8 italic">Premium Annual</span>
+                            <div className="flex items-baseline gap-2 mb-10">
+                                <span className="text-7xl font-black text-accent-white italic tracking-tighter group-hover:scale-105 transition-transform cursor-default">₹5000</span>
+                                <span className="text-accent-gray font-bold uppercase text-xs tracking-widest">/yr</span>
+                            </div>
+                            <div className="w-full h-px bg-white/10 mb-10 relative z-10"></div>
+                            <ul className="space-y-6 flex-grow w-full mb-10 relative z-10">
+                                <li className="flex items-center gap-4 text-accent-white font-black text-[10px] uppercase tracking-widest italic"><div className="w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_#ee1d23]"></div> 2 Months Free Included</li>
+                                <li className="flex items-center gap-4 text-accent-white font-black text-[10px] uppercase tracking-widest italic"><div className="w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_#ee1d23]"></div> Full Course Access</li>
+                                <li className="flex items-center gap-4 text-accent-white font-black text-[10px) uppercase tracking-widest italic"><div className="w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_#ee1d23]"></div> 1-on-1 Mentorship</li>
+                                <li className="flex items-center gap-4 text-accent-white font-black text-[10px] uppercase tracking-widest italic"><div className="w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_#ee1d23]"></div> Books & Study Material</li>
                             </ul>
-                            <button className="mt-8 w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">Enrol Now</button>
+                            <button className="w-full btn-primary py-6 scale-100 hover:scale-105 transition-all text-[11px] italic relative z-10 uppercase tracking-widest">Enroll Yearly</button>
                         </div>
-
-                        <div className="border border-gray-200 rounded-2xl p-8 hover:shadow-xl transition relative">
-                            <h4 className="text-xl font-bold text-gray-900">Pro Mentorship</h4>
-                            <div className="mt-4 text-4xl font-extrabold text-gray-900">₹9999<span className="text-base font-medium text-gray-500">/year</span></div>
-                            <ul className="mt-6 space-y-4 text-gray-600">
-                                <li className="flex items-center gap-2"><div className="w-2 h-2 bg-green-500 rounded-full"></div> All Premium Features</li>
-                                <li className="flex items-center gap-2"><div className="w-2 h-2 bg-green-500 rounded-full"></div> 1-on-1 Mentorship</li>
-                                <li className="flex items-center gap-2"><div className="w-2 h-2 bg-green-500 rounded-full"></div> Hardcopy Study Material</li>
-                            </ul>
-                            <button className="mt-8 w-full py-3 bg-indigo-50 text-indigo-700 font-bold rounded-lg hover:bg-indigo-100 transition">Contact Us</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Stats Section */}
-            <section className="py-16 bg-indigo-900 text-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                    <div>
-                        <div className="text-4xl font-bold mb-2">500+</div>
-                        <div className="text-indigo-200">Live Classes Daily</div>
-                    </div>
-                    <div>
-                        <div className="text-4xl font-bold mb-2">10k+</div>
-                        <div className="text-indigo-200">Active Students</div>
-                    </div>
-                    <div>
-                        <div className="text-4xl font-bold mb-2">50+</div>
-                        <div className="text-indigo-200">Expert Instructors</div>
-                    </div>
-                    <div>
-                        <div className="text-4xl font-bold mb-2">4.9/5</div>
-                        <div className="text-indigo-200">User Rating</div>
                     </div>
                 </div>
             </section>
 
             {/* Footer */}
-            <footer className="bg-gray-50 py-12 border-t border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div className="flex items-center gap-2">
-                        <img src={logo} alt="EduTalks Logo" className="h-8 w-auto" />
+            <footer className="bg-surface py-24 border-t border-white/5 relative overflow-hidden">
+                <div className="absolute bottom-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px]"></div>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-12">
+                        <div className="flex flex-col items-center md:items-start gap-6">
+                            <img src={logo} alt="EduTalks Logo" className="h-12 w-auto scale-110 drop-shadow-[0_0_10px_rgba(238,29,35,0.3)]" />
+                            <p className="text-accent-gray text-xs max-w-sm text-center md:text-left font-black uppercase tracking-[0.2em] leading-loose opacity-70">
+                                Revolutionizing education with <span className="text-primary italic">Stunning</span> design and <span className="text-accent-white">Elite</span> mentorship.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-12 text-[10px] font-black text-accent-white uppercase tracking-[0.4em]">
+                            <a href="#" className="hover:text-primary transition-all hover:scale-110">Privacy</a>
+                            <a href="#" className="hover:text-primary transition-all hover:scale-110">Terms</a>
+                            <a href="#" className="hover:text-primary transition-all hover:scale-110">Careers</a>
+                        </div>
                     </div>
-                    <p className="text-gray-500 text-sm">© 2025 EduTalks Platform. All rights reserved.</p>
+                    <div className="mt-20 pt-10 border-t border-white/5 text-center text-accent-gray text-[9px] font-black tracking-[0.5em] uppercase italic opacity-40">
+                        © 2025 EDUTALKS PLATFORM • BUILT FOR EXCELLENCE
+                    </div>
                 </div>
             </footer>
         </div>

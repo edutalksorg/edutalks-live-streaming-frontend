@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { FaChalkboardTeacher, FaUserGraduate, FaVideo, FaBell, FaChartLine, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaChalkboardTeacher, FaUserGraduate, FaVideo, FaBell, FaCheck, FaTimes } from 'react-icons/fa';
 import api from '../../services/api';
+import { useTheme } from '../../context/ThemeContext';
 
 interface User {
     id: number;
@@ -13,6 +14,7 @@ interface User {
 }
 
 const AdminDashboard: React.FC = () => {
+    const { theme } = useTheme();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
@@ -45,7 +47,6 @@ const AdminDashboard: React.FC = () => {
             const instructorCount = instructors.length;
             const studentCount = students.length;
             const pendingCount = allUsers.filter(u => !u.is_active).length;
-            // Admin count is not available via these endpoints, setting to 0 or removing
             const adminCount = 0;
 
             setStats({ superInstructors: superInstructorCount, instructors: instructorCount, students: studentCount, pending: pendingCount, admins: adminCount });
@@ -61,62 +62,60 @@ const AdminDashboard: React.FC = () => {
     }, []);
 
     const toggleStatus = async (id: number, currentStatus: boolean | number) => {
-        // If already active, we might want to deactivate. But adminController only has approve.
-        // We will use approve endpoint for approval.
-        if (currentStatus) {
-            alert("Deactivation is not currently supported via this dashboard.");
-            return;
-        }
+        const isActive = Boolean(currentStatus);
+        const action = isActive ? 'deactivate' : 'approve';
+        const actionText = isActive ? 'Deactivate' : 'Approve';
 
-        if (!window.confirm(`Are you sure you want to Approve this user?`)) return;
+        if (!window.confirm(`Are you sure you want to ${actionText.toLowerCase()} this user?`)) return;
 
         try {
-            await api.put(`/api/admin/approve/${id}`);
-            alert(`User Approved successfully!`);
+            const endpoint = isActive ? `/api/admin/deactivate/${id}` : `/api/admin/approve/${id}`;
+            await api.put(endpoint);
+            alert(`User ${actionText.toLowerCase()}d successfully!`);
             fetchUsers(); // Refresh data
         } catch (err) {
-            console.error("Failed to update status", err);
-            alert("Failed to approve user.");
+            console.error(`Failed to ${action} user`, err);
+            alert(`Failed to ${action} user.`);
         }
     };
 
-    if (loading) return <div className="p-10 text-center">Loading Dashboard...</div>;
+    if (loading) return <div className="p-10 text-center text-primary font-black uppercase lg:text-3xl italic animate-pulse">Loading Premium Dashboard...</div>;
 
     const filteredUsers = filterRole
         ? users.filter(u => filterRole === 'pending' ? !u.is_active : u.role_name === filterRole)
         : users;
 
     return (
-        <div className="space-y-8">
+        <div className={`space-y-8 transition-colors duration-500 ${theme === 'dark' ? 'dark' : ''}`}>
             <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">Super Admin Dashboard</h2>
-                <div className="flex items-center gap-3 text-sm text-gray-500">
+                <h2 className="text-3xl font-extrabold text-accent-white tracking-tight italic">Admin <span className="text-primary italic">Dashboard</span></h2>
+                <div className="flex items-center gap-3 text-sm text-accent-gray italic font-medium">
                     <span>Last updated: just now</span>
-                    <button className="p-2 bg-white rounded-full shadow hover:bg-gray-50"><FaBell /></button>
+                    <button className="p-2 bg-surface rounded-full shadow-premium border border-surface-border hover:bg-surface-light hover:text-primary transition-all"><FaBell /></button>
                 </div>
             </div>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Total Super Instructors', value: stats.superInstructors, icon: FaChalkboardTeacher, color: 'from-purple-500 to-purple-600', filter: 'super_instructor' },
-                    { label: 'Total Instructors', value: stats.instructors, icon: FaChalkboardTeacher, color: 'from-blue-500 to-blue-600', filter: 'instructor' },
-                    { label: 'Total Students', value: stats.students, icon: FaUserGraduate, color: 'from-indigo-500 to-indigo-600', filter: 'student' },
-                    { label: 'Pending Requests', value: stats.pending, icon: FaVideo, color: 'from-red-500 to-red-600', filter: 'pending' },
+                    { label: 'Total Super Instructors', value: stats.superInstructors, icon: FaChalkboardTeacher, border: 'border-accent-purple', accent: 'text-accent-purple', filter: 'super_instructor' },
+                    { label: 'Total Instructors', value: stats.instructors, icon: FaChalkboardTeacher, border: 'border-accent-blue', accent: 'text-accent-blue', filter: 'instructor' },
+                    { label: 'Total Students', value: stats.students, icon: FaUserGraduate, border: 'border-accent-indigo', accent: 'text-accent-indigo', filter: 'student' },
+                    { label: 'Pending Requests', value: stats.pending, icon: FaVideo, border: 'border-primary', accent: 'text-primary', filter: 'pending' },
                 ].map((stat, idx) => (
                     <div
                         key={idx}
                         onClick={() => setFilterRole(stat.filter === filterRole ? null : stat.filter)}
-                        className={`relative overflow-hidden rounded-2xl p-6 text-white shadow-xl bg-gradient-to-br ${stat.color} transition transform hover:-translate-y-1 cursor-pointer ${filterRole === stat.filter ? 'ring-4 ring-offset-2 ring-indigo-500' : ''}`}
+                        className={`relative overflow-hidden rounded-[2rem] p-8 shadow-premium bg-surface border-l-8 ${stat.border} border border-surface-border transition transform hover:-translate-y-2 cursor-pointer ${filterRole === stat.filter ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-105 active:scale-95' : 'hover:shadow-premium-hover'}`}
                     >
-                        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
+                        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-primary/5 rounded-full blur-xl group-hover:bg-primary/10 transition-colors"></div>
                         <div className="flex justify-between items-start relative z-10">
                             <div>
-                                <p className="text-sm font-medium opacity-90">{stat.label}</p>
-                                <h3 className="text-4xl font-bold mt-2">{stat.value}</h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-gray mb-3">{stat.label}</p>
+                                <h3 className={`text-4xl font-black mt-2 italic tracking-tighter ${stat.accent}`}>{stat.value}</h3>
                             </div>
-                            <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                                <stat.icon size={24} />
+                            <div className={`p-5 bg-surface-light rounded-3xl border border-surface-border shadow-xl`}>
+                                <stat.icon size={28} className={stat.accent} />
                             </div>
                         </div>
                     </div>
@@ -125,47 +124,51 @@ const AdminDashboard: React.FC = () => {
 
             {/* Recent Activity / Tables */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                        <h3 className="text-lg font-bold text-gray-800">
+                <div className="lg:col-span-3 premium-card overflow-hidden">
+                    <div className="p-8 border-b border-surface-border flex justify-between items-center bg-surface-light/30">
+                        <h3 className="text-xl font-black text-accent-white italic">
                             {filterRole ? `${filterRole.replace('_', ' ').charAt(0).toUpperCase() + filterRole.replace('_', ' ').slice(1)} List` : 'All Users'}
                         </h3>
-                        <button onClick={() => { fetchUsers(); setFilterRole(null); }} className="text-indigo-600 text-sm font-medium hover:underline">Reset & Refresh</button>
+                        <button onClick={() => { fetchUsers(); setFilterRole(null); }} className="text-primary text-[10px] font-black hover:underline tracking-widest uppercase italic">Reset & Refresh</button>
                     </div>
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-gray-600">
-                            <thead className="bg-gray-50 text-gray-800 font-medium">
+                        <table className="w-full text-left text-sm text-accent-gray">
+                            <thead className="bg-surface-dark text-accent-white font-black uppercase tracking-widest text-[10px]">
                                 <tr>
-                                    <th className="p-4">Name</th>
-                                    <th className="p-4">Email</th>
-                                    <th className="p-4">Role</th>
-                                    <th className="p-4">Grade</th>
-                                    <th className="p-4">Joined Date</th>
-                                    <th className="p-4">Status</th>
-                                    <th className="p-4">Actions</th>
+                                    <th className="p-6">Name</th>
+                                    <th className="p-6">Email</th>
+                                    <th className="p-6">Role</th>
+                                    <th className="p-6">Grade</th>
+                                    <th className="p-6">Joined Date</th>
+                                    <th className="p-6">Status</th>
+                                    <th className="p-6">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-surface-border">
                                 {filteredUsers.map((user) => (
-                                    <tr key={user.id} className="hover:bg-gray-50/50">
-                                        <td className="p-4 font-medium text-gray-900">{user.name}</td>
-                                        <td className="p-4">{user.email}</td>
-                                        <td className="p-4 capitalize">{user.role_name.replace('_', ' ')}</td>
-                                        <td className="p-4">{user.grade || '-'}</td>
-                                        <td className="p-4">{new Date(user.created_at).toLocaleDateString()}</td>
-                                        <td className="p-4">
+                                    <tr key={user.id} className="hover:bg-primary/5 transition-colors group">
+                                        <td className="p-6 font-black text-accent-white italic">{user.name}</td>
+                                        <td className="p-6 opacity-70 italic">{user.email}</td>
+                                        <td className="p-6 capitalize">
+                                            <span className="px-3 py-1 rounded-full bg-surface-dark border border-surface-border text-[9px] uppercase font-black tracking-widest text-accent-gray">
+                                                {user.role_name.replace('_', ' ')}
+                                            </span>
+                                        </td>
+                                        <td className="p-6 font-bold">{user.grade || '-'}</td>
+                                        <td className="p-6 italic">{new Date(user.created_at).toLocaleDateString()}</td>
+                                        <td className="p-6">
                                             {user.is_active ? (
-                                                <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">Active</span>
+                                                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">Active</span>
                                             ) : (
-                                                <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">Pending</span>
+                                                <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-widest border border-amber-500/20 animate-pulse">Pending</span>
                                             )}
                                         </td>
-                                        <td className="p-4">
+                                        <td className="p-6">
                                             <button
                                                 onClick={() => toggleStatus(user.id, user.is_active)}
-                                                className={`flex items-center gap-1 px-3 py-1 rounded shadow text-xs font-bold text-white transition ${user.is_active ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+                                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl shadow-lg text-[10px] font-black uppercase tracking-widest transition transform hover:scale-105 active:scale-95 ${user.is_active ? 'bg-surface-dark border border-surface-border hover:border-primary/50 text-accent-gray cursor-not-allowed opacity-50' : 'bg-primary text-white hover:bg-primary-hover shadow-primary/30'}`}
                                             >
-                                                {user.is_active ? <><FaTimes /> Deactivate</> : <><FaCheck /> Approve</>}
+                                                {user.is_active ? <><FaTimes /> Active</> : <><FaCheck /> Approve</>}
                                             </button>
                                         </td>
                                     </tr>

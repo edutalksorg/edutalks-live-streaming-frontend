@@ -1,13 +1,18 @@
 import React, { useContext } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { FaChalkboardTeacher, FaCalendarAlt, FaClipboardList, FaSignOutAlt, FaUserGraduate, FaBookOpen, FaMedal } from 'react-icons/fa';
+import { FaChalkboardTeacher, FaCalendarAlt, FaClipboardList, FaSignOutAlt, FaUserGraduate, FaBookOpen, FaMedal, FaBars, FaTimes } from 'react-icons/fa';
 import logo from '../../assets/logo.png';
+import { useTheme } from '../../context/ThemeContext';
+import ThemeToggle from '../../components/ThemeToggle';
 
 const InstructorLayout: React.FC = () => {
     const { logout, user } = useContext(AuthContext)!;
+    const { theme } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
+
+    const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
     const handleLogout = () => {
         logout();
@@ -15,49 +20,94 @@ const InstructorLayout: React.FC = () => {
     };
 
     const isActive = (path: string) => {
-        return location.pathname === path ? 'bg-indigo-800' : 'hover:bg-indigo-700';
+        return location.pathname === path
+            ? 'bg-primary border-l-4 border-accent-white text-white'
+            : 'text-accent-gray hover:bg-surface-light hover:text-accent-white';
     };
 
     return (
-        <div className="flex h-screen bg-gray-100">
-            {/* Sidebar */}
-            <div className="w-64 bg-indigo-900 text-white flex flex-col">
-                <div className="p-4 text-2xl font-bold flex items-center gap-2 border-b border-indigo-800">
-                    <img src={logo} alt="EduTalks" className="h-8 filter brightness-0 invert" />
-                </div>
-                <div className="p-4 border-b border-indigo-800 text-sm">
-                    {user?.name} <span className="text-xs text-indigo-300 block">({user?.role})</span>
-                </div>
-                <nav className="flex-1 p-4 space-y-2">
-                    <Link to="/instructor" className={`block py-2.5 px-4 rounded-xl transition duration-200 ${isActive('/instructor')}`}>
-                        <div className="flex items-center gap-3"><FaChalkboardTeacher className="text-xl" /> <span className="font-medium">Dashboard</span></div>
-                    </Link>
-                    <Link to="/instructor/classes" className={`block py-2.5 px-4 rounded-xl transition duration-200 ${isActive('/instructor/classes')}`}>
-                        <div className="flex items-center gap-3"><FaCalendarAlt className="text-xl" /> <span className="font-medium">My Classes</span></div>
-                    </Link>
-                    <Link to="/instructor/students" className={`block py-2.5 px-4 rounded-xl transition duration-200 ${isActive('/instructor/students')}`}>
-                        <div className="flex items-center gap-3"><FaUserGraduate className="text-xl" /> <span className="font-medium">Students</span></div>
-                    </Link>
-                    <Link to="/instructor/notes" className={`block py-2.5 px-4 rounded-xl transition duration-200 ${isActive('/instructor/notes')}`}>
-                        <div className="flex items-center gap-3"><FaBookOpen className="text-xl" /> <span className="font-medium">Study Material</span></div>
-                    </Link>
-                    <Link to="/instructor/exams" className={`block py-2.5 px-4 rounded-xl transition duration-200 ${isActive('/instructor/exams')}`}>
-                        <div className="flex items-center gap-3"><FaClipboardList className="text-xl" /> <span className="font-medium">Exams</span></div>
-                    </Link>
-                    <Link to="/instructor/tournaments" className={`block py-2.5 px-4 rounded-xl transition duration-200 ${isActive('/instructor/tournaments')}`}>
-                        <div className="flex items-center gap-3"><FaMedal className="text-xl" /> <span className="font-medium">Tournaments</span></div>
-                    </Link>
-                </nav>
-                <div className="p-4 border-t border-indigo-800">
-                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition duration-200">
-                        <FaSignOutAlt /> Logout
+        <div className={`flex flex-col lg:flex-row h-screen ${theme === 'dark' ? 'dark' : ''} bg-surface-dark antialiased font-sans transition-colors duration-500 overflow-hidden`}>
+            {/* Mobile Header */}
+            <div className="lg:hidden flex items-center justify-between p-4 bg-surface border-b border-surface-border z-50">
+                <Link to="/instructor" onClick={() => setIsSidebarOpen(false)}>
+                    <img src={logo} alt="EduTalks" className="h-8" />
+                </Link>
+                <div className="flex items-center gap-4">
+                    <ThemeToggle />
+                    <button
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        className="p-2 text-accent-white hover:bg-surface-light rounded-lg transition-colors"
+                    >
+                        {isSidebarOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
                     </button>
                 </div>
             </div>
 
+            {/* Sidebar Overlay */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
+            {/* Sidebar */}
+            <div className={`
+                fixed inset-y-0 left-0 w-64 bg-surface text-accent-white flex flex-col shadow-2xl z-50 border-r border-surface-border transition-all duration-300 transform
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                lg:relative lg:translate-x-0 lg:flex
+            `}>
+                <div className="hidden lg:flex p-6 text-2xl font-black items-center gap-2 border-b border-surface-border">
+                    <Link to="/instructor">
+                        <img src={logo} alt="EduTalks" className={`h-10 ${theme === 'dark' ? 'brightness-110 drop-shadow-[0_0_8px_rgba(238,29,35,0.2)]' : ''}`} />
+                    </Link>
+                </div>
+                <div className="p-6 border-b border-surface-border bg-surface-dark/50 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-white shadow-lg">
+                                {user?.name?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-accent-white leading-none">{user?.name}</p>
+                                <p className="text-[10px] text-primary mt-1 uppercase tracking-widest font-black">Instructor</p>
+                            </div>
+                        </div>
+                        <div className="hidden lg:block">
+                            <ThemeToggle className="scale-75 origin-right" />
+                        </div>
+                    </div>
+                </div>
+                <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
+                    {[
+                        { to: "/instructor", icon: FaChalkboardTeacher, label: "Dashboard" },
+                        { to: "/instructor/classes", icon: FaCalendarAlt, label: "My Classes" },
+                        { to: "/instructor/students", icon: FaUserGraduate, label: "Students" },
+                        { to: "/instructor/notes", icon: FaBookOpen, label: "Study Material" },
+                        { to: "/instructor/exams", icon: FaClipboardList, label: "Exams" },
+                        { to: "/instructor/tournaments", icon: FaMedal, label: "Tournaments" },
+                    ].map((item) => (
+                        <Link
+                            key={item.to}
+                            to={item.to}
+                            onClick={() => setIsSidebarOpen(false)}
+                            className={`block py-3 px-4 rounded-xl transition-all duration-300 font-bold text-sm ${isActive(item.to)}`}
+                        >
+                            <div className="flex items-center gap-3"><item.icon size={18} /> <span>{item.label}</span></div>
+                        </Link>
+                    ))}
+                </nav>
+                <div className="p-4 border-t border-surface-border">
+                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-surface-dark hover:bg-primary transition-all duration-300 font-black text-sm shadow-lg text-accent-white group">
+                        <FaSignOutAlt className="group-hover:rotate-12 transition-transform" /> Logout
+                    </button>
+                    <p className="text-[9px] text-center text-accent-gray mt-4 uppercase tracking-[0.25em] font-black italic"> Premium EdTech Platform </p>
+                </div>
+            </div>
+
             {/* Main Content */}
-            <div className="flex-1 overflow-auto">
-                <div className="p-8">
+            <div className="flex-1 overflow-auto bg-surface-dark transition-colors duration-500">
+                <div className="p-4 md:p-10 max-w-7xl mx-auto">
                     <Outlet />
                 </div>
             </div>

@@ -2,17 +2,28 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
-import {
-    FaVideo, FaGraduationCap, FaBook, FaCalendarAlt,
-    FaPlayCircle, FaChevronDown,
-    FaFileAlt, FaCheckCircle, FaHourglassHalf
-} from 'react-icons/fa';
+import { useTheme } from '../../context/ThemeContext';
+import { FaVideo, FaBook, FaChevronDown, FaChevronUp, FaFileAlt, FaCheckCircle, FaPlayCircle, FaHourglassHalf, FaTimes } from 'react-icons/fa';
+import { io } from 'socket.io-client';
+
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
 interface Subject {
     id: number;
     name: string;
+    instructor_name?: string;
+    exams: {
+        id: number;
+        title: string;
+        status: string;
+        score: number | null;
+        total_marks: number;
+        attempts_done: number;
+        attempts_allowed: number;
+        review_text?: string;
+        all_attempts?: any[];
+    }[];
     notes: any[];
-    exams: any[];
 }
 
 interface DashboardData {
@@ -23,186 +34,357 @@ interface DashboardData {
         studyMaterials: number;
     };
     upcomingClasses: any[];
+    recentResults: {
+        score: number;
+        submitted_at: string;
+        title: string;
+        total_marks: number;
+        subject_name: string;
+        submission_id: number;
+        review_text?: string;
+        file_path?: string;
+    }[];
+}
+
+interface ClassSession {
+    id: number;
+    title: string;
+    description: string;
+    start_time: string;
+    duration: number;
+    status: 'scheduled' | 'live' | 'completed';
+    instructor_id?: number;
+    super_instructor_id?: number;
+    instructor_name?: string;
+    subject_name?: string;
+    is_super_instructor?: boolean;
 }
 
 const StudentDashboard: React.FC = () => {
     const { user } = useContext(AuthContext)!;
+    const { theme } = useTheme();
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [liveClasses, setLiveClasses] = useState<ClassSession[]>([]);
+    const [showLivePopup, setShowLivePopup] = useState(false);
     const [loading, setLoading] = useState(true);
     const [expandedSubject, setExpandedSubject] = useState<number | null>(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [dashRes, subRes] = await Promise.all([
-                    api.get('/api/student/dashboard'),
-                    api.get('/api/student/subjects-full')
-                ]);
-                setDashboardData(dashRes.data);
-                setSubjects(subRes.data);
-                if (subRes.data.length > 0) setExpandedSubject(subRes.data[0].id);
-            } catch (err) {
-                console.error("Failed to fetch dashboard data");
-            } finally {
-                setLoading(false);
+    const fetchData = async () => {
+        try {
+            const [dashRes, subRes, classesRes, siClassesRes] = await Promise.all([
+                api.get('/api/student/dashboard'),
+                api.get('/api/student/subjects-full'),
+                api.get('/api/classes/student'),
+                api.get('/api/student/super-instructor-classes')
+            ]);
+
+            setDashboardData(dashRes.data);
+            setSubjects(subRes.data);
+            if (subRes.data.length > 0) setExpandedSubject(subRes.data[0].id);
+
+            // Process Live Classes
+            const regularLive = classesRes.data.filter((c: any) => c.status === 'live').map((c: any) => ({ ...c, is_super_instructor: false }));
+            const siLive = siClassesRes.data.filter((c: any) => c.status === 'live').map((c: any) => ({ ...c, is_super_instructor: true }));
+            const allLive = [...regularLive, ...siLive];
+
+            setLiveClasses(allLive);
+            if (allLive.length > 0) {
+                setShowLivePopup(true);
             }
-        };
+        } catch (err) {
+            console.error("Failed to fetch dashboard data");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchData();
+
+        // Socket for real-time updates
+        const socket = io(SOCKET_URL);
+        socket.on('class_live', () => {
+            console.log("Live update received from socket");
+            fetchData();
+        });
+        socket.on('class_ended', () => {
+            console.log("Class end received from socket");
+            fetchData();
+        });
+
+        return () => {
+            socket.disconnect();
+        };
     }, []);
 
     if (loading) return (
         <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+    );
+
+    if (!dashboardData) return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+            <div className="text-2xl font-black text-accent-gray opacity-50 uppercase tracking-widest">Unable to load dashboard</div>
+            <button onClick={fetchData} className="px-6 py-2 rounded-xl bg-primary/10 text-primary font-black uppercase tracking-widest hover:bg-primary/20 transition-all">Retry Uplink</button>
         </div>
     );
 
     return (
-        <div className="space-y-10 pb-20 max-w-7xl mx-auto px-4 md:px-0">
+        <div className={`space-y-12 pb-20 max-w-7xl mx-auto px-4 md:px-0 relative transition-colors duration-500 ${theme === 'dark' ? 'dark' : ''}`}>
+            {/* Background Pattern Layer */}
+            <div className="fixed inset-0 bg-pattern-dark pointer-events-none -z-10 opacity-10"></div>
+
+            {/* Decorative Floating Marks - Hidden on small mobile to reduce clutter */}
+            <div className={`hidden sm:block absolute top-10 right-0 text-[120px] md:text-[180px] font-black ${theme === 'dark' ? 'text-primary/10' : 'text-primary/5'} select-none -z-10 animate-pulse`}>L</div>
+            <div className={`hidden sm:block absolute top-[600px] left-[-50px] text-[150px] md:text-[220px] font-black ${theme === 'dark' ? 'text-white/5' : 'text-black/5'} select-none -z-10 -rotate-12`}>I</div>
+            <div className={`hidden sm:block absolute top-[1200px] right-[-30px] text-[100px] md:text-[150px] font-black ${theme === 'dark' ? 'text-primary/10' : 'text-primary/5'} select-none -z-10 rotate-45`}>V</div>
+
             {/* Premium Hero Section */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-indigo-950 to-indigo-900 rounded-[2.5rem] p-10 md:p-16 text-white shadow-2xl border border-white/5">
+            <div className="relative overflow-hidden bg-surface rounded-[2rem] md:rounded-[3.5rem] p-8 md:p-20 text-accent-white shadow-premium border border-surface-border group transition-all duration-500">
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-primary/10 -skew-x-12 translate-x-1/2 opacity-30"></div>
+                <div className={`absolute inset-0 ${theme === 'dark' ? 'bg-[radial-gradient(circle_at_top_right,_rgba(238,29,35,0.2),_transparent_70%)]' : 'bg-[radial-gradient(circle_at_top_right,_rgba(238,29,35,0.05),_transparent_70%)]'}`}></div>
+
                 <div className="relative z-10">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-                        <div className="max-w-xl">
-                            <span className="inline-block px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-sm font-bold mb-6 tracking-wide uppercase">
-                                Student Portal • {dashboardData?.grade || 'N/A'}
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12">
+                        <div className="max-w-2xl space-y-6 md:space-y-8">
+                            <span className="inline-block px-4 md:px-6 py-2 rounded-full bg-primary text-white text-[8px] md:text-[10px] font-black tracking-[0.3em] uppercase shadow-lg shadow-primary/40 border border-white/10">
+                                {dashboardData?.grade || 'Student'} HUB
                             </span>
-                            <h1 className="text-5xl md:text-6xl font-black mb-6 leading-tight tracking-tight">
-                                Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">{user?.name}</span>!
+                            <h1 className="text-4xl md:text-6xl lg:text-8xl font-black leading-[0.9] tracking-tighter">
+                                <span className="text-gradient-red italic">Hello,</span> <br />
+                                <span className="text-accent-white">{user?.name?.split(' ')[0]}</span>
                             </h1>
-                            <p className="text-indigo-100/70 text-lg mb-8 leading-relaxed max-w-md">
-                                Your learning journey is on track. You have <span className="text-white font-bold">{dashboardData?.stats.liveNow} live sessions</span> happening right now.
+                            <p className="text-accent-gray text-base md:text-xl leading-relaxed max-w-md font-medium">
+                                Ready for excellence? You have <span className="text-primary font-black animate-pulse opacity-100">{liveClasses.length} Live Sessions</span> to conquer.
                             </p>
-                            <div className="flex flex-wrap gap-4">
-                                <Link to="/student/live-now" className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 shadow-lg shadow-indigo-600/20 transition-all active:scale-95">
-                                    <FaVideo className="animate-pulse" /> Join Live Now
-                                </Link>
-                                <Link to="/student/profile" className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white px-8 py-4 rounded-2xl font-bold transition-all active:scale-95">
-                                    View Profile
-                                </Link>
-                            </div>
                         </div>
-                        {/* Summary Card */}
-                        <div className="hidden lg:grid grid-cols-2 gap-4">
-                            <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl text-center">
-                                <div className="text-3xl font-black text-indigo-400 mb-1">{dashboardData?.stats.upcomingExams}</div>
-                                <div className="text-xs uppercase font-bold text-gray-400 tracking-wider">Tests</div>
-                            </div>
-                            <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl text-center">
-                                <div className="text-3xl font-black text-purple-400 mb-1">{dashboardData?.stats.studyMaterials}</div>
-                                <div className="text-xs uppercase font-bold text-gray-400 tracking-wider">Notes</div>
-                            </div>
+                        {/* Status Bubbles - visible on all screens as smaller grid on mobile */}
+                        <div className="flex flex-row lg:flex-col gap-4 md:gap-6 overflow-x-auto pb-4 lg:pb-0 lg:overflow-visible no-scrollbar">
+                            <Link to="/student/tests" className="flex-shrink-0 bg-surface-light/50 backdrop-blur-3xl border border-surface-border p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] text-center w-40 md:w-64 hover:border-primary/30 transition-all cursor-pointer group/card shadow-premium block">
+                                <div className="text-4xl md:text-7xl font-black text-primary italic tracking-tighter group-hover/card:scale-110 transition-transform">{dashboardData?.stats.upcomingExams}</div>
+                                <div className="text-[8px] md:text-[10px] uppercase font-black text-accent-gray tracking-[0.4em] mt-2 whitespace-nowrap">Active Exams</div>
+                            </Link>
+                            <Link to="/student/materials" className="flex-shrink-0 bg-surface-light/50 backdrop-blur-3xl border border-surface-border p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] text-center w-40 md:w-64 hover:border-primary/30 transition-all cursor-pointer group/card lg:translate-x-10 shadow-premium block">
+                                <div className="text-4xl md:text-7xl font-black text-accent-white italic tracking-tighter group-hover/card:scale-110 transition-transform">{dashboardData?.stats.studyMaterials}</div>
+                                <div className="text-[8px] md:text-[10px] uppercase font-black text-accent-gray tracking-[0.4em] mt-2 whitespace-nowrap">Materials</div>
+                            </Link>
                         </div>
                     </div>
                 </div>
-                {/* Abstract Background Shapes */}
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px]"></div>
-                <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-purple-500/10 rounded-full blur-[80px]"></div>
             </div>
+            {/* Live Class Popup Modal - Small Floating Popup */}
+            {showLivePopup && liveClasses.length > 0 && (
+                <div className="fixed bottom-8 right-8 z-[60] max-w-sm w-full animate-in slide-in-from-bottom-10 duration-500">
+                    <div className="bg-surface border border-primary/30 p-6 rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(238,29,35,0.4)] relative overflow-hidden">
+                        {/* Background Effects */}
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl -z-10"></div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                {/* Left Side: Subject Hub (Main Focus) */}
-                <div className="lg:col-span-8 space-y-8">
-                    <div className="flex items-center justify-between px-2">
-                        <h2 className="text-3xl font-black text-gray-900 tracking-tight">Your Subject Hub</h2>
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full animate-pulse"></div>
+                                    <FaVideo size={24} className="text-primary relative z-10" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-accent-white italic tracking-tight leading-none">
+                                        LIVE <span className="text-primary">NOW</span>
+                                    </h2>
+                                    <p className="text-[9px] text-accent-gray font-bold tracking-widest uppercase mt-1">
+                                        Broadcast Active
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowLivePopup(false)}
+                                className="text-accent-gray hover:text-white transition-colors"
+                            >
+                                <FaTimes size={14} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-3 mb-4 max-h-[200px] overflow-y-auto custom-scrollbar pr-1">
+                            {liveClasses.map((cls) => (
+                                <div key={cls.id} className="bg-surface-dark/50 border border-surface-border p-4 rounded-2xl group hover:border-primary/30 transition-all">
+                                    <h4 className="text-sm font-black text-accent-white italic truncate">{cls.title}</h4>
+                                    {cls.instructor_name && <p className="text-[8px] text-accent-gray uppercase tracking-widest mt-1 mb-3">By {cls.instructor_name}</p>}
+                                    <Link
+                                        to={cls.is_super_instructor ? `/student/super-instructor-classroom/${cls.id}` : `/student/live/${cls.id}`}
+                                        className="btn-primary w-full py-2 text-[9px] shadow-lg shadow-primary/10 group-hover:shadow-primary/30 flex items-center justify-center gap-2"
+                                    >
+                                        <FaPlayCircle size={10} /> JOIN STREAM
+                                    </Link>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 pt-10">
+                {/* Left Side: Subject Hub */}
+                <div className="lg:col-span-8 space-y-8 md:space-y-12">
+                    <div className="flex flex-col gap-2">
+                        <h2 className="text-3xl md:text-5xl font-black text-accent-white tracking-tighter">
+                            <span className="text-gradient-red italic">Subject</span> Hub
+                        </h2>
+                        <div className="w-16 md:w-20 h-1.5 md:h-2 bg-primary rounded-full shadow-primary-glow"></div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6">
+                    <div className="grid grid-cols-1 gap-10">
                         {subjects.map((subject) => (
                             <div
                                 key={subject.id}
-                                className={`group overflow-hidden bg-white rounded-[2rem] border transition-all duration-300 ${expandedSubject === subject.id
-                                    ? 'shadow-2xl shadow-indigo-100 border-indigo-200'
-                                    : 'shadow-sm border-gray-100 hover:border-indigo-100 hover:shadow-xl hover:shadow-gray-100'
+                                className={`group overflow-hidden bg-surface rounded-[2rem] md:rounded-[3.5rem] border-2 transition-all duration-700 ${expandedSubject === subject.id
+                                    ? 'shadow-premium-hover border-primary/40'
+                                    : 'shadow-premium border-surface-border hover:border-primary/20'
                                     }`}
                             >
-                                {/* Subject Header Card */}
                                 <div
                                     onClick={() => setExpandedSubject(expandedSubject === subject.id ? null : subject.id)}
-                                    className="p-8 flex items-center justify-between cursor-pointer select-none"
+                                    className="p-6 md:p-12 flex items-center justify-between cursor-pointer select-none group/header hover:bg-surface-light/50 transition-colors"
                                 >
-                                    <div className="flex items-center gap-6">
-                                        <div className={`p-4 rounded-2xl transition-colors ${expandedSubject === subject.id ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100'
+                                    <div className="flex items-center gap-4 md:gap-10">
+                                        <div className={`w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-[2.5rem] flex items-center justify-center transition-all duration-700 ${expandedSubject === subject.id ? 'bg-primary text-white rotate-12 shadow-2xl shadow-primary/40' : 'bg-surface-dark text-accent-white border-2 border-surface-border group-hover/header:bg-primary group-hover/header:rotate-12 shadow-xl'
                                             }`}>
-                                            <FaBook size={24} />
+                                            <FaBook size={24} className="md:size-[36px]" />
                                         </div>
-                                        <div>
-                                            <h3 className="text-xl font-black text-gray-900">{subject.name}</h3>
-                                            <p className="text-sm text-gray-500 font-medium">
-                                                {subject.exams.length} Exams • {subject.notes.length} Study Materials
-                                            </p>
+                                        <div className="space-y-1 md:space-y-2">
+                                            <h3 className="text-xl md:text-4xl font-black text-accent-white tracking-tight italic group-hover/header:text-primary transition-colors">{subject.name}</h3>
+                                            <div className="flex items-center gap-2 md:gap-4 text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] text-accent-gray flex-wrap">
+                                                <span className="text-primary">{subject.exams.length} TESTS</span>
+                                                <div className="w-1 h-1 md:w-1.5 md:h-1.5 bg-surface-border rounded-full"></div>
+                                                <span>{subject.notes.length} DOCS</span>
+                                                {subject.instructor_name && (
+                                                    <>
+                                                        <div className="hidden sm:block w-1 h-1 md:w-1.5 md:h-1.5 bg-surface-border rounded-full"></div>
+                                                        <span className="text-accent-white/70 italic block sm:inline">By {subject.instructor_name}</span>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className={`p-2 rounded-full border transition-all duration-500 ${expandedSubject === subject.id ? 'rotate-180 bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-gray-50 border-gray-100 text-gray-400'
+                                    <div className={`w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center border-2 transition-all duration-700 ${expandedSubject === subject.id ? 'rotate-180 bg-primary border-primary text-white shadow-xl' : 'bg-surface-dark border-surface-border text-accent-gray'
                                         }`}>
-                                        <FaChevronDown />
+                                        {expandedSubject === subject.id ? <FaChevronUp size={10} className="md:size-[14px]" /> : <FaChevronDown size={10} className="md:size-[14px]" />}
                                     </div>
                                 </div>
 
-                                {/* Expanded Content Hub */}
                                 {expandedSubject === subject.id && (
-                                    <div className="px-8 pb-8 pt-2 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
-                                        <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
+                                    <div className="px-6 md:px-12 pb-8 md:pb-12 pt-4 space-y-8 md:space-y-12 animate-in fade-in slide-in-from-top-10 duration-1000">
+                                        <div className="h-px bg-surface-border"></div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            {/* Exams Section */}
-                                            <div className="space-y-4">
-                                                <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                                    <FaGraduationCap className="text-indigo-500" /> Subject Tests
-                                                </h4>
-                                                <div className="space-y-3">
-                                                    {subject.exams.map((exam, idx) => (
-                                                        <div key={idx} className="bg-gray-50 p-4 rounded-2xl border border-gray-200/50 flex items-center justify-between group/exam hover:bg-white hover:shadow-lg hover:border-indigo-100 transition-all">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${exam.status === 'Completed' ? 'bg-green-100 text-green-600' :
-                                                                    exam.status === 'Pending' ? 'bg-yellow-100 text-yellow-600' : 'bg-indigo-100 text-indigo-600'
-                                                                    }`}>
-                                                                    {exam.status === 'Completed' ? <FaCheckCircle /> :
-                                                                        exam.status === 'Pending' ? <FaHourglassHalf /> : <FaPlayCircle />}
-                                                                </div>
-                                                                <div>
-                                                                    <div className="text-sm font-bold text-gray-800">{exam.title}</div>
-                                                                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                                                                        {exam.status} {exam.score !== null ? `• Score: ${exam.score}/${exam.total_marks}` : ''}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                                            {/* Exams */}
+                                            <div className="space-y-6 md:space-y-8">
+                                                <h4 className="text-[10px] md:text-[12px] font-black text-primary uppercase tracking-[0.4em] mb-6 md:mb-10 italic">Tests & Assessments</h4>
+                                                <div className="space-y-4 md:space-y-5">
+                                                    {subject.exams.map((exam: any, idx) => (
+                                                        <React.Fragment key={idx}>
+                                                            <div className="bg-surface-dark p-4 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border border-surface-border flex flex-col sm:flex-row items-center justify-between gap-4 group/exam hover:bg-surface-light hover:border-primary/20 transition-all duration-500">
+                                                                <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto">
+                                                                    <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover/exam:rotate-12 flex-shrink-0 ${exam.status === 'Completed' ? 'bg-accent-emerald text-white shadow-accent-emerald/20' :
+                                                                        exam.status === 'Pending' ? 'bg-surface text-accent-white border border-surface-border' :
+                                                                            exam.status === 'Expired' ? 'bg-surface-dark text-accent-gray border border-surface-border opacity-50' :
+                                                                                'bg-primary text-white animate-pulse shadow-primary/40'
+                                                                        }`}>
+                                                                        {exam.status === 'Completed' ? <FaCheckCircle size={20} /> :
+                                                                            exam.status === 'Pending' ? <FaHourglassHalf size={20} /> :
+                                                                                exam.status === 'Expired' ? <FaTimes size={20} /> :
+                                                                                    <FaPlayCircle size={24} />}
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <div className="text-base md:text-lg font-black text-accent-white tracking-tight truncate">{exam.title}</div>
+                                                                        <div className="text-[9px] md:text-[10px] text-accent-gray font-black uppercase tracking-widest mt-1 flex flex-wrap items-center gap-x-2 md:gap-x-3">
+                                                                            <span className={`${exam.status === 'Completed' ? 'text-emerald-500' : exam.status === 'Expired' ? 'text-primary' : ''}`}>{exam.status}</span>
+                                                                            {exam.score !== null && <span className="opacity-50 whitespace-nowrap">• {exam.score}/{exam.total_marks} Marks</span>}
+                                                                            <span className="opacity-50 whitespace-nowrap">• {exam.attempts_done || 0}/{exam.attempts_allowed || 1} Att.</span>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
+                                                                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                                                                    <Link to={exam.status === 'Attempt Now' ? `/student/exam/${exam.id}` : (exam.attempts_done > 0 ? `/student/exam-result/${exam.id}` : '#')}
+                                                                        className={`flex-1 sm:flex-none text-center px-4 md:px-8 py-2 md:py-3 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black tracking-[0.2em] transition-all transform hover:scale-105 ${exam.status === 'Attempt Now'
+                                                                            ? 'bg-primary text-white hover:bg-primary-hover shadow-xl shadow-primary/30 uppercase'
+                                                                            : 'bg-surface border border-surface-border text-accent-gray cursor-default uppercase'
+                                                                            }`}>
+                                                                        {exam.status === 'Attempt Now' ? 'START' : (exam.status === 'Expired' ? 'EXPIRED' : 'RESULT')}
+                                                                    </Link>
+                                                                    {exam.status === 'Completed' && (
+                                                                        <div className="relative group/upload">
+                                                                            <input
+                                                                                type="file"
+                                                                                id={`upload-${exam.id}`}
+                                                                                className="hidden"
+                                                                                accept="image/*"
+                                                                                onChange={async (e) => {
+                                                                                    const file = e.target.files?.[0];
+                                                                                    if (!file || !exam.all_attempts?.[0]?.id) return;
+                                                                                    const formData = new FormData();
+                                                                                    formData.append('file', file);
+                                                                                    try {
+                                                                                        await api.post(`/api/exams/submissions/${exam.all_attempts[0].id}/upload-worksheet`, formData);
+                                                                                        alert('Tactical Intel Uploaded Successfully!');
+                                                                                        window.location.reload();
+                                                                                    } catch (err) {
+                                                                                        console.error(err);
+                                                                                        alert('Upload Failure');
+                                                                                    }
+                                                                                }}
+                                                                            />
+                                                                            <label
+                                                                                htmlFor={`upload-${exam.id}`}
+                                                                                className={`cursor-pointer px-6 py-3 rounded-2xl text-[9px] font-black tracking-widest transition-all flex items-center gap-3 shadow-lg ${exam.all_attempts?.[0]?.file_path
+                                                                                    ? 'bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20 hover:bg-accent-emerald/20'
+                                                                                    : 'bg-primary text-white hover:bg-primary-hover shadow-primary/30'
+                                                                                    }`}
+                                                                            >
+                                                                                <FaVideo size={14} className={exam.all_attempts?.[0]?.file_path ? '' : 'animate-bounce'} />
+                                                                                {exam.all_attempts?.[0]?.file_path ? 'PHOTO ATTACHED' : 'UPLOAD WORKSHEET'}
+                                                                            </label>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                            <Link to={exam.status === 'Attempt Now' ? `/student/exam/${exam.id}` : '#'}
-                                                                className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${exam.status === 'Attempt Now'
-                                                                    ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-200'
-                                                                    : 'bg-gray-200 text-gray-400 cursor-default'
-                                                                    }`}>
-                                                                {exam.status === 'Attempt Now' ? 'START' : 'VIEW'}
-                                                            </Link>
-                                                        </div>
+                                                            {exam.review_text && (
+                                                                <div className="mx-6 mb-6 p-6 rounded-2xl bg-primary/5 border border-primary/10 animate-in fade-in slide-in-from-top-2 duration-500">
+                                                                    <div className="text-[8px] font-black text-primary uppercase tracking-widest mb-2 flex items-center gap-2">
+                                                                        <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
+                                                                        Instructor Feedback
+                                                                    </div>
+                                                                    <p className="text-xs text-accent-white italic font-medium leading-relaxed">
+                                                                        "{exam.review_text}"
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                        </React.Fragment>
                                                     ))}
-                                                    {subject.exams.length === 0 && <p className="text-xs text-gray-400 italic">No exams available for this subject.</p>}
+                                                    {subject.exams.length === 0 && <p className="text-[10px] text-accent-gray font-black uppercase tracking-widest italic pl-4">No exams available yet.</p>}
                                                 </div>
                                             </div>
 
-                                            {/* Materials Section */}
-                                            <div className="space-y-4">
-                                                <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                                    <FaFileAlt className="text-purple-500" /> Study Materials
-                                                </h4>
-                                                <div className="space-y-3">
+                                            {/* Materials */}
+                                            <div className="space-y-6 md:space-y-8">
+                                                <h4 className="text-[10px] md:text-[12px] font-black text-accent-white uppercase tracking-[0.4em] mb-6 md:mb-10 italic">Premium Materials</h4>
+                                                <div className="space-y-4 md:space-y-5">
                                                     {subject.notes.map((note, idx) => (
-                                                        <div key={idx} className="bg-gray-50 p-4 rounded-2xl border border-gray-200/50 flex items-center justify-between hover:bg-white hover:shadow-lg hover:border-purple-100 transition-all">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
-                                                                    <FaFileAlt />
+                                                        <div key={idx} className="bg-surface-dark p-4 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border border-surface-border flex items-center justify-between group/note hover:bg-surface-light transition-all duration-500">
+                                                            <div className="flex items-center gap-4 md:gap-6">
+                                                                <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-surface text-accent-white flex items-center justify-center shadow-xl group-hover/note:bg-primary group-hover/note:text-white transition-all border border-surface-border">
+                                                                    <FaFileAlt size={16} className="md:size-[20px]" />
                                                                 </div>
-                                                                <div className="max-w-[120px]">
-                                                                    <div className="text-sm font-bold text-gray-800 truncate">{note.title}</div>
-                                                                    <div className="text-[10px] text-gray-400 font-bold uppercase">Material</div>
+                                                                <div>
+                                                                    <div className="text-sm md:text-lg font-black text-accent-white tracking-tight group-hover/note:text-primary transition-colors">{note.title}</div>
+                                                                    <div className="text-[8px] md:text-[10px] text-accent-gray font-black uppercase tracking-widest mt-1">Resource</div>
                                                                 </div>
                                                             </div>
-                                                            <a href={`http://localhost:5000${note.file_path}`} target="_blank" rel="noreferrer" className="text-purple-600 font-black text-xs hover:underline decoration-2">
-                                                                VIEW DOC
+                                                            <a href={`http://localhost:5000${note.file_path}`} target="_blank" rel="noreferrer" className="bg-surface border border-surface-border text-accent-white px-4 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl font-black text-[8px] md:text-[10px] tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm">
+                                                                PDF
                                                             </a>
                                                         </div>
                                                     ))}
-                                                    {subject.notes.length === 0 && <p className="text-xs text-gray-400 italic">No materials uploaded for this subject.</p>}
+                                                    {subject.notes.length === 0 && <p className="text-[10px] text-accent-gray font-black uppercase tracking-widest italic pl-4">No resources available yet.</p>}
                                                 </div>
                                             </div>
                                         </div>
@@ -213,53 +395,103 @@ const StudentDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Right Side: Quick Sidebar */}
-                <div className="lg:col-span-4 space-y-8">
-                    {/* Live Schedule Card */}
-                    <div className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 border border-gray-100 p-8 space-y-6">
-                        <h2 className="text-xl font-black text-gray-900 flex items-center gap-3">
-                            <FaCalendarAlt className="text-indigo-600" /> Live Schedule
+                {/* Right Side: Schedule */}
+                <div className="lg:col-span-4 space-y-16">
+
+
+                    {/* Test Results Section */}
+                    <div className="bg-surface rounded-[2rem] md:rounded-[3.5rem] shadow-premium border border-surface-border p-8 md:p-12 space-y-8 md:space-y-10 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-3xl -z-10 transition-all duration-1000 group-hover:scale-150 group-hover:bg-emerald-500/20"></div>
+                        <h2 className="text-2xl md:text-3xl font-black text-accent-white flex items-center gap-4 italic tracking-tight">
+                            <FaCheckCircle className="text-emerald-500 animate-pulse" /> Performance
                         </h2>
-                        <div className="space-y-4">
-                            {dashboardData?.upcomingClasses.map((cls, i) => (
-                                <div key={i} className="flex gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-indigo-50/50 transition-colors border border-transparent hover:border-indigo-100">
-                                    <div className="flex flex-col items-center justify-center px-3 py-2 bg-white rounded-xl shadow-sm min-w-[55px]">
-                                        <span className="text-[10px] font-black uppercase text-indigo-400">{new Date(cls.start_time).toLocaleString('default', { month: 'short' })}</span>
-                                        <span className="text-lg font-black text-gray-800 leading-none">{new Date(cls.start_time).getDate()}</span>
+                        <div className="space-y-4 md:space-y-6">
+                            {dashboardData?.recentResults && dashboardData.recentResults.length > 0 ? (
+                                dashboardData.recentResults.map((result: any, i: number) => (
+                                    <div key={i} className="flex flex-col gap-3 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] bg-surface-dark border border-surface-border hover:border-emerald-500/20 transition-all duration-500 group/result">
+                                        <div className="flex justify-between items-start">
+                                            <div className="min-w-0">
+                                                <h5 className="font-black text-lg text-accent-white truncate tracking-tight mb-1">{result.title}</h5>
+                                                <p className="text-[9px] font-black text-accent-gray uppercase tracking-widest">{result.subject_name}</p>
+                                            </div>
+                                            <div className="text-right flex flex-col items-end gap-2">
+                                                <div className="flex items-center gap-3">
+                                                    {!result.file_path && (
+                                                        <div className="relative group/mini-upload">
+                                                            <input
+                                                                type="file"
+                                                                id={`mini-upload-${result.submission_id}`}
+                                                                className="hidden"
+                                                                accept="image/*"
+                                                                onChange={async (e) => {
+                                                                    const file = e.target.files?.[0];
+                                                                    if (!file) return;
+                                                                    const formData = new FormData();
+                                                                    formData.append('file', file);
+                                                                    try {
+                                                                        await api.post(`/api/exams/submissions/${result.submission_id}/upload-worksheet`, formData);
+                                                                        alert('Uplink Established!');
+                                                                        window.location.reload();
+                                                                    } catch (err) {
+                                                                        console.error(err);
+                                                                        alert('Uplink Failed');
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <label
+                                                                htmlFor={`mini-upload-${result.submission_id}`}
+                                                                className="cursor-pointer p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all animate-pulse"
+                                                                title="Upload Worksheet"
+                                                            >
+                                                                <FaVideo size={10} />
+                                                            </label>
+                                                        </div>
+                                                    )}
+                                                    <div className="text-xl font-black text-emerald-500 italic">{result.score}/{result.total_marks}</div>
+                                                </div>
+                                                <div className="text-[8px] font-black text-accent-gray uppercase tracking-widest mt-1">
+                                                    {new Date(result.submitted_at).toLocaleDateString()}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* Score Percentage Bar */}
+                                        <div className="w-full bg-surface-light rounded-full h-1.5 overflow-hidden shadow-inner mt-1">
+                                            <div
+                                                className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                                                style={{ width: `${(result.score / result.total_marks) * 100}%` }}
+                                            ></div>
+                                        </div>
+                                        {result.review_text && (
+                                            <div className="mt-3 text-[9px] text-accent-white italic opacity-70 border-l-2 border-emerald-500/30 pl-3 leading-relaxed">
+                                                "{result.review_text}"
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h5 className="font-bold text-gray-900 truncate">{cls.title}</h5>
-                                        <p className="text-xs text-gray-400 font-bold uppercase truncate">{cls.subject_name} • {new Date(cls.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                    </div>
-                                </div>
-                            ))}
-                            {(!dashboardData?.upcomingClasses || dashboardData.upcomingClasses.length === 0) && (
-                                <div className="text-center py-6">
-                                    <div className="text-gray-200 mb-2"><FaCalendarAlt size={32} className="mx-auto" /></div>
-                                    <p className="text-sm text-gray-400 font-medium italic">No classes today.</p>
+                                ))
+                            ) : (
+                                <div className="text-center py-20 bg-surface-dark rounded-[3rem] border-4 border-dashed border-surface-border">
+                                    <FaHourglassHalf size={60} className="mx-auto text-accent-gray/20 mb-6" />
+                                    <p className="text-[10px] text-accent-gray font-black uppercase tracking-[0.4em]">No tests taken yet</p>
                                 </div>
                             )}
                         </div>
-                        <button className="w-full py-4 rounded-2xl bg-gray-900 text-white font-bold text-sm tracking-wide hover:bg-gray-800 transition active:scale-95">
-                            VIEW FULL CALENDAR
-                        </button>
                     </div>
 
-                    {/* Quick Tips or Announcements */}
-                    <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-[2.5rem] p-8 text-white relative overflow-hidden group shadow-lg shadow-indigo-600/20">
-                        <div className="relative z-10">
-                            <h3 className="text-lg font-black mb-3 italic">Study Tip of the Day</h3>
-                            <p className="text-sm text-indigo-100 leading-relaxed font-medium">
-                                "The best way to learn is to teach others. Try explaining a complex topic to your friends after class!"
+                    <div className="bg-primary rounded-[2rem] md:rounded-[3.5rem] p-8 md:p-12 text-white relative overflow-hidden group shadow-[0_30px_60px_-10px_rgba(238,29,35,0.5)] border border-white/10">
+                        <div className="absolute top-0 right-0 w-48 h-full bg-white/10 -skew-x-[20deg] translate-x-1/2"></div>
+                        <div className="relative z-10 space-y-6">
+                            <h3 className="text-2xl font-black italic tracking-tight">Prime Tip</h3>
+                            <p className="text-lg text-white leading-relaxed font-bold italic opacity-95">
+                                "Visualizing success is the first step. Picture your goals every morning before class!"
                             </p>
                         </div>
-                        <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:rotate-12 transition-transform duration-500">
-                            <FaVideo size={80} />
+                        <div className="absolute -bottom-10 -right-10 p-6 opacity-20 group-hover:rotate-[30deg] group-hover:scale-125 transition-all duration-1000">
+                            <FaVideo size={200} />
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

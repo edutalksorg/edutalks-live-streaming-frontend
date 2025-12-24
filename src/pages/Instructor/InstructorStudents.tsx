@@ -36,70 +36,75 @@ const InstructorStudents: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="flex items-center justify-center min-h-[400px] text-indigo-600 font-bold">Loading Students...</div>;
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-primary font-black uppercase tracking-widest text-xs italic">Synchronizing Student Data...</p>
+        </div>
+    );
 
     return (
-        <div className="max-w-7xl mx-auto">
-            <header className="mb-10">
-                <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-2">
-                    My Students
-                </h2>
-                <p className="text-gray-500 font-medium">List of all students assigned to your batches across different subjects.</p>
+        <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700">
+            <header>
+                <h2 className="text-4xl font-black text-accent-white italic tracking-tighter uppercase">OPERATIONAL <span className="text-gradient-red">ROSTER</span></h2>
+                <p className="text-accent-gray italic font-medium mt-2 opacity-60">DEPLOYED STUDENT ASSETS WITHIN YOUR TACTICAL SECTORS</p>
             </header>
 
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+            <div className="premium-card p-0 overflow-hidden border-surface-border shadow-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50 border-b border-gray-100">
+                        <thead className="bg-surface-dark/50 border-b border-surface-border">
                             <tr>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Student Name</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Contact Info</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Batch & Subject</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
+                                <th className="px-8 py-6 text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">STUDENT IDENTIFIER</th>
+                                <th className="px-8 py-6 text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">COMMUNICATION FREQUENCY</th>
+                                <th className="px-8 py-6 text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">BATCH & SECTOR</th>
+                                <th className="px-8 py-6 text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40 text-right">OPERATIONS</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-surface-border/50">
                             {students.length > 0 ? students.map((student) => (
-                                <tr key={student.id} className="hover:bg-indigo-50/30 transition-colors group">
-                                    <td className="px-6 py-5">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md">
+                                <tr key={student.id} className="hover:bg-white/5 transition-all duration-300 group">
+                                    <td className="px-8 py-6">
+                                        <div className="flex items-center gap-5">
+                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-white font-black italic shadow-lg shadow-primary/20 transform group-hover:scale-110 group-hover:rotate-3 transition-transform">
                                                 {student.name.charAt(0)}
                                             </div>
                                             <div>
-                                                <div className="text-sm font-bold text-gray-900">{student.name}</div>
-                                                <div className="text-xs text-gray-400">ID: #{student.id}</div>
+                                                <div className="text-base font-black text-accent-white italic tracking-tighter uppercase group-hover:text-primary transition-colors">{student.name}</div>
+                                                <div className="text-[9px] text-accent-gray font-black tracking-widest opacity-30 mt-1 uppercase">ID: EXT-{student.id}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-5">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2 text-xs text-gray-600">
-                                                <FaEnvelope className="text-indigo-400" /> {student.email}
+                                    <td className="px-8 py-6">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-3 text-[11px] text-accent-gray italic font-medium group-hover:text-accent-white transition-colors">
+                                                <FaEnvelope className="text-primary opacity-60" /> {student.email}
                                             </div>
-                                            <div className="flex items-center gap-2 text-xs text-gray-600">
-                                                <FaPhone className="text-indigo-400" /> {student.phone || 'N/A'}
+                                            <div className="flex items-center gap-3 text-[11px] text-accent-gray italic font-medium group-hover:text-accent-white transition-colors">
+                                                <FaPhone className="text-primary opacity-60" /> {student.phone || 'VOICE DOWNLINK SECURED'}
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex flex-col gap-1">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 w-fit">
-                                                <FaLayerGroup className="mr-1" /> {student.batch_name}
+                                    <td className="px-8 py-6">
+                                        <div className="flex flex-col gap-2">
+                                            <span className="inline-flex items-center px-4 py-1 rounded-xl text-[9px] font-black bg-primary/10 text-primary border border-primary/20 w-fit uppercase tracking-widest">
+                                                <FaLayerGroup className="mr-2" /> {student.batch_name}
                                             </span>
-                                            <span className="text-xs text-gray-400 font-medium ml-1">{student.subject_name}</span>
+                                            <span className="text-[10px] text-accent-gray font-black italic uppercase tracking-tighter ml-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                                                {student.subject_name}
+                                            </span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-5 text-right">
-                                        <button className="text-xs bg-white border border-indigo-200 text-indigo-600 px-4 py-2 rounded-xl font-bold hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
-                                            View Progress
+                                    <td className="px-8 py-6 text-right">
+                                        <button className="text-[9px] font-black uppercase tracking-[0.2em] bg-surface-light border border-surface-border text-accent-white px-6 py-3 rounded-xl hover:bg-primary hover:border-primary hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95">
+                                            VERIFY PROGRESS
                                         </button>
                                     </td>
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-10 text-center text-gray-400 italic font-medium text-sm">
-                                        No students found in your batches.
+                                    <td colSpan={4} className="px-8 py-24 text-center">
+                                        <p className="text-accent-gray italic font-medium opacity-20 tracking-widest uppercase text-sm">ROSTER IS VOID IN THIS SECTOR.</p>
                                     </td>
                                 </tr>
                             )}
