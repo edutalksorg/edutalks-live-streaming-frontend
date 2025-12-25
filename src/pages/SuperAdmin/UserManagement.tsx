@@ -221,8 +221,6 @@ const UserManagement: React.FC = () => {
                                         <option value="10th">10th Grade</option>
                                         <option value="11th">11th Grade</option>
                                         <option value="12th">12th Grade</option>
-                                        <option value="NEET">NEET Dropper</option>
-                                        <option value="JEE">JEE Mains</option>
                                     </select>
                                 </div>
                             )}

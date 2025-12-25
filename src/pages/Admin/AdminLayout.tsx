@@ -1,8 +1,8 @@
 import React, { useContext, useState } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { FaUserTie, FaSignOutAlt, FaEye, FaBars, FaTimes } from 'react-icons/fa';
-import logo from '../../assets/logo.png';
+import { FaSignOutAlt, FaEye, FaBars, FaTimes } from 'react-icons/fa';
+import Logo from '../../components/Logo';
 import { useTheme } from '../../context/ThemeContext';
 import ThemeToggle from '../../components/ThemeToggle';
 
@@ -29,7 +29,7 @@ const AdminLayout: React.FC = () => {
             {/* Mobile Header */}
             <div className="lg:hidden flex items-center justify-between px-6 h-16 bg-surface border-b border-surface-border z-50">
                 <Link to="/admin" onClick={() => setIsSidebarOpen(false)}>
-                    <img src={logo} alt="EduTalks" className="h-8" />
+                    <Logo />
                 </Link>
                 <div className="flex items-center gap-4">
                     <ThemeToggle className="scale-75" />
@@ -58,7 +58,7 @@ const AdminLayout: React.FC = () => {
             `}>
                 <div className="p-6 text-2xl font-black hidden lg:flex items-center gap-2 border-b border-surface-border">
                     <Link to="/admin">
-                        <img src={logo} alt="EduTalks" className={`h-10 ${theme === 'dark' ? 'brightness-110 drop-shadow-[0_0_8px_rgba(238,29,35,0.2)]' : ''}`} />
+                        <Logo />
                     </Link>
                 </div>
                 <div className="p-6 border-b border-surface-border bg-surface-dark/50 flex flex-col gap-4">

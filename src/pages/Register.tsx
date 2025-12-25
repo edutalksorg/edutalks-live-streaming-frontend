@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import logo from '../assets/logo.png';
+import { FaEye, FaEyeSlash, FaArrowLeft, FaCheckCircle } from 'react-icons/fa';
+import Logo from '../components/Logo';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
 
@@ -20,6 +20,8 @@ const Register: React.FC = () => {
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
+    const [showSuccess, setShowSuccess] = useState(false);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -29,8 +31,7 @@ const Register: React.FC = () => {
         setError('');
         try {
             await api.post('/api/auth/register', formData);
-            alert('Registration Successful! Please login.');
-            navigate('/login');
+            setShowSuccess(true);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Registration failed');
         }
@@ -47,8 +48,13 @@ const Register: React.FC = () => {
             <div className="fixed inset-0 bg-pattern-dark pointer-events-none -z-10"></div>
 
             <div className="max-w-xl w-full premium-card p-10 animate-in fade-in zoom-in duration-700">
+                <div className="absolute top-8 left-8">
+                    <Link to="/" className="flex items-center gap-2 text-accent-gray text-xs font-bold uppercase tracking-wider hover:text-primary transition-all group">
+                        <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" /> Back
+                    </Link>
+                </div>
                 <div className="text-center mb-10">
-                    <img src={logo} alt="EduTalks" className="h-20 mx-auto mb-6 hover:scale-105 transition-all duration-500 drop-shadow-primary-glow" />
+                    <Logo size="xl" className="justify-center mb-6 hover:scale-105 transition-all duration-500 drop-shadow-primary-glow" />
                     <h2 className="text-4xl font-black text-accent-white italic mb-2 tracking-tighter">CREATE <span className="text-primary">ACCOUNT</span></h2>
                     <p className="text-accent-gray uppercase tracking-[0.3em] text-[10px] font-black opacity-70">Join the Academic Revolution</p>
                 </div>
@@ -128,8 +134,6 @@ const Register: React.FC = () => {
                                     <option value="10th">10th Grade</option>
                                     <option value="11th">11th Grade</option>
                                     <option value="12th">12th Grade</option>
-                                    <option value="NEET">NEET Prep</option>
-                                    <option value="JEE">JEE Mains</option>
                                 </select>
                             </div>
                         )}
@@ -172,6 +176,32 @@ const Register: React.FC = () => {
                     </p>
                 </div>
             </div>
+
+            {/* Success Modal */}
+            {showSuccess && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-surface p-8 rounded-[2rem] max-w-sm w-full text-center shadow-[0_0_50px_rgba(238,29,35,0.15)] border border-white/10 relative overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="absolute inset-0 bg-primary/5 pointer-events-none"></div>
+                        <div className="relative z-10">
+                            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-1 ring-green-500/20">
+                                <FaCheckCircle className="text-green-500 text-4xl" />
+                            </div>
+                            <h3 className="text-2xl font-black text-accent-white mb-2 italic tracking-tighter">SUCCESS!</h3>
+                            <p className="text-accent-gray text-xs font-bold uppercase tracking-widest mb-8 leading-relaxed">
+                                {formData.role === 'student'
+                                    ? 'Your account has been created successfully.'
+                                    : 'Registration submitted for Admin approval.'}
+                            </p>
+                            <button
+                                onClick={() => navigate('/login')}
+                                className="w-full btn-primary py-4 hover:scale-105 active:scale-95 shadow-lg shadow-primary/25"
+                            >
+                                CONTINUE TO LOGIN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

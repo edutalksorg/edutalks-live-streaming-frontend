@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { FaUsers, FaMoneyBillWave, FaSignOutAlt, FaChartPie } from 'react-icons/fa';
-import logo from '../../assets/logo.png';
+import Logo from '../../components/Logo';
 import { useTheme } from '../../context/ThemeContext';
 import ThemeToggle from '../../components/ThemeToggle';
 
@@ -33,7 +33,7 @@ const SuperAdminLayout: React.FC = () => {
             <div className="w-64 bg-surface text-accent-white flex flex-col shadow-2xl border-r border-surface-border transition-colors duration-500">
                 <div className="p-6 text-2xl font-black flex items-center gap-2 border-b border-surface-border">
                     <Link to="/super-admin">
-                        <img src={logo} alt="EduTalks" className={`h-10 ${theme === 'dark' ? 'brightness-110 drop-shadow-[0_0_8px_rgba(238,29,35,0.2)]' : ''}`} />
+                        <Logo />
                     </Link>
                 </div>
                 <div className="p-6 border-b border-surface-border bg-surface-dark/50 flex flex-col gap-4">

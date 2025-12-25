@@ -1,8 +1,9 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { FaArrowLeft } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
-import logo from '../assets/logo.png';
+import Logo from '../components/Logo';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
 
@@ -49,9 +50,14 @@ const Login: React.FC = () => {
             {/* Background Pattern */}
             <div className="fixed inset-0 bg-pattern-dark pointer-events-none -z-10"></div>
 
-            <div className="max-w-md w-full premium-card p-10 animate-in fade-in zoom-in duration-700">
+            <div className="max-w-md w-full premium-card p-10 animate-in fade-in zoom-in duration-700 relative">
+                <div className="absolute top-6 left-6">
+                    <Link to="/" className="flex items-center gap-2 text-accent-gray/60 text-[10px] font-black uppercase tracking-widest hover:text-primary transition-all group">
+                        <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" /> Back
+                    </Link>
+                </div>
                 <div className="text-center mb-10">
-                    <img src={logo} alt="EduTalks" className={`h-16 mx-auto mb-6 ${theme === 'dark' ? 'brightness-110 drop-shadow-[0_0_8px_rgba(238,29,35,0.2)]' : 'hover:scale-105 transition-transform'}`} />
+                    <Logo size="lg" className={`justify-center mb-6 ${theme === 'dark' ? 'drop-shadow-[0_0_8px_rgba(238,29,35,0.2)]' : 'hover:scale-105 transition-transform'}`} />
                     <h2 className="text-3xl font-black text-accent-white italic mb-2">Welcome Back</h2>
                     <p className="text-accent-gray uppercase tracking-[0.2em] text-[10px] font-black">Sign in to your account</p>
                 </div>

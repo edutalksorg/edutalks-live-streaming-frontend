@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { FaBook, FaUserTie, FaUsers, FaTimes, FaEye, FaEnvelope, FaPhone, FaUserGraduate, FaTrash } from 'react-icons/fa';
+import { useToast } from '../../context/ToastContext';
 
 interface User {
     id: number;
@@ -52,12 +53,14 @@ const SuperInstructorAllocation: React.FC = () => {
     const [selectedInstructor, setSelectedInstructor] = useState<string>('');
 
     // Filter State
-    const [filter, setFilter] = useState<'All' | 'State' | 'Central'>('All');
+
 
     // Drawer State
     const [selectedBatchDetails, setSelectedBatchDetails] = useState<BatchDetails | null>(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [drawerLoading, setDrawerLoading] = useState(false);
+
+    const { showToast } = useToast();
 
     const fetchData = async () => {
         try {
@@ -82,6 +85,23 @@ const SuperInstructorAllocation: React.FC = () => {
         fetchData();
     }, []);
 
+    // Confirmation Modal State
+    const [confirmationModal, setConfirmationModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'info' | 'warning' | 'danger';
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        type: 'info'
+    });
+
+    const closeConfirmation = () => setConfirmationModal(prev => ({ ...prev, isOpen: false }));
+
     const handleAssign = async () => {
         if (!selectedSubject || !selectedInstructor) return;
         try {
@@ -89,26 +109,34 @@ const SuperInstructorAllocation: React.FC = () => {
                 instructorId: selectedInstructor,
                 subjectId: selectedSubject
             });
-            alert("Instructor assigned and batch created successfully!");
+            showToast("Instructor assigned and batch created successfully!", 'success');
             setSelectedSubject(null);
             setSelectedInstructor('');
             fetchData();
         } catch (err: any) {
-            alert(err.response?.data?.message || "Failed to assign instructor");
+            showToast(err.response?.data?.message || "Failed to assign instructor", 'error');
         }
     };
 
-
-    const handleDistribute = async (subjectId: number) => {
-        if (!window.confirm("Auto-distribute students to batches for this subject? Unassigned students will be filled into available batches sequentially.")) return;
-        try {
-            const res = await api.post('/api/super-instructor/distribute-students', { subjectId });
-            alert(res.data.message);
-            fetchData();
-        } catch (err: any) {
-            alert(err.response?.data?.message || "Distribution Failed");
-        }
-    }
+    const handleDistribute = (subjectId: number) => {
+        setConfirmationModal({
+            isOpen: true,
+            title: 'Auto-Distribute Students?',
+            message: 'This will automatically distribute unassigned students into available batches sequentially. Are you sure you want to proceed?',
+            type: 'info',
+            onConfirm: async () => {
+                try {
+                    const res = await api.post('/api/super-instructor/distribute-students', { subjectId });
+                    showToast(res.data.message, 'success');
+                    fetchData();
+                    closeConfirmation();
+                } catch (err: any) {
+                    showToast(err.response?.data?.message || "Distribution Failed", 'error');
+                    closeConfirmation();
+                }
+            }
+        });
+    };
 
     const handleViewBatch = async (batchId: number) => {
         try {
@@ -119,47 +147,44 @@ const SuperInstructorAllocation: React.FC = () => {
             setDrawerLoading(false);
         } catch (err) {
             console.error(err);
-            alert("Failed to fetch batch details");
+            showToast("Failed to fetch batch details", 'error');
             setIsDrawerOpen(false);
             setDrawerLoading(false);
         }
     };
 
-
-
-    const handleReset = async () => {
-        if (!window.confirm("WARNING: This will UNASSIGN ALL instructors and DELETE ALL batches for your grade. This action cannot be undone. Are you sure?")) return;
-        try {
-            const res = await api.post('/api/super-instructor/reset-assignments');
-            alert(res.data.message);
-            fetchData();
-        } catch (err: any) {
-            console.error(err);
-            alert("Failed to reset assignments");
-        }
+    const handleReset = () => {
+        setConfirmationModal({
+            isOpen: true,
+            title: 'Reset Entire System?',
+            message: 'WARNING: This will UNASSIGN ALL instructors and DELETE ALL batches for your grade. This action cannot be undone. Are you sure?',
+            type: 'danger',
+            onConfirm: async () => {
+                try {
+                    const res = await api.post('/api/super-instructor/reset-assignments');
+                    showToast(res.data.message, 'info');
+                    fetchData();
+                    closeConfirmation();
+                } catch (err: any) {
+                    console.error(err);
+                    showToast("Failed to reset assignments", 'error');
+                    closeConfirmation();
+                }
+            }
+        });
     };
 
     const handleCleanupStrays = async () => {
         if (!window.confirm("This will find and remove any batches assigned to instructors without qualification. This helps fix dashboard discrepancies. Proceed?")) return;
         try {
             const res = await api.post('/api/super-instructor/cleanup-strays');
-            alert(res.data.message);
+            showToast(res.data.message, 'success');
             fetchData();
         } catch (err: any) {
             console.error(err);
-            alert("Failed to cleanup stray batches");
+            showToast("Failed to cleanup stray batches", 'error');
         }
     };
-
-    const filteredSubjects = subjects.filter(sub => {
-        if (filter === 'All') return true;
-        // Backend provides 'curriculum' field now
-        if (sub.curriculum) return sub.curriculum === filter;
-        // Fallback checks if backend meta missing
-        if (filter === 'State') return sub.name.toLowerCase().includes('(state)');
-        if (filter === 'Central') return sub.name.toLowerCase().includes('(central)');
-        return true;
-    });
 
     if (loading) return <div className="flex items-center justify-center min-h-[400px] text-primary font-black uppercase tracking-[0.4em] animate-pulse italic">Loading Allocation Data...</div>;
 
@@ -184,30 +209,15 @@ const SuperInstructorAllocation: React.FC = () => {
             {/* Filters & Actions */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-surface p-4 rounded-[2rem] border border-white/5 shadow-2xl animate-fadeIn">
 
-                {/* Curriculum Tabs */}
-                <div className="flex p-2 bg-surface-dark rounded-2xl border border-surface-border">
-                    {['All', 'State', 'Central'].map((f) => (
-                        <button
-                            key={f}
-                            onClick={() => setFilter(f as any)}
-                            className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${filter === f
-                                ? 'bg-primary text-white shadow-xl shadow-primary/20 active:scale-95'
-                                : 'text-accent-gray hover:text-accent-white hover:bg-surface-light/50'
-                                }`}
-                        >
-                            {f} Subjects
-                        </button>
-                    ))}
-                </div>
 
                 {/* Actions */}
-                <div className="flex gap-4">
-                    <button
+                <div className="flex gap-4 ml-auto">
+                    {/* <button
                         onClick={handleCleanupStrays}
                         className="flex items-center gap-2 px-6 py-3 bg-emerald-500/10 text-emerald-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20 shadow-lg hover:shadow-emerald-500/20 active:scale-95"
                     >
                         Cleanup System
-                    </button>
+                    </button> */}
                     <button
                         onClick={handleReset}
                         className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all border border-red-500/20 shadow-lg hover:shadow-red-500/20 active:scale-95"
@@ -218,7 +228,7 @@ const SuperInstructorAllocation: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredSubjects.map(sub => (
+                {subjects.map(sub => (
                     <div key={sub.id} className="premium-card flex flex-col h-full relative overflow-hidden group hover:border-primary/20 transition-all duration-500">
 
                         {/* Header */}
@@ -443,8 +453,37 @@ const SuperInstructorAllocation: React.FC = () => {
                 )
             }
 
+            {/* Custom Confirmation Modal */}
+            {confirmationModal.isOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity animate-fadeIn" onClick={closeConfirmation}></div>
+                    <div className="bg-surface p-8 rounded-[2rem] border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-sm w-full relative z-10 animate-scaleIn transform hover:scale-[1.02] transition-transform">
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 shadow-glow ${confirmationModal.type === 'danger' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-primary/10 text-primary border border-primary/20'}`}>
+                            {confirmationModal.type === 'danger' ? <FaTrash size={24} /> : <FaBook size={24} />}
+                        </div>
+                        <h3 className="text-2xl font-black text-center text-accent-white mb-2 italic tracking-tight">{confirmationModal.title}</h3>
+                        <p className="text-center text-accent-gray text-sm mb-8 font-medium leading-relaxed">{confirmationModal.message}</p>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={closeConfirmation}
+                                className="flex-1 py-3 rounded-xl bg-surface-dark border border-white/5 text-accent-gray font-black uppercase tracking-widest text-[10px] hover:bg-white/5 hover:text-white transition-all"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmationModal.onConfirm}
+                                className={`flex-1 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] text-white shadow-xl transition-all hover:scale-105 active:scale-95 ${confirmationModal.type === 'danger' ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20' : 'bg-primary hover:bg-primary-hover shadow-primary/20'}`}
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div >
     );
+
 };
 
 export default SuperInstructorAllocation;

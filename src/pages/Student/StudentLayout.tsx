@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { FaSignOutAlt, FaBookOpen, FaVideo, FaClipboardCheck, FaTrophy, FaThLarge, FaUserGraduate } from 'react-icons/fa';
-import logo from '../../assets/logo.png';
+import Logo from '../../components/Logo';
 import ThemeToggle from '../../components/ThemeToggle';
 
 const StudentLayout: React.FC = () => {
@@ -39,7 +39,7 @@ const StudentLayout: React.FC = () => {
                         {/* Logo Area */}
                         <div className="flex-shrink-0 flex items-center gap-2 w-auto md:w-64">
                             <Link to="/student">
-                                <img src={logo} alt="EduTalks" className="h-8 md:h-12" />
+                                <Logo />
                             </Link>
                         </div>
 

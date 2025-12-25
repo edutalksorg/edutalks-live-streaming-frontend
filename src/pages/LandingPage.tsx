@@ -1,4 +1,4 @@
-import logo from '../assets/logo.png';
+import Logo from '../components/Logo';
 import { Link } from 'react-router-dom';
 import { FaVideo, FaChalkboardTeacher, FaChartLine } from 'react-icons/fa';
 import { useTheme } from '../context/ThemeContext';
@@ -19,30 +19,37 @@ const LandingPage: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-20 items-center">
                         <div className="flex items-center">
-                            <img src={logo} alt="EduTalks Logo" className="h-10 w-auto brightness-110 drop-shadow-[0_0_8px_rgba(238,29,35,0.2)]" />
+                            <Logo size="md" className="drop-shadow-[0_0_8px_rgba(238,29,35,0.2)]" />
                         </div>
                         <div className="hidden md:flex space-x-10 items-center">
                             <a href="#features" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">Features</a>
                             <a href="#plans" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">Plans</a>
                             <a href="#about" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">About</a>
 
-                            <ThemeToggle />
+                            <div className="hidden md:block">
+                                <ThemeToggle />
+                            </div>
 
                             <Link to="/login" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">Login</Link>
                             <Link to="/register" className="btn-primary shadow-lg shadow-primary/30 scale-105 px-8">
                                 Join Now
                             </Link>
                         </div>
+                        {/* Mobile Menu Button - Placeholder if needed, or just keep simple for now */}
+                        <div className="md:hidden flex items-center gap-4">
+                            <ThemeToggle />
+                            <Link to="/login" className="text-accent-gray font-black text-[10px] uppercase tracking-widest">Login</Link>
+                        </div>
                     </div>
                 </div>
             </nav>
 
             {/* Hero Section */}
-            <section className="pt-48 pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden relative">
+            <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden relative">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-16">
                     <div className="md:w-1/2 space-y-10 animate-in fade-in slide-in-from-left duration-1000">
                         <span className="px-5 py-2 bg-primary/10 text-primary text-[10px] font-black tracking-[0.3em] uppercase rounded-full border border-primary/20">Welcome to Future</span>
-                        <h1 className="text-7xl md:text-8xl font-black leading-[1.0] tracking-tighter text-accent-white">
+                        <h1 className="text-5xl md:text-8xl font-black leading-[1.0] tracking-tighter text-accent-white">
                             <span className="text-gradient-red italic">Master</span> Your <span className="text-accent-white">Future</span>
                         </h1>
                         <p className="text-xl text-accent-gray leading-relaxed max-w-lg font-medium">
@@ -72,7 +79,7 @@ const LandingPage: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-3xl mx-auto mb-24">
                         <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block">Our Expertise</span>
-                        <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-accent-white">
+                        <h2 className="text-4xl md:text-7xl font-black tracking-tighter text-accent-white">
                             Everything <span className="text-gradient-red italic">to Excel</span>
                         </h2>
                     </div>
@@ -118,7 +125,7 @@ const LandingPage: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-3xl mx-auto mb-24">
                         <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block">Pricing Plans</span>
-                        <h2 className="text-5xl md:text-7xl font-black text-accent-white tracking-tighter">
+                        <h2 className="text-4xl md:text-7xl font-black text-accent-white tracking-tighter">
                             Affordable <span className="text-gradient-red italic">Excellence</span>
                         </h2>
                     </div>
@@ -169,7 +176,7 @@ const LandingPage: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-12">
                         <div className="flex flex-col items-center md:items-start gap-6">
-                            <img src={logo} alt="EduTalks Logo" className="h-12 w-auto scale-110 drop-shadow-[0_0_10px_rgba(238,29,35,0.3)]" />
+                            <Logo size="lg" className="scale-110 drop-shadow-[0_0_10px_rgba(238,29,35,0.3)]" />
                             <p className="text-accent-gray text-xs max-w-sm text-center md:text-left font-black uppercase tracking-[0.2em] leading-loose opacity-70">
                                 Revolutionizing education with <span className="text-primary italic">Stunning</span> design and <span className="text-accent-white">Elite</span> mentorship.
                             </p>
