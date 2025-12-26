@@ -8,9 +8,9 @@ import api from '../../services/api';
 import Whiteboard from '../../components/Whiteboard';
 import {
     FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash,
-    FaPhoneSlash, FaHandPaper, FaArrowRight,
-    FaGlobe, FaLock, FaUnlock, FaDesktop, FaChalkboard,
-    FaUsers, FaComments, FaClock, FaSignal, FaExpand, FaCompress
+    FaPhoneSlash, FaHandPaper,
+    FaDesktop, FaChalkboard,
+    FaUsers, FaComments, FaClock, FaExpand, FaCompress
 } from 'react-icons/fa';
 
 const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID;
@@ -93,7 +93,7 @@ const LiveClassRoom: React.FC = () => {
         const socket = socketRef.current;
 
         socket.on('connect', () => {
-            socket.emit('join_class', { classId: id, userId: user?.id, userName: user?.name, role: user?.role });
+            socket.emit('join_class', { classId: id, userId: user?.id, userName: user?.name, role: user?.role, classType: 'super' });
         });
 
         socket.on('receive_message', (data) => {
@@ -446,6 +446,7 @@ const LiveClassRoom: React.FC = () => {
                 }
                 setLocalScreenTrack(null);
                 setIsScreenSharing(false);
+                setScreenSharerUid(null);
 
                 if (localVideoTrack && cameraOn) {
                     await client?.publish(localVideoTrack);
@@ -467,22 +468,19 @@ const LiveClassRoom: React.FC = () => {
                     localVideoTrack.stop(); // Stop local preview
                 }
 
-                // 2. Publish Screen
+                // Publish Screen
                 setLocalScreenTrack(track);
                 setIsScreenSharing(true);
+                setScreenSharerUid(Number(user?.id));
                 setShowWhiteboard(false);
 
                 await client?.publish(track);
-
-                // Small delay to ensure track is ready on server before switching UI for everyone
-                setTimeout(() => {
-                    setScreenSharerUid(Number(user?.id));
-                    socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: true });
-                }, 500);
+                socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: true });
 
                 track.on("track-ended", async () => {
                     setIsScreenSharing(false);
                     setScreenSharerUid(null);
+                    setLocalScreenTrack(null);
                     await client?.unpublish(track);
                     socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
                     track.close();

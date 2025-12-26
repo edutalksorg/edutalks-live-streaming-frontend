@@ -104,14 +104,14 @@ const StudentDashboard: React.FC = () => {
 
         // Socket for real-time updates
         const socket = io(SOCKET_URL);
-        socket.on('class_live', () => {
-            console.log("Live update received from socket");
+
+        socket.on('global_sync', (payload) => {
+            console.log("[StudentDashboard] Global sync received:", payload);
             fetchData();
         });
-        socket.on('class_ended', () => {
-            console.log("Class end received from socket");
-            fetchData();
-        });
+
+        socket.on('class_live', () => fetchData());
+        socket.on('class_ended', () => fetchData());
 
         return () => {
             socket.disconnect();

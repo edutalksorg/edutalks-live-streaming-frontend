@@ -32,9 +32,7 @@ const SuperAdminLayout: React.FC = () => {
             {/* Sidebar */}
             <div className="w-64 bg-surface text-accent-white flex flex-col shadow-2xl border-r border-surface-border transition-colors duration-500">
                 <div className="p-6 text-2xl font-black flex items-center gap-2 border-b border-surface-border">
-                    <Link to="/super-admin">
-                        <Logo />
-                    </Link>
+                    <Logo />
                 </div>
                 <div className="p-6 border-b border-surface-border bg-surface-dark/50 flex flex-col gap-4">
                     <div className="flex items-center justify-between">

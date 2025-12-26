@@ -28,9 +28,7 @@ const SuperInstructorLayout: React.FC = () => {
         <div className={`flex flex-col lg:flex-row h-screen ${theme === 'dark' ? 'dark' : ''} bg-surface-dark antialiased transition-colors duration-500 overflow-hidden`}>
             {/* Mobile Header */}
             <div className="lg:hidden flex items-center justify-between px-6 h-16 bg-surface border-b border-surface-border z-50">
-                <Link to="/super-instructor" onClick={() => setIsSidebarOpen(false)}>
-                    <Logo />
-                </Link>
+                <Logo />
                 <div className="flex items-center gap-4">
                     <ThemeToggle className="scale-75" />
                     <button
@@ -57,9 +55,7 @@ const SuperInstructorLayout: React.FC = () => {
                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
                 <div className="p-6 text-2xl font-black hidden lg:flex items-center gap-2 border-b border-surface-border">
-                    <Link to="/super-instructor">
-                        <Logo />
-                    </Link>
+                    <Logo />
                 </div>
                 <div className="p-6 border-b border-surface-border bg-surface-dark/50 flex flex-col gap-4">
                     <div className="flex items-center justify-between">

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { io } from 'socket.io-client';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { FaClock, FaClipboardCheck, FaPlay } from 'react-icons/fa';
@@ -23,21 +24,34 @@ const StudentExamList: React.FC = () => {
     const [exams, setExams] = useState<Exam[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchExams = async () => {
-            try {
-                // Determine if we should filter by class/subject? For now fetch all active.
-                // ideally backend filters by student's class.
-                const res = await api.get('/api/exams/student');
-                setExams(res.data);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchExams();
+    const fetchExams = useCallback(async () => {
+        try {
+            const res = await api.get('/api/exams/student');
+            setExams(res.data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchExams();
+
+        // Setup real-time sync
+        const socket = io(import.meta.env.VITE_API_URL.replace('/api', ''));
+
+        socket.on('global_sync', (payload) => {
+            console.log('[StudentExamList] Sync received:', payload);
+            if (payload.type === 'exams') {
+                fetchExams();
+            }
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [fetchExams]);
 
     if (loading) return <div>Loading available exams...</div>;
 

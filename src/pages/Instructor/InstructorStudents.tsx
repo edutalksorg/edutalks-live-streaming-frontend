@@ -12,11 +12,150 @@ interface Student {
     subject_name: string;
 }
 
+interface ExamResult {
+    submission_id: number;
+    exam_title: string;
+    auto_score: number;
+    submitted_at: string;
+    reviewed_score: number | null;
+    review_text: string | null;
+    total_marks: number;
+}
+
+const ProgressModal: React.FC<{ student: Student; results: ExamResult[]; onClose: () => void }> = ({ student, results, onClose }) => {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-[#0f0f0f] w-full max-w-4xl max-h-[90vh] rounded-3xl border border-surface-border shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 relative">
+                {/* Header */}
+                <div className="p-8 border-b border-surface-border bg-surface-light/30 flex justify-between items-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent opacity-50"></div>
+                    <div className="relative z-10 flex items-center gap-6">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-white text-2xl font-black italic shadow-lg shadow-primary/20">
+                            {student.name.charAt(0)}
+                        </div>
+                        <div>
+                            <h3 className="text-3xl font-black text-white italic tracking-tighter uppercase">{student.name}</h3>
+                            <p className="text-accent-gray font-bold tracking-widest text-xs uppercase mt-1">
+                                <span className="text-primary">{student.batch_name}</span> • {student.subject_name}
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="w-10 h-10 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center text-white transition-all shadow-lg hover:shadow-red-600/50 z-50"
+                        title="Close"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-8 overflow-y-auto custom-scrollbar space-y-8 flex-1">
+                    {/* Stats Overview */}
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden group hover:border-primary/50 transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <FaLayerGroup size={40} className="text-primary" />
+                            </div>
+                            <p className="text-accent-gray text-[10px] font-black uppercase tracking-widest">Exams Attempted</p>
+                            <p className="text-4xl font-black text-white italic tracking-tighter mt-1">{results.length}</p>
+                        </div>
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden group hover:border-green-500/50 transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <FaLayerGroup size={40} className="text-green-500" />
+                            </div>
+                            <p className="text-accent-gray text-[10px] font-black uppercase tracking-widest">Average Score</p>
+                            <p className="text-4xl font-black text-white italic tracking-tighter mt-1">
+                                {results.length > 0
+                                    ? Math.round(results.reduce((acc, curr) => acc + ((curr.reviewed_score ?? curr.auto_score) / curr.total_marks) * 100, 0) / results.length)
+                                    : 0}%
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Results Table */}
+                    <div className="space-y-4">
+                        <h4 className="text-sm font-black text-accent-gray uppercase tracking-widest flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                            Performance History
+                        </h4>
+
+                        {results.length > 0 ? (
+                            <div className="border border-surface-border rounded-xl overflows-hidden bg-surface-light/20">
+                                <table className="w-full text-left">
+                                    <thead className="bg-black/20 border-b border-white/5">
+                                        <tr>
+                                            <th className="px-6 py-4 text-[10px] font-black text-accent-gray uppercase tracking-widest opacity-60">Exam Title</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-accent-gray uppercase tracking-widest opacity-60">Date</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-accent-gray uppercase tracking-widest opacity-60 text-right">Score</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-accent-gray uppercase tracking-widest opacity-60 text-right">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {results.map((res) => {
+                                            const finalScore = res.reviewed_score ?? res.auto_score;
+                                            const percentage = (finalScore / res.total_marks) * 100;
+                                            const scoreColor = percentage >= 80 ? 'text-green-400' : percentage >= 50 ? 'text-yellow-400' : 'text-red-400';
+
+                                            return (
+                                                <tr key={res.submission_id} className="hover:bg-white/5 transition-colors">
+                                                    <td className="px-6 py-4 font-bold text-white text-sm">{res.exam_title}</td>
+                                                    <td className="px-6 py-4 text-xs text-accent-gray font-mono">{new Date(res.submitted_at).toLocaleDateString()}</td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <span className={`font-black italic text-lg ${scoreColor}`}>
+                                                            {finalScore}<span className="text-xs text-white/30 font-medium not-italic ml-1">/ {res.total_marks}</span>
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        {res.reviewed_score !== null ? (
+                                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-widest">
+                                                                Reviewed
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-widest">
+                                                                Auto-Graded
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 border border-dashed border-surface-border rounded-xl">
+                                <p className="text-accent-gray italic opacity-50 text-sm">No exam submissions found for this student.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-6 border-t border-surface-border bg-surface-light/30 flex justify-end">
+                    <button
+                        onClick={onClose}
+                        className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all"
+                    >
+                        Close Dossier
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const InstructorStudents: React.FC = () => {
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchParams] = useSearchParams();
     const batchIdFilter = searchParams.get('batchId');
+
+    const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+    const [progressResults, setProgressResults] = useState<ExamResult[]>([]);
+    const [fetchingProgress, setFetchingProgress] = useState(false);
 
     useEffect(() => {
         fetchStudents();
@@ -35,6 +174,21 @@ const InstructorStudents: React.FC = () => {
             setLoading(false);
         }
     };
+
+    const handleVerifyProgress = async (student: Student) => {
+        setFetchingProgress(true);
+        try {
+            const res = await api.get(`/api/instructor/students/${student.id}/progress`);
+            setProgressResults(res.data);
+            setSelectedStudent(student);
+        } catch (err) {
+            console.error("Failed to fetch progress:", err);
+            alert("Failed to load student progress. Please try again.");
+        } finally {
+            setFetchingProgress(false);
+        }
+    };
+
 
     if (loading) return (
         <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
@@ -96,8 +250,12 @@ const InstructorStudents: React.FC = () => {
                                         </div>
                                     </td>
                                     <td className="px-8 py-6 text-right">
-                                        <button className="text-[9px] font-black uppercase tracking-[0.2em] bg-surface-light border border-surface-border text-accent-white px-6 py-3 rounded-xl hover:bg-primary hover:border-primary hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95">
-                                            VERIFY PROGRESS
+                                        <button
+                                            onClick={() => handleVerifyProgress(student)}
+                                            disabled={fetchingProgress}
+                                            className="text-[9px] font-black uppercase tracking-[0.2em] bg-surface-light border border-surface-border text-accent-white px-6 py-3 rounded-xl hover:bg-primary hover:border-primary hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {fetchingProgress && selectedStudent?.id === student.id ? 'Loading...' : 'VERIFY PROGRESS'}
                                         </button>
                                     </td>
                                 </tr>
@@ -112,7 +270,18 @@ const InstructorStudents: React.FC = () => {
                     </table>
                 </div>
             </div>
-        </div>
+
+
+            {
+                selectedStudent && (
+                    <ProgressModal
+                        student={selectedStudent}
+                        results={progressResults}
+                        onClose={() => setSelectedStudent(null)}
+                    />
+                )
+            }
+        </div >
     );
 };
 

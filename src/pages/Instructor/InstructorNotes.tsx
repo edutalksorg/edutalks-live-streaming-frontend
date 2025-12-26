@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import api from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
-import { FaFileUpload, FaTrash, FaDownload } from 'react-icons/fa';
+import { FaFileUpload, FaTrash, FaDownload, FaBookOpen } from 'react-icons/fa';
+import { io } from 'socket.io-client';
 
 interface Note {
     id: number;
@@ -22,6 +23,20 @@ const InstructorNotes: React.FC = () => {
 
     useEffect(() => {
         fetchNotes();
+
+        // Setup real-time sync
+        const socket = io(import.meta.env.VITE_API_URL.replace('/api', ''));
+
+        socket.on('global_sync', (payload) => {
+            console.log('[InstructorNotes] Sync received:', payload);
+            if (payload.type === 'notes') {
+                fetchNotes();
+            }
+        });
+
+        return () => {
+            socket.disconnect();
+        };
     }, []);
 
     const fetchNotes = async () => {
@@ -69,12 +84,20 @@ const InstructorNotes: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm('Are you sure?')) return;
+        if (!window.confirm('Are you sure you want to delete this resource?')) return;
+
+        // Optimistic Update: Remove from UI immediately
+        const previousNotes = [...notes];
+        setNotes(notes.filter(n => n.id !== id));
+
         try {
             await api.delete(`/api/notes/${id}`);
-            fetchNotes();
-        } catch (err) {
-            console.error('Failed to delete note');
+            // Success - no need to do anything as it's already removed from state
+        } catch (err: any) {
+            console.error('Failed to delete note:', err);
+            alert(err.response?.data?.message || 'Failed to delete note. Please try again.');
+            // Rollback on failure
+            setNotes(previousNotes);
         }
     };
 
@@ -182,7 +205,7 @@ const InstructorNotes: React.FC = () => {
                                     <div className="flex items-center gap-3">
                                         <p className="text-[10px] text-accent-gray font-black mr-4 uppercase tracking-tighter opacity-50">{new Date(note.uploaded_at).toLocaleDateString()}</p>
                                         <a
-                                            href={`http://localhost:5000/${note.file_path}`}
+                                            href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${note.file_path}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="p-3 bg-surface-light hover:bg-accent-blue/20 text-accent-blue rounded-xl transition-all duration-300"
