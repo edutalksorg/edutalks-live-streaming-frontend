@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { AuthContext } from '../../context/AuthContext';
+import SubscriptionPopup from '../../components/SubscriptionPopup';
 import api from '../../services/api';
-import { FaDownload, FaBookOpen } from 'react-icons/fa';
+import { FaDownload, FaBookOpen, FaFilePdf, FaCrown } from 'react-icons/fa';
 import { io } from 'socket.io-client';
 
 interface Note {
@@ -12,6 +15,8 @@ interface Note {
 }
 
 const StudentNotes: React.FC = () => {
+    const { user } = useContext(AuthContext)!;
+    const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
     const [notes, setNotes] = useState<Note[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -73,26 +78,66 @@ const StudentNotes: React.FC = () => {
                             </p>
                         </div>
 
-                        <a
-                            href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${note.file_path}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-8 w-full btn-outline py-4 flex items-center justify-center gap-3 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300 shadow-sm"
+                        <div
+                            onClick={() => {
+                                const isFree = !user?.plan_name || user.plan_name === 'Free';
+                                if (isFree) {
+                                    setShowSubscriptionPopup(true);
+                                }
+                            }}
+                            className="w-full mt-8"
                         >
-                            <FaDownload className="text-sm" />
-                            <span className="tracking-[0.2em]">DOWNLOAD RESOURCE</span>
-                        </a>
+                            <a
+                                href={(!user?.plan_name || user.plan_name === 'Free') ? '#' : `${import.meta.env.VITE_API_URL.replace('/api', '')}${note.file_path}`}
+                                target={(!user?.plan_name || user.plan_name === 'Free') ? '_self' : '_blank'}
+                                rel="noreferrer"
+                                onClick={(e) => {
+                                    const isFree = !user?.plan_name || user.plan_name === 'Free';
+                                    if (isFree) {
+                                        e.preventDefault();
+                                    }
+                                }}
+                                className="w-full btn-outline py-4 flex items-center justify-center gap-3 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300 shadow-sm"
+                            >
+                                <FaDownload className="text-sm" />
+                                <span className="tracking-[0.2em]">DOWNLOAD RESOURCE</span>
+                            </a>
+                        </div>
                     </div>
                 ))}
             </div>
 
             {notes.length === 0 && (
-                <div className="premium-card p-20 text-center opacity-70 border-dashed border-2">
-                    <FaFilePdf className="mx-auto text-accent-gray/30 text-6xl mb-6" />
-                    <h3 className="text-xl font-black text-accent-white italic uppercase">No materials available</h3>
-                    <p className="text-accent-gray italic font-medium mt-2">Check back later for academic updates.</p>
-                </div>
+                <>
+                    {(!user?.plan_name || user.plan_name === 'Free') ? (
+                        <div className="premium-card p-12 text-center border-l-4 border-yellow-500 relative overflow-hidden group hover:scale-[1.01] transition-transform duration-500">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
+                            <FaCrown className="mx-auto text-yellow-500 text-6xl mb-6 animate-pulse drop-shadow-lg" />
+                            <h3 className="text-3xl font-black text-gray-900 dark:text-white italic uppercase tracking-tight mb-4">
+                                Unlock <span className="text-yellow-500">Premium Notes</span>
+                            </h3>
+                            <p className="text-gray-600 dark:text-gray-400 text-lg font-medium max-w-2xl mx-auto mb-8 leading-relaxed">
+                                Get access to exclusive study materials, detailed guides, and premium resources with EduTalks Pro.
+                            </p>
+                            <div className="flex justify-center gap-4">
+                                <Link
+                                    to="/student/subscription"
+                                    className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white rounded-xl font-black uppercase tracking-widest shadow-xl shadow-yellow-500/20 hover:shadow-yellow-500/40 hover:-translate-y-1 transition-all flex items-center gap-2"
+                                >
+                                    Upgrade Now
+                                </Link>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="premium-card p-20 text-center opacity-70 border-dashed border-2">
+                            <FaFilePdf className="mx-auto text-accent-gray/30 text-6xl mb-6" />
+                            <h3 className="text-xl font-black text-accent-white italic uppercase">No materials available</h3>
+                            <p className="text-accent-gray italic font-medium mt-2">Check back later for academic updates.</p>
+                        </div>
+                    )}
+                </>
             )}
+            <SubscriptionPopup isOpen={showSubscriptionPopup} onClose={() => setShowSubscriptionPopup(false)} />
         </div>
     );
 };

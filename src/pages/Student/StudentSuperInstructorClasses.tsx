@@ -4,6 +4,7 @@ import { AuthContext } from '../../context/AuthContext';
 import api from '../../services/api';
 import { FaPlayCircle, FaCalendarDay, FaClock, FaBook } from 'react-icons/fa';
 import { io } from 'socket.io-client';
+import SubscriptionPopup from '../../components/SubscriptionPopup';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
@@ -23,6 +24,7 @@ interface ClassSession {
 
 const StudentSuperInstructorClasses: React.FC = () => {
     const { user } = useContext(AuthContext)!;
+    const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
     const [classes, setClasses] = useState<ClassSession[]>([]);
     const [selectedSubject, setSelectedSubject] = useState<string>('all');
 
@@ -75,8 +77,8 @@ const StudentSuperInstructorClasses: React.FC = () => {
                         <button
                             onClick={() => setSelectedSubject('all')}
                             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${selectedSubject === 'all'
-                                    ? 'bg-primary text-white'
-                                    : 'bg-white text-primary border border-primary hover:bg-primary/10'
+                                ? 'bg-primary text-white'
+                                : 'bg-white text-primary border border-primary hover:bg-primary/10'
                                 }`}
                         >
                             All Subjects
@@ -86,8 +88,8 @@ const StudentSuperInstructorClasses: React.FC = () => {
                                 key={subject}
                                 onClick={() => setSelectedSubject(subject!)}
                                 className={`px-4 py-2 rounded-lg font-semibold transition-colors ${selectedSubject === subject
-                                        ? 'bg-primary text-white'
-                                        : 'bg-white text-primary border border-primary hover:bg-primary/10'
+                                    ? 'bg-primary text-white'
+                                    : 'bg-white text-primary border border-primary hover:bg-primary/10'
                                     }`}
                             >
                                 {subject}
@@ -125,12 +127,24 @@ const StudentSuperInstructorClasses: React.FC = () => {
                                             Instructor: {cls.instructor_name}
                                         </p>
                                     </div>
-                                    <Link
-                                        to={`/student/super-instructor-classroom/${cls.id}`}
-                                        className="block w-full bg-red-500 text-white text-center py-3 rounded-lg hover:bg-red-600 transition-colors font-semibold flex items-center justify-center gap-2"
+                                    <div
+                                        onClick={() => {
+                                            if (user?.plan_name === 'Free') {
+                                                setShowSubscriptionPopup(true);
+                                            }
+                                        }}
+                                        className="w-full"
                                     >
-                                        <FaPlayCircle /> Join Live Class
-                                    </Link>
+                                        <Link
+                                            to={user?.plan_name === 'Free' ? '#' : `/student/super-instructor-classroom/${cls.id}`}
+                                            onClick={(e) => {
+                                                if (user?.plan_name === 'Free') e.preventDefault();
+                                            }}
+                                            className="block w-full bg-red-500 text-white text-center py-3 rounded-lg hover:bg-red-600 transition-colors font-semibold flex items-center justify-center gap-2"
+                                        >
+                                            <FaPlayCircle /> Join Live Class
+                                        </Link>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -141,9 +155,31 @@ const StudentSuperInstructorClasses: React.FC = () => {
                 <div className="mb-8">
                     <h2 className="text-xl font-bold text-primary mb-4">Upcoming Classes</h2>
                     {filterBySubject(scheduledClasses).length === 0 ? (
-                        <div className="premium-card p-8 text-center text-text-secondary">
-                            No upcoming classes scheduled.
-                        </div>
+                        <>
+                            {(!user?.plan_name || user.plan_name === 'Free') ? (
+                                <div className="premium-card p-12 text-center border-l-4 border-yellow-500 relative overflow-hidden group hover:scale-[1.01] transition-transform duration-500 col-span-full">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
+                                    <h3 className="text-3xl font-black text-gray-900 dark:text-white italic uppercase tracking-tight mb-4 mt-4">
+                                        Super Instructor <span className="text-yellow-500">Access</span>
+                                    </h3>
+                                    <p className="text-gray-600 dark:text-gray-400 text-lg font-medium max-w-2xl mx-auto mb-8 leading-relaxed">
+                                        Unlock exclusive grade-wide classes from Super Instructors. Upgrade to Pro for full access.
+                                    </p>
+                                    <div className="flex justify-center gap-4">
+                                        <Link
+                                            to="/student/subscription"
+                                            className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white rounded-xl font-black uppercase tracking-widest shadow-xl shadow-yellow-500/20 hover:shadow-yellow-500/40 hover:-translate-y-1 transition-all flex items-center gap-2"
+                                        >
+                                            Upgrade Now
+                                        </Link>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="premium-card p-8 text-center text-text-secondary col-span-full">
+                                    No upcoming classes scheduled.
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {filterBySubject(scheduledClasses).map(cls => (
@@ -208,6 +244,7 @@ const StudentSuperInstructorClasses: React.FC = () => {
                     )}
                 </div>
             </div>
+            <SubscriptionPopup isOpen={showSubscriptionPopup} onClose={() => setShowSubscriptionPopup(false)} />
         </div>
     );
 };

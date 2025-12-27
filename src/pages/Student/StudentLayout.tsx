@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { FaSignOutAlt, FaBookOpen, FaVideo, FaClipboardCheck, FaTrophy, FaThLarge, FaUserGraduate } from 'react-icons/fa';
+import { FaSignOutAlt, FaBookOpen, FaVideo, FaClipboardCheck, FaTrophy, FaThLarge, FaUserGraduate, FaCrown } from 'react-icons/fa';
 import Logo from '../../components/Logo';
 import ThemeToggle from '../../components/ThemeToggle';
 
@@ -22,6 +22,7 @@ const StudentLayout: React.FC = () => {
         { path: '/student/tests', label: 'Tests', icon: FaClipboardCheck },
         { path: '/student/materials', label: 'Materials', icon: FaBookOpen },
         { path: '/student/tournaments', label: 'Tournaments', icon: FaTrophy },
+        { path: '/student/subscription', label: 'Plans', icon: FaCrown },
     ];
 
     const isActive = (path: string) => {

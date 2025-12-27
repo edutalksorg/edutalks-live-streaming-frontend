@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, type ReactNode } from 'react';
 import api from '../services/api';
 
 interface User {
@@ -8,6 +8,9 @@ interface User {
     role: string;
     role_id: number;
     grade?: string;
+    plan_name?: string;
+    subscription_expires_at?: string;
+    phone?: string;
 }
 
 interface AuthContextType {
@@ -20,17 +23,39 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<User | null>(() => {
+        const storedUser = localStorage.getItem('user');
+        return storedUser ? JSON.parse(storedUser) : null;
+    });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Here we would ideally validate the token with the backend
-        const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
-        if (storedUser && token) {
-            setUser(JSON.parse(storedUser));
-        }
-        setLoading(false);
+        const validateToken = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    // Fetch fresh user profile from backend
+                    const res = await api.get('/api/auth/me');
+                    console.log('AuthContext Fetched User:', res.data);
+                    // Update user state and sync with local storage
+                    setUser(res.data);
+                    localStorage.setItem('user', JSON.stringify(res.data));
+                } catch (err: any) {
+                    console.error("Token validation failed", err);
+                    if (err.response) {
+                        // Only logout if the token is actually invalid/expired (401/403)
+                        if (err.response.status === 401 || err.response.status === 403) {
+                            logout();
+                        }
+                    } else {
+                        // Network error or other issue - do not logout immediately, maybe retry or just keep loading false
+                        console.warn("Network or server error during token validation, keeping session for now.");
+                    }
+                }
+            }
+            setLoading(false);
+        };
+        validateToken();
     }, []);
 
     const login = (token: string, userData: User) => {

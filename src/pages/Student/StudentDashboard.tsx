@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { FaVideo, FaBook, FaChevronDown, FaChevronUp, FaFileAlt, FaCheckCircle, FaPlayCircle, FaHourglassHalf, FaTimes } from 'react-icons/fa';
 import { io } from 'socket.io-client';
+import SubscriptionPopup from '../../components/SubscriptionPopup';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
@@ -69,6 +70,22 @@ const StudentDashboard: React.FC = () => {
     const [showLivePopup, setShowLivePopup] = useState(false);
     const [loading, setLoading] = useState(true);
     const [expandedSubject, setExpandedSubject] = useState<number | null>(null);
+    const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
+    const navigate = useNavigate();
+
+    const checkAccess = (e: React.MouseEvent, action?: () => void) => {
+        // Allow access if plan is anything other than 'Free' (and exists)
+        // Valid paid plans: 'Pro', 'Monthly', 'Yearly'
+        const isPaid = user?.plan_name && user.plan_name !== 'Free';
+
+        if (!isPaid) {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowSubscriptionPopup(true);
+        } else if (action) {
+            action();
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -162,14 +179,14 @@ const StudentDashboard: React.FC = () => {
                         </div>
                         {/* Status Bubbles - visible on all screens as smaller grid on mobile */}
                         <div className="flex flex-row lg:flex-col gap-4 md:gap-6 overflow-x-auto pb-4 lg:pb-0 lg:overflow-visible no-scrollbar">
-                            <Link to="/student/tests" className="flex-shrink-0 bg-surface-light/50 backdrop-blur-3xl border border-surface-border p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] text-center w-40 md:w-64 hover:border-primary/30 transition-all cursor-pointer group/card shadow-premium block">
+                            <div onClick={(e) => checkAccess(e, () => navigate('/student/tests'))} className="flex-shrink-0 bg-surface-light/50 backdrop-blur-3xl border border-surface-border p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] text-center w-40 md:w-64 hover:border-primary/30 transition-all cursor-pointer group/card shadow-premium block">
                                 <div className="text-4xl md:text-7xl font-black text-primary italic tracking-tighter group-hover/card:scale-110 transition-transform">{dashboardData?.stats.upcomingExams}</div>
                                 <div className="text-[8px] md:text-[10px] uppercase font-black text-accent-gray tracking-[0.4em] mt-2 whitespace-nowrap">Active Exams</div>
-                            </Link>
-                            <Link to="/student/materials" className="flex-shrink-0 bg-surface-light/50 backdrop-blur-3xl border border-surface-border p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] text-center w-40 md:w-64 hover:border-primary/30 transition-all cursor-pointer group/card lg:translate-x-10 shadow-premium block">
+                            </div>
+                            <div onClick={(e) => checkAccess(e, () => navigate('/student/materials'))} className="flex-shrink-0 bg-surface-light/50 backdrop-blur-3xl border border-surface-border p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] text-center w-40 md:w-64 hover:border-primary/30 transition-all cursor-pointer group/card lg:translate-x-10 shadow-premium block">
                                 <div className="text-4xl md:text-7xl font-black text-accent-white italic tracking-tighter group-hover/card:scale-110 transition-transform">{dashboardData?.stats.studyMaterials}</div>
                                 <div className="text-[8px] md:text-[10px] uppercase font-black text-accent-gray tracking-[0.4em] mt-2 whitespace-nowrap">Materials</div>
-                            </Link>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -209,12 +226,12 @@ const StudentDashboard: React.FC = () => {
                                 <div key={cls.id} className="bg-surface-dark/50 border border-surface-border p-4 rounded-2xl group hover:border-primary/30 transition-all">
                                     <h4 className="text-sm font-black text-accent-white italic truncate">{cls.title}</h4>
                                     {cls.instructor_name && <p className="text-[8px] text-accent-gray uppercase tracking-widest mt-1 mb-3">By {cls.instructor_name}</p>}
-                                    <Link
-                                        to={cls.is_super_instructor ? `/student/super-instructor-classroom/${cls.id}` : `/student/live/${cls.id}`}
-                                        className="btn-primary w-full py-2 text-[9px] shadow-lg shadow-primary/10 group-hover:shadow-primary/30 flex items-center justify-center gap-2"
+                                    <div
+                                        onClick={(e) => checkAccess(e, () => navigate(cls.is_super_instructor ? `/student/super-instructor-classroom/${cls.id}` : `/student/live/${cls.id}`))}
+                                        className="btn-primary w-full py-2 text-[9px] shadow-lg shadow-primary/10 group-hover:shadow-primary/30 flex items-center justify-center gap-2 cursor-pointer"
                                     >
                                         <FaPlayCircle size={10} /> JOIN STREAM
-                                    </Link>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -304,13 +321,14 @@ const StudentDashboard: React.FC = () => {
                                                                     </div>
                                                                 </div>
                                                                 <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                                                                    <Link to={exam.status === 'Attempt Now' ? `/student/exam/${exam.id}` : (exam.attempts_done > 0 ? `/student/exam-result/${exam.id}` : '#')}
-                                                                        className={`flex-1 sm:flex-none text-center px-4 md:px-8 py-2 md:py-3 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black tracking-[0.2em] transition-all transform hover:scale-105 ${exam.status === 'Attempt Now'
+                                                                    <div
+                                                                        onClick={(e) => checkAccess(e, () => navigate(exam.status === 'Attempt Now' ? `/student/exam/${exam.id}` : (exam.attempts_done > 0 ? `/student/exam-result/${exam.id}` : '#')))}
+                                                                        className={`flex-1 sm:flex-none text-center px-4 md:px-8 py-2 md:py-3 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black tracking-[0.2em] transition-all transform hover:scale-105 cursor-pointer ${exam.status === 'Attempt Now'
                                                                             ? 'bg-primary text-white hover:bg-primary-hover shadow-xl shadow-primary/30 uppercase'
                                                                             : 'bg-surface border border-surface-border text-accent-gray cursor-default uppercase'
                                                                             }`}>
                                                                         {exam.status === 'Attempt Now' ? 'START' : (exam.status === 'Expired' ? 'EXPIRED' : 'RESULT')}
-                                                                    </Link>
+                                                                    </div>
                                                                     {exam.status === 'Completed' && (
                                                                         <div className="relative group/upload">
                                                                             <input
@@ -379,9 +397,9 @@ const StudentDashboard: React.FC = () => {
                                                                     <div className="text-[8px] md:text-[10px] text-accent-gray font-black uppercase tracking-widest mt-1">Resource</div>
                                                                 </div>
                                                             </div>
-                                                            <a href={`http://localhost:5000${note.file_path}`} target="_blank" rel="noreferrer" className="bg-surface border border-surface-border text-accent-white px-4 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl font-black text-[8px] md:text-[10px] tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm">
+                                                            <div onClick={(e) => checkAccess(e, () => window.open(`http://localhost:5000${note.file_path}`, '_blank'))} className="cursor-pointer bg-surface border border-surface-border text-accent-white px-4 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl font-black text-[8px] md:text-[10px] tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm">
                                                                 PDF
-                                                            </a>
+                                                            </div>
                                                         </div>
                                                     ))}
                                                     {subject.notes.length === 0 && <p className="text-[10px] text-accent-gray font-black uppercase tracking-widest italic pl-4">No resources available yet.</p>}
@@ -491,6 +509,8 @@ const StudentDashboard: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            <SubscriptionPopup isOpen={showSubscriptionPopup} onClose={() => setShowSubscriptionPopup(false)} />
         </div >
     );
 };

@@ -1,8 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useContext } from 'react';
 import { io } from 'socket.io-client';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { FaClock, FaClipboardCheck, FaPlay } from 'react-icons/fa';
+import { AuthContext } from '../../context/AuthContext';
+import SubscriptionPopup from '../../components/SubscriptionPopup';
 
 interface Exam {
     id: number;
@@ -21,6 +23,8 @@ interface Exam {
 }
 
 const StudentExamList: React.FC = () => {
+    const { user } = useContext(AuthContext)!;
+    const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
     const [exams, setExams] = useState<Exam[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -128,24 +132,66 @@ const StudentExamList: React.FC = () => {
 
                             {exam.submission_id ? (
                                 <div className="space-y-4 pt-6 border-t border-surface-border">
-                                    <Link
-                                        to={`/student/exam-result/${exam.submission_id}`}
-                                        className="btn-outline w-full py-4 text-[10px]"
+                                    <div
+                                        onClick={() => {
+                                            const isFree = !user?.plan_name || user.plan_name === 'Free';
+                                            if (isFree) setShowSubscriptionPopup(true);
+                                        }}
+                                        className="w-full h-full"
                                     >
-                                        ANALYZE PREVIOUS DATA
-                                    </Link>
-                                    {canAttempt && (
-                                        <Link to={`/student/exam/${exam.id}`} className="btn-primary w-full py-4 text-[10px]">
-                                            RE-ENGAGE MISSION
+                                        <Link
+                                            to={(!user?.plan_name || user.plan_name === 'Free') ? '#' : `/student/exam-result/${exam.submission_id}`}
+                                            onClick={(e) => {
+                                                const isFree = !user?.plan_name || user.plan_name === 'Free';
+                                                if (isFree) e.preventDefault();
+                                            }}
+                                            className="btn-outline w-full py-4 text-[10px]"
+                                        >
+                                            ANALYZE PREVIOUS DATA
                                         </Link>
+                                    </div>
+                                    {canAttempt && (
+                                        <div
+                                            onClick={() => {
+                                                const isFree = !user?.plan_name || user.plan_name === 'Free';
+                                                if (isFree) setShowSubscriptionPopup(true);
+                                            }}
+                                            className="w-full h-full"
+                                        >
+                                            <Link
+                                                to={(!user?.plan_name || user.plan_name === 'Free') ? '#' : `/student/exam/${exam.id}`}
+                                                onClick={(e) => {
+                                                    const isFree = !user?.plan_name || user.plan_name === 'Free';
+                                                    if (isFree) e.preventDefault();
+                                                }}
+                                                className="btn-primary w-full py-4 text-[10px]"
+                                            >
+                                                RE-ENGAGE MISSION
+                                            </Link>
+                                        </div>
                                     )}
                                 </div>
                             ) : (
                                 <div className="pt-6 border-t border-surface-border">
                                     {canAttempt ? (
-                                        <Link to={`/student/exam/${exam.id}`} className="btn-primary w-full py-4 text-[10px] flex items-center justify-center gap-3">
-                                            <FaPlay size={10} /> INITIALIZE SESSION
-                                        </Link>
+                                        <div
+                                            onClick={() => {
+                                                const isFree = !user?.plan_name || user.plan_name === 'Free';
+                                                if (isFree) setShowSubscriptionPopup(true);
+                                            }}
+                                            className="w-full h-full"
+                                        >
+                                            <Link
+                                                to={(!user?.plan_name || user.plan_name === 'Free') ? '#' : `/student/exam/${exam.id}`}
+                                                onClick={(e) => {
+                                                    const isFree = !user?.plan_name || user.plan_name === 'Free';
+                                                    if (isFree) e.preventDefault();
+                                                }}
+                                                className="btn-primary w-full py-4 text-[10px] flex items-center justify-center gap-3"
+                                            >
+                                                <FaPlay size={10} /> INITIALIZE SESSION
+                                            </Link>
+                                        </div>
                                     ) : (
                                         <button disabled className="w-full py-4 rounded-full bg-surface-light border border-surface-border text-accent-gray/40 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 cursor-not-allowed">
                                             {isExpired ? 'TIME-LOCK ACTIVE' : 'LIMIT EXCEEDED'}
@@ -159,11 +205,34 @@ const StudentExamList: React.FC = () => {
             </div>
 
             {exams.length === 0 && (
-                <div className="premium-card p-24 text-center opacity-50 border-dashed border-2">
-                    <FaClipboardCheck className="mx-auto text-accent-gray/20 text-7xl mb-6" />
-                    <h3 className="text-2xl font-black text-accent-white italic uppercase tracking-tight">No active missions found</h3>
-                    <p className="text-accent-gray italic font-medium mt-3">Tactical headquarters has not deployed any assessments for your node yet.</p>
-                </div>
+                <>
+                    {(!user?.plan_name || user.plan_name === 'Free') ? (
+                        <div className="premium-card p-12 text-center border-l-4 border-yellow-500 relative overflow-hidden group hover:scale-[1.01] transition-transform duration-500">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
+                            {/* Note: Ensure FaCrown is imported from react-icons/fa */}
+                            <h3 className="text-3xl font-black text-gray-900 dark:text-white italic uppercase tracking-tight mb-4 mt-4">
+                                Upgrade for <span className="text-yellow-500">More Content</span>
+                            </h3>
+                            <p className="text-gray-600 dark:text-gray-400 text-lg font-medium max-w-2xl mx-auto mb-8 leading-relaxed">
+                                Unlock premium exams, olympiads, and detailed performance analytics with the Pro plan.
+                            </p>
+                            <div className="flex justify-center gap-4">
+                                <Link
+                                    to="/student/subscription"
+                                    className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white rounded-xl font-black uppercase tracking-widest shadow-xl shadow-yellow-500/20 hover:shadow-yellow-500/40 hover:-translate-y-1 transition-all flex items-center gap-2"
+                                >
+                                    Upgrade Now
+                                </Link>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="premium-card p-24 text-center opacity-50 border-dashed border-2">
+                            <FaClipboardCheck className="mx-auto text-accent-gray/20 text-7xl mb-6" />
+                            <h3 className="text-2xl font-black text-accent-white italic uppercase tracking-tight">No active missions found</h3>
+                            <p className="text-accent-gray italic font-medium mt-3">Tactical headquarters has not deployed any assessments for your node yet.</p>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );
