@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import SubscriptionPopup from '../../components/SubscriptionPopup';
 import api from '../../services/api';
-import { FaDownload, FaBookOpen, FaFilePdf, FaCrown } from 'react-icons/fa';
+import { FaDownload, FaBookOpen, FaFilePdf, FaCrown, FaEye } from 'react-icons/fa';
 import { io } from 'socket.io-client';
 
 interface Note {
@@ -78,30 +78,60 @@ const StudentNotes: React.FC = () => {
                             </p>
                         </div>
 
-                        <div
-                            onClick={() => {
-                                const isFree = !user?.plan_name || user.plan_name === 'Free';
-                                if (isFree) {
-                                    setShowSubscriptionPopup(true);
-                                }
-                            }}
-                            className="w-full mt-8"
-                        >
-                            <a
-                                href={(!user?.plan_name || user.plan_name === 'Free') ? '#' : `${import.meta.env.VITE_API_URL.replace('/api', '')}${note.file_path}`}
-                                target={(!user?.plan_name || user.plan_name === 'Free') ? '_self' : '_blank'}
-                                rel="noreferrer"
+                        <div className="w-full mt-8 flex gap-3">
+                            <button
                                 onClick={(e) => {
+                                    e.preventDefault();
                                     const isFree = !user?.plan_name || user.plan_name === 'Free';
                                     if (isFree) {
-                                        e.preventDefault();
+                                        setShowSubscriptionPopup(true);
+                                    } else {
+                                        window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}${note.file_path}`, '_blank');
                                     }
                                 }}
-                                className="w-full btn-outline py-4 flex items-center justify-center gap-3 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300 shadow-sm"
+                                className="flex-1 btn-outline py-3 px-2 flex items-center justify-center gap-2 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300 shadow-sm"
+                            >
+                                <FaEye className="text-sm" />
+                                <span className="tracking-[0.1em] text-xs font-bold">VIEW</span>
+                            </button>
+                            <button
+                                onClick={async (e) => {
+                                    e.preventDefault();
+                                    const isFree = !user?.plan_name || user.plan_name === 'Free';
+                                    if (isFree) {
+                                        setShowSubscriptionPopup(true);
+                                    } else {
+                                        try {
+                                            const fileUrl = `${import.meta.env.VITE_API_URL.replace('/api', '')}${note.file_path}`;
+                                            const response = await fetch(fileUrl);
+                                            const blob = await response.blob();
+                                            const blobUrl = window.URL.createObjectURL(blob);
+                                            const link = document.createElement('a');
+                                            link.href = blobUrl;
+
+                                            // Extract extension from file_path
+                                            const extension = note.file_path.split('.').pop();
+                                            let filename = note.title || 'resource';
+                                            if (extension && !filename.endsWith(`.${extension}`)) {
+                                                filename += `.${extension}`;
+                                            }
+
+                                            link.download = filename;
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                            window.URL.revokeObjectURL(blobUrl);
+                                        } catch (error) {
+                                            console.error("Download failed:", error);
+                                            window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}${note.file_path}`, '_blank');
+                                        }
+                                    }
+                                }}
+                                className="flex-1 btn-outline py-3 px-2 flex items-center justify-center gap-2 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300 shadow-sm"
                             >
                                 <FaDownload className="text-sm" />
-                                <span className="tracking-[0.2em]">DOWNLOAD RESOURCE</span>
-                            </a>
+                                <span className="tracking-[0.1em] text-xs font-bold">DOWNLOAD</span>
+                            </button>
                         </div>
                     </div>
                 ))}

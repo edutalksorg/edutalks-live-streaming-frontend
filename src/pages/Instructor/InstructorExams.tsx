@@ -314,7 +314,6 @@ const InstructorExams: React.FC = () => {
                                                         >
                                                             <option value="mcq">MCQ UNIT</option>
                                                             <option value="fib">BLANK UNIT</option>
-                                                            <option value="photo">PHOTO UNIT</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -381,7 +380,6 @@ const InstructorExams: React.FC = () => {
                                         <span className="text-[10px] font-black text-accent-gray uppercase tracking-widest mr-2">Append New Node:</span>
                                         <button type="button" onClick={() => addQuestion('mcq')} className="btn-outline py-3 px-8 text-[10px] border-accent-blue text-accent-blue hover:bg-accent-blue hover:text-white transition-all shadow-lg shadow-accent-blue/5 hover:shadow-accent-blue/20">+ MCQ UNIT</button>
                                         <button type="button" onClick={() => addQuestion('fib')} className="btn-outline py-3 px-8 text-[10px] border-accent-purple text-accent-purple hover:bg-accent-purple hover:text-white transition-all shadow-lg shadow-accent-purple/5 hover:shadow-accent-purple/20">+ BLANK UNIT</button>
-                                        <button type="button" onClick={() => addQuestion('photo')} className="btn-outline py-3 px-8 text-[10px] border-accent-emerald text-accent-emerald hover:bg-accent-emerald hover:text-white transition-all shadow-lg shadow-accent-emerald/5 hover:shadow-accent-emerald/20">+ PHOTO UNIT</button>
                                     </div>
                                 </div>
                             </div>

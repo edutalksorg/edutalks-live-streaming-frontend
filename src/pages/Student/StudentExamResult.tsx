@@ -9,14 +9,33 @@ const StudentExamResult: React.FC = () => {
     const [submission, setSubmission] = useState<any>(null);
     const [exam, setExam] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [fallbackReviewText, setFallbackReviewText] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchResult = async () => {
             try {
                 // We need an endpoint to get a specific submission with its exam questions
                 const res = await api.get(`/api/student/submissions/${submissionId}`);
+                console.log('Submission Data Debug:', res.data.submission);
+                console.log('Exam Data Debug:', res.data.exam);
                 setSubmission(res.data.submission);
                 setExam(res.data.exam);
+
+                // Fallback: Check dashboard for review text if missing in primary response
+                if (!res.data.submission.review_text && !res.data.submission.reviewText && !res.data.submission.feedback) {
+                    try {
+                        const dashRes = await api.get('/api/student/dashboard');
+                        const recentResults = dashRes.data.recentResults || [];
+                        const matchingResult = recentResults.find((r: any) => r.submission_id == submissionId);
+                        if (matchingResult && matchingResult.review_text) {
+                            console.log('Found review text in dashboard fallback:', matchingResult.review_text);
+                            setFallbackReviewText(matchingResult.review_text);
+                        }
+                    } catch (e) {
+                        console.warn('Fallback dashboard fetch failed', e);
+                    }
+                }
+
             } catch (err) {
                 console.error(err);
             } finally {
@@ -127,6 +146,22 @@ const StudentExamResult: React.FC = () => {
                         )}
                     </div>
 
+                    {(submission.review_text || submission.reviewText || submission.feedback || exam?.review_text || exam?.reviewText || exam?.feedback || fallbackReviewText) && (
+                        <div className="bg-surface-light/50 border border-surface-border p-8 rounded-[2.5rem] relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                            <h3 className="text-lg font-black text-accent-white italic tracking-tighter uppercase mb-4 flex items-center gap-3">
+                                <span className="w-2 h-8 bg-primary rounded-r-full"></span>
+                                INSTRUCTOR FEEDBACK
+                            </h3>
+                            <div className="px-6 py-2 border-l-2 border-primary/20 bg-primary/5 rounded-r-xl">
+                                <p className="text-accent-white italic font-medium leading-relaxed">
+                                    "{submission.review_text || submission.reviewText || submission.feedback || exam?.review_text || exam?.reviewText || exam?.feedback || fallbackReviewText}"
+                                </p>
+                                <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-3 opacity-60">Verified by Instructor</p>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="flex items-center gap-4">
                         <h3 className="text-2xl font-black text-accent-white italic tracking-tighter uppercase">MISSION <span className="text-primary">DEBRIEF</span></h3>
                         <div className="flex-1 h-px bg-surface-border"></div>
@@ -201,7 +236,7 @@ const StudentExamResult: React.FC = () => {
                                                 <div className="relative group/photo">
                                                     <div className="absolute inset-0 bg-primary/20 blur-2xl opacity-0 group-hover/photo:opacity-100 transition-opacity"></div>
                                                     <img
-                                                        src={`http://localhost:5000/${submission.file_path}`}
+                                                        src={`${import.meta.env.VITE_API_URL.replace('/api', '')}/${submission.file_path.replace(/^\//, '')}`}
                                                         alt="Mission Intel"
                                                         className="relative max-h-80 rounded-[2.5rem] border-2 border-surface-border shadow-2xl transition-transform group-hover/photo:scale-[1.02] duration-500"
                                                     />

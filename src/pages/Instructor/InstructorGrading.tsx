@@ -44,7 +44,7 @@ const InstructorGrading: React.FC = () => {
     };
 
     const handleGrade = async () => {
-        if (!selectedSubmission || score === '') return alert('Please enter a score');
+        if (!selectedSubmission) return;
         try {
             await api.post('/api/instructor/submissions/review', {
                 submissionId: selectedSubmission.id,
@@ -189,6 +189,7 @@ const InstructorGrading: React.FC = () => {
                             )}
 
                             {/* Photo Assessment */}
+                            {/* Photo Assessment */}
                             {selectedSubmission.file_path && (
                                 <div className="space-y-8">
                                     <h3 className="text-sm font-black text-accent-white italic tracking-widest uppercase flex items-center gap-4">
@@ -197,13 +198,13 @@ const InstructorGrading: React.FC = () => {
                                     </h3>
                                     <div className="relative group rounded-[2.5rem] overflow-hidden border-2 border-dashed border-surface-border bg-surface-light p-6">
                                         <img
-                                            src={`http://localhost:5000${selectedSubmission.file_path}`}
+                                            src={`${import.meta.env.VITE_API_URL.replace('/api', '')}${selectedSubmission.file_path}`}
                                             alt="Visual Submission"
                                             className="mx-auto max-h-[800px] object-contain rounded-2xl shadow-[0_40px_100px_rgba(0,0,0,0.6)] group-hover:scale-[1.01] transition-all duration-700"
                                         />
                                         <div className="absolute inset-0 bg-surface-dark/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center">
                                             <a
-                                                href={`http://localhost:5000${selectedSubmission.file_path}`}
+                                                href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${selectedSubmission.file_path}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="btn-primary px-10 py-5 rounded-2xl flex items-center gap-4 group/link"
@@ -254,17 +255,8 @@ const InstructorGrading: React.FC = () => {
                                     <FaClipboardList className="text-primary" /> MISSION EVALUATION
                                 </h3>
                                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative z-10">
-                                    <div className="lg:col-span-1 space-y-3">
-                                        <label className="text-[9px] font-black text-primary uppercase tracking-[0.3em] opacity-60">SCORE MAGNITUDE</label>
-                                        <input
-                                            type="number"
-                                            className="w-full bg-surface-dark border-2 border-primary/20 rounded-2xl p-6 text-4xl font-black text-primary italic text-center focus:border-primary focus:shadow-[0_0_30px_rgba(238,29,35,0.2)] outline-none transition-all"
-                                            placeholder="00"
-                                            value={score}
-                                            onChange={e => setScore(parseInt(e.target.value))}
-                                        />
-                                    </div>
-                                    <div className="lg:col-span-3 space-y-3">
+
+                                    <div className="lg:col-span-4 space-y-3">
                                         <label className="text-[9px] font-black text-primary uppercase tracking-[0.3em] opacity-60">TACTICAL DEBRIEFING</label>
                                         <textarea
                                             className="w-full bg-surface-dark border-2 border-primary/20 rounded-2xl p-6 text-sm text-accent-white font-medium italic min-h-[160px] focus:border-primary outline-none transition-all placeholder:text-accent-gray/20 placeholder:font-black placeholder:uppercase placeholder:tracking-widest"
