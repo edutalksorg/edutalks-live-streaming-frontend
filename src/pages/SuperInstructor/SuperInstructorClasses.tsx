@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../../context/AuthContext';
+
 import api from '../../services/api';
 import { FaPlayCircle, FaCalendarDay, FaEdit, FaTrash, FaPlus, FaClock } from 'react-icons/fa';
 import { io } from 'socket.io-client';
@@ -21,7 +21,7 @@ interface ClassSession {
 }
 
 const SuperInstructorClasses: React.FC = () => {
-    const { user } = useContext(AuthContext)!;
+
     const navigate = useNavigate();
     const [classes, setClasses] = useState<ClassSession[]>([]);
     const [subjects, setSubjects] = useState<any[]>([]);

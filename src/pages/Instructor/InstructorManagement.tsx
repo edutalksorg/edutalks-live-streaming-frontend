@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
-import { FaPlus, FaSearch } from 'react-icons/fa';
+import { FaPlus } from 'react-icons/fa';
 
 interface User {
     id: number;
@@ -12,7 +12,7 @@ interface User {
 
 const InstructorManagement: React.FC = () => {
     const [instructors, setInstructors] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
+
     const [showModal, setShowModal] = useState(false);
     const [newInstructor, setNewInstructor] = useState({ name: '', email: '', password: '' });
 
@@ -29,7 +29,7 @@ const InstructorManagement: React.FC = () => {
         } catch (err) {
             console.error('Failed to fetch instructors', err);
         } finally {
-            setLoading(false);
+
         }
     };
 

@@ -58,7 +58,7 @@ const LiveClassRoom: React.FC = () => {
     const [audioLocked, setAudioLocked] = useState(false);
     const [videoLocked, setVideoLocked] = useState(false);
     const [screenLocked, setScreenLocked] = useState(false);
-    const [whiteboardLocked, setWhiteboardLocked] = useState(false);
+
 
     const [remoteUsers, setRemoteUsers] = useState<any[]>([]);
     const [showTray, setShowTray] = useState<'chat' | 'participants' | 'hands' | null>(null);
@@ -125,7 +125,7 @@ const LiveClassRoom: React.FC = () => {
                 toggleScreenShare(); // Logic handles stop and unpublish
             }
         });
-        socket.on('whiteboard_status', (data) => setWhiteboardLocked(data.locked));
+
         socket.on('whiteboard_visibility', (data) => {
             setShowWhiteboard(data.show);
             if (data.show) setIsScreenSharing(false);
@@ -153,7 +153,7 @@ const LiveClassRoom: React.FC = () => {
                 setAudioLocked(false);
                 setVideoLocked(false);
                 setScreenLocked(false);
-                setWhiteboardLocked(false);
+
 
                 // Auto-enable media as specified
                 try {
@@ -562,11 +562,7 @@ const LiveClassRoom: React.FC = () => {
         setPipPosition(prev => ({ ...prev, corner: corners[nextIndex] }));
     };
 
-    const toggleChatLock = () => {
-        const newState = !chatLocked;
-        setChatLocked(newState);
-        socketRef.current?.emit('toggle_chat', { classId: id, locked: newState });
-    };
+
 
     const approveStudent = (studentId: string) => {
         socketRef.current?.emit('approve_hand', { classId: id, studentId });

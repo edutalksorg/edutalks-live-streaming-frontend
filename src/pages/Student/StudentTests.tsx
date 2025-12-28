@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { FaClock, FaClipboardList } from 'react-icons/fa';
+import { FaClock } from 'react-icons/fa';
 
 interface Exam {
     id: number;
@@ -9,6 +9,7 @@ interface Exam {
     duration: number;
     questions: any; // JSON
     total_marks: number;
+    date: string;
 }
 
 const StudentTests: React.FC = () => {

@@ -174,17 +174,7 @@ const SuperInstructorAllocation: React.FC = () => {
         });
     };
 
-    const handleCleanupStrays = async () => {
-        if (!window.confirm("This will find and remove any batches assigned to instructors without qualification. This helps fix dashboard discrepancies. Proceed?")) return;
-        try {
-            const res = await api.post('/api/super-instructor/cleanup-strays');
-            showToast(res.data.message, 'success');
-            fetchData();
-        } catch (err: any) {
-            console.error(err);
-            showToast("Failed to cleanup stray batches", 'error');
-        }
-    };
+
 
     if (loading) return <div className="flex items-center justify-center min-h-[400px] text-primary font-black uppercase tracking-[0.4em] animate-pulse italic">Loading Allocation Data...</div>;
 

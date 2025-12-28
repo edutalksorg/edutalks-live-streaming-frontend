@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import api from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
-import { FaFileUpload, FaTrash, FaDownload, FaBookOpen } from 'react-icons/fa';
+import { FaFileUpload, FaTrash, FaDownload } from 'react-icons/fa';
 import { io } from 'socket.io-client';
 
 interface Note {

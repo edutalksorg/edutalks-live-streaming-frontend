@@ -3,7 +3,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { FaBook, FaVideo, FaUsers, FaBell, FaChartLine, FaCheck, FaTimes, FaChalkboardTeacher, FaUserClock, FaUserTie, FaClipboardList } from 'react-icons/fa';
+import { FaBook, FaVideo, FaUsers, FaBell, FaCheck, FaChalkboardTeacher, FaUserClock, FaUserTie, FaClipboardList } from 'react-icons/fa';
 import SuperInstructorAllocation from './SuperInstructorAllocation';
 import SuperInstructorUsers from './SuperInstructorUsers';
 import BatchManagement from '../Instructor/BatchManagement';
@@ -76,9 +76,7 @@ const SuperInstructorDashboard: React.FC = () => {
         }
     };
 
-    const handleGoLive = () => {
-        setShowLiveModal(true);
-    };
+
 
     const handleStartImmediate = async (e: React.FormEvent) => {
         e.preventDefault();

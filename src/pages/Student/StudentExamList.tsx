@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { FaClock, FaClipboardCheck, FaPlay } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
-import SubscriptionPopup from '../../components/SubscriptionPopup';
 
 interface Exam {
     id: number;
@@ -24,7 +23,7 @@ interface Exam {
 
 const StudentExamList: React.FC = () => {
     const { user } = useContext(AuthContext)!;
-    const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
+
     const [exams, setExams] = useState<Exam[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -133,10 +132,7 @@ const StudentExamList: React.FC = () => {
                             {exam.submission_id ? (
                                 <div className="space-y-4 pt-6 border-t border-surface-border">
                                     <div
-                                        onClick={() => {
-                                            const isFree = !user?.plan_name || user.plan_name === 'Free';
-                                            if (isFree) setShowSubscriptionPopup(true);
-                                        }}
+
                                         className="w-full h-full"
                                     >
                                         <Link
@@ -152,10 +148,7 @@ const StudentExamList: React.FC = () => {
                                     </div>
                                     {canAttempt && (
                                         <div
-                                            onClick={() => {
-                                                const isFree = !user?.plan_name || user.plan_name === 'Free';
-                                                if (isFree) setShowSubscriptionPopup(true);
-                                            }}
+
                                             className="w-full h-full"
                                         >
                                             <Link
@@ -175,10 +168,7 @@ const StudentExamList: React.FC = () => {
                                 <div className="pt-6 border-t border-surface-border">
                                     {canAttempt ? (
                                         <div
-                                            onClick={() => {
-                                                const isFree = !user?.plan_name || user.plan_name === 'Free';
-                                                if (isFree) setShowSubscriptionPopup(true);
-                                            }}
+
                                             className="w-full h-full"
                                         >
                                             <Link
