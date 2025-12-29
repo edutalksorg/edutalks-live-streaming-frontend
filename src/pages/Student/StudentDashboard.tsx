@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { FaVideo, FaBook, FaChevronDown, FaChevronUp, FaFileAlt, FaCheckCircle, FaPlayCircle, FaHourglassHalf, FaTimes } from 'react-icons/fa';
+import { FaVideo, FaBook, FaChevronDown, FaChevronUp, FaFileAlt, FaCheckCircle, FaPlayCircle, FaHourglassHalf, FaTimes, FaClock } from 'react-icons/fa';
 import { io } from 'socket.io-client';
 import SubscriptionPopup from '../../components/SubscriptionPopup';
 
@@ -35,6 +35,7 @@ interface DashboardData {
         studyMaterials: number;
     };
     upcomingClasses: any[];
+    liveTournaments: any[];
     recentResults: {
         score: number;
         submitted_at: string;
@@ -106,7 +107,13 @@ const StudentDashboard: React.FC = () => {
             const allLive = [...regularLive, ...siLive];
 
             setLiveClasses(allLive);
-            if (allLive.length > 0) {
+
+            // Check for Live Tournaments (Strictly respect exam_end)
+            const now = new Date();
+            const currentLiveTournaments = (dashRes.data.liveTournaments || []).filter((t: any) =>
+                (t.status === 'LIVE' || t.status === 'UPCOMING') && now >= new Date(t.exam_start) && now <= new Date(t.exam_end)
+            );
+            if (allLive.length > 0 || currentLiveTournaments.length > 0) {
                 setShowLivePopup(true);
             }
         } catch (err) {
@@ -192,52 +199,86 @@ const StudentDashboard: React.FC = () => {
                 </div>
             </div>
             {/* Live Class Popup Modal - Small Floating Popup */}
-            {showLivePopup && liveClasses.length > 0 && (
-                <div className="fixed bottom-8 right-8 z-[60] max-w-sm w-full animate-in slide-in-from-bottom-10 duration-500">
-                    <div className="bg-surface border border-primary/30 p-6 rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(238,29,35,0.4)] relative overflow-hidden">
-                        {/* Background Effects */}
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl -z-10"></div>
+            {showLivePopup && (liveClasses.length > 0 || (dashboardData?.liveTournaments?.some(t => {
+                const now = new Date();
+                const examStart = new Date(t.exam_start);
+                const examEnd = new Date(t.exam_end);
+                return t.status === 'LIVE' || (t.status === 'UPCOMING' && now >= examStart && now <= examEnd);
+            }) || false)) && (
+                    <div className="fixed bottom-8 right-8 z-[60] max-w-sm w-full animate-in slide-in-from-bottom-10 duration-500">
+                        <div className="bg-surface border border-primary/30 p-6 rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(238,29,35,0.4)] relative overflow-hidden">
+                            {/* Background Effects */}
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl -z-10"></div>
 
-                        <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full animate-pulse"></div>
-                                    <FaVideo size={24} className="text-primary relative z-10" />
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-black text-accent-white italic tracking-tight leading-none">
-                                        LIVE <span className="text-primary">NOW</span>
-                                    </h2>
-                                    <p className="text-[9px] text-accent-gray font-bold tracking-widest uppercase mt-1">
-                                        Broadcast Active
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setShowLivePopup(false)}
-                                className="text-accent-gray hover:text-white transition-colors"
-                            >
-                                <FaTimes size={14} />
-                            </button>
-                        </div>
-
-                        <div className="space-y-3 mb-4 max-h-[200px] overflow-y-auto custom-scrollbar pr-1">
-                            {liveClasses.map((cls) => (
-                                <div key={cls.id} className="bg-surface-dark/50 border border-surface-border p-4 rounded-2xl group hover:border-primary/30 transition-all">
-                                    <h4 className="text-sm font-black text-accent-white italic truncate">{cls.title}</h4>
-                                    {cls.instructor_name && <p className="text-[8px] text-accent-gray uppercase tracking-widest mt-1 mb-3">By {cls.instructor_name}</p>}
-                                    <div
-                                        onClick={(e) => checkAccess(e, () => navigate(cls.is_super_instructor ? `/student/super-instructor-classroom/${cls.id}` : `/student/live/${cls.id}`))}
-                                        className="btn-primary w-full py-2 text-[9px] shadow-lg shadow-primary/10 group-hover:shadow-primary/30 flex items-center justify-center gap-2 cursor-pointer"
-                                    >
-                                        <FaPlayCircle size={10} /> JOIN STREAM
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full animate-pulse"></div>
+                                        <FaVideo size={24} className="text-primary relative z-10" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-black text-accent-white italic tracking-tight leading-none">
+                                            LIVE <span className="text-primary">NOW</span>
+                                        </h2>
+                                        <p className="text-[9px] text-accent-gray font-bold tracking-widest uppercase mt-1">
+                                            Broadcast Active
+                                        </p>
                                     </div>
                                 </div>
-                            ))}
+                                <button
+                                    onClick={() => setShowLivePopup(false)}
+                                    className="text-accent-gray hover:text-white transition-colors"
+                                >
+                                    <FaTimes size={14} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-3 mb-4 max-h-[200px] overflow-y-auto custom-scrollbar pr-1">
+                                {liveClasses.map((cls) => (
+                                    <div key={`class-${cls.id}`} className="bg-surface-dark/50 border border-surface-border p-4 rounded-2xl group hover:border-primary/30 transition-all">
+                                        <h4 className="text-sm font-black text-accent-white italic truncate">{cls.title}</h4>
+                                        {cls.instructor_name && <p className="text-[8px] text-accent-gray uppercase tracking-widest mt-1 mb-3">By {cls.instructor_name}</p>}
+                                        <div
+                                            onClick={(e) => checkAccess(e, () => navigate(cls.is_super_instructor ? `/student/super-instructor-classroom/${cls.id}` : `/student/live/${cls.id}`))}
+                                            className="btn-primary w-full py-2 text-[9px] shadow-lg shadow-primary/10 group-hover:shadow-primary/30 flex items-center justify-center gap-2 cursor-pointer"
+                                        >
+                                            <FaPlayCircle size={10} /> JOIN STREAM
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* Live Tournaments (Resilience: show UPCOMING if time has passed) */}
+                                {dashboardData.liveTournaments?.filter(t => {
+                                    const now = new Date();
+                                    const examStart = new Date(t.exam_start);
+                                    const examEnd = new Date(t.exam_end);
+                                    return t.status === 'LIVE' || (t.status === 'UPCOMING' && now >= examStart && now <= examEnd);
+                                }).map((tournament) => (
+                                    <div key={`tournament-${tournament.id}`} className="bg-primary/5 border border-primary/20 p-4 rounded-2xl group hover:border-primary/40 transition-all">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h4 className="text-sm font-black text-primary italic truncate">{tournament.name}</h4>
+                                            <span className="text-[7px] font-black bg-primary text-white px-2 py-0.5 rounded-full animate-pulse">
+                                                {new Date() >= new Date(tournament.exam_start) ? 'LIVE NOW' : 'STARTING'}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col gap-1 mt-1 mb-3">
+                                            <p className="text-[8px] text-accent-gray uppercase tracking-widest font-black">Grade {tournament.grade}</p>
+                                            <p className="text-[8px] text-primary/80 font-black flex items-center gap-1 uppercase">
+                                                <FaClock size={8} /> {new Date(tournament.exam_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                        <div
+                                            onClick={(e) => checkAccess(e, () => navigate(`/student/tournament-exam/${tournament.id}`))}
+                                            className="bg-primary text-white w-full py-2 text-[9px] rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/10 group-hover:shadow-primary/30 flex items-center justify-center gap-2 cursor-pointer hover:bg-primary-hover transition-all"
+                                        >
+                                            <FaPlayCircle size={10} /> START EXAM
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 pt-10">
                 {/* Left Side: Subject Hub */}

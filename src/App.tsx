@@ -26,6 +26,8 @@ import InstructorExams from './pages/Instructor/InstructorExams';
 import InstructorGrading from './pages/Instructor/InstructorGrading';
 import InstructorNotes from './pages/Instructor/InstructorNotes';
 import InstructorTournaments from './pages/Instructor/InstructorTournaments';
+import TournamentMonitor from './pages/Instructor/TournamentMonitor';
+import TournamentPreview from './pages/Instructor/TournamentPreview';
 import InstructorStudents from './pages/Instructor/InstructorStudents';
 import LiveClassRoom from './pages/Instructor/LiveClassRoom';
 import StudentDashboard from './pages/Student/StudentDashboard';
@@ -44,6 +46,9 @@ import SuperInstructorLiveClassRoom from './pages/SuperInstructor/SuperInstructo
 import StudentSuperInstructorClasses from './pages/Student/StudentSuperInstructorClasses';
 import StudentSuperInstructorClassRoom from './pages/Student/StudentSuperInstructorClassRoom';
 import StudentExamResult from './pages/Student/StudentExamResult';
+import TournamentExamRunner from './pages/Student/TournamentExamRunner';
+import TournamentResult from './pages/Student/TournamentResult';
+import TournamentLeaderboard from './pages/Student/TournamentLeaderboard';
 import { ThemeProvider } from './context/ThemeContext';
 
 
@@ -107,6 +112,9 @@ function App() {
                   <Route path="notes" element={<InstructorNotes />} />
                 </Route>
                 <Route path="/instructor/live/:id" element={<LiveClassRoom />} />
+                <Route path="/instructor/tournament-monitor/:id" element={<TournamentMonitor />} />
+                <Route path="/instructor/tournament-preview/:id" element={<TournamentPreview />} />
+                <Route path="/instructor/tournament-leaderboard/:id" element={<TournamentLeaderboard />} />
               </Route>
 
               {/* Student */}
@@ -117,10 +125,13 @@ function App() {
                   <Route path="tests" element={<StudentExamList />} />
                   <Route path="exam/:id" element={<ExamRunner />} />
                   <Route path="exam-result/:submissionId" element={<StudentExamResult />} />
-                  <Route path="tournaments" element={<StudentTournaments />} />
-                  <Route path="materials" element={<StudentNotes />} />
                   <Route path="subscription" element={<StudentSubscription />} />
                   <Route path="profile" element={<StudentProfile />} />
+                  <Route path="tournaments" element={<StudentTournaments />} />
+                  <Route path="materials" element={<StudentNotes />} />
+                  <Route path="tournament-exam/:id" element={<TournamentExamRunner />} />
+                  <Route path="tournament-result/:id" element={<TournamentResult />} />
+                  <Route path="tournament-leaderboard/:id" element={<TournamentLeaderboard />} />
                   <Route path="super-instructor-classes" element={<StudentSuperInstructorClasses />} />
                 </Route>
                 <Route path="/student/live/:id" element={<LiveClassRoom />} />

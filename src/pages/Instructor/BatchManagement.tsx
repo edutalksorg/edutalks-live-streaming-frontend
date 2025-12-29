@@ -12,6 +12,11 @@ interface Batch {
     instructor_id: number | null;
     student_count: number;
     max_students: number;
+    students?: {
+        id: number;
+        name: string;
+        plan_name: string;
+    }[];
 }
 
 interface User {
@@ -71,7 +76,7 @@ const BatchManagement: React.FC = () => {
                                 <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Class</th>
                                 <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Subject</th>
                                 <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Batch Name</th>
-                                <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Students</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Assigned Students</th>
                                 <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Instructor</th>
                                 <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Actions</th>
                             </tr>
@@ -82,10 +87,30 @@ const BatchManagement: React.FC = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-accent-white italic">{batch.class_name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-accent-gray/70 font-medium">{batch.subject_name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-accent-gray/70 font-medium">{batch.name}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg border shadow-sm ${batch.student_count >= (batch.max_students || 30) ? 'bg-primary/20 text-primary border-primary/20' : 'bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20'}`}>
-                                            {batch.student_count} / {batch.max_students || 30}
-                                        </span>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg border shadow-sm ${batch.student_count >= (batch.max_students || 30) ? 'bg-primary/20 text-primary border-primary/20' : 'bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20'}`}>
+                                                {batch.student_count} / {batch.max_students || 30} Filled
+                                            </span>
+                                        </div>
+                                        {/* Student List with Plans */}
+                                        {batch.students && batch.students.length > 0 ? (
+                                            <div className="flex flex-col gap-2 mt-2">
+                                                {batch.students.map(student => (
+                                                    <div key={student.id} className="flex items-center gap-2 text-xs bg-surface-dark/50 px-2 py-1 rounded-md border border-white/5">
+                                                        <span className="text-accent-white font-bold">{student.name}</span>
+                                                        <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-black tracking-wider ${student.plan_name === 'Free' ? 'bg-gray-500/20 text-gray-400' :
+                                                                student.plan_name === 'Pro' ? 'bg-amber-500/20 text-amber-500' :
+                                                                    'bg-emerald-500/20 text-emerald-400'
+                                                            }`}>
+                                                            {student.plan_name}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span className="text-[10px] text-accent-gray/50 italic">No students yet</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         {batch.instructor_name ? (

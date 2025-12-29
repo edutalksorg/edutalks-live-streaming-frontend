@@ -39,9 +39,7 @@ const StudentLayout: React.FC = () => {
                     <div className="flex justify-between items-center h-16 md:h-24">
                         {/* Logo Area */}
                         <div className="flex-shrink-0 flex items-center gap-2 w-auto md:w-64">
-                            <Link to="/student">
-                                <Logo />
-                            </Link>
+                            <Logo />
                         </div>
 
                         {/* Desktop Nav - Centered */}
