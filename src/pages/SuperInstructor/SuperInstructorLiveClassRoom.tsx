@@ -10,7 +10,8 @@ import {
     FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash,
     FaPhoneSlash, FaHandPaper,
     FaDesktop, FaChalkboard,
-    FaUsers, FaComments, FaClock, FaExpand, FaCompress
+    FaUsers, FaComments, FaClock, FaExpand, FaCompress,
+    FaTimesCircle, FaCheckCircle, FaExclamationTriangle, FaInfoCircle
 } from 'react-icons/fa';
 
 const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID;
@@ -43,6 +44,8 @@ const LiveClassRoom: React.FC = () => {
 
     // Socket & Signaling
     const socketRef = useRef<Socket | null>(null);
+    const clientRef = useRef<IAgoraRTCClient | null>(null); // To access client inside socket listeners
+    const localAudioTrackRef = useRef<IMicrophoneAudioTrack | null>(null); // Ref to avoid stale closure for track access
     const containerRef = useRef<HTMLDivElement>(null);
     const [messages, setMessages] = useState<any[]>([]);
     const [unreadMsgCount, setUnreadMsgCount] = useState(0);
@@ -58,6 +61,19 @@ const LiveClassRoom: React.FC = () => {
     const [audioLocked, setAudioLocked] = useState(false);
     const [videoLocked, setVideoLocked] = useState(false);
     const [screenLocked, setScreenLocked] = useState(false);
+
+    // Track which students have permission to unmute (instructor-controlled)
+    // Track which students have permission to unmute (instructor-controlled)
+    const [studentsWithUnmutePermission, setStudentsWithUnmutePermission] = useState<Set<string>>(new Set());
+
+    // Notification State
+    const [notification, setNotification] = useState<{ message: string, type: 'info' | 'success' | 'error' | 'warning' } | null>(null);
+
+    // Toast Helper
+    const showToast = (message: string, type: 'info' | 'success' | 'error' | 'warning' = 'info') => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification(null), 3000);
+    };
 
 
     const [remoteUsers, setRemoteUsers] = useState<any[]>([]);
@@ -149,11 +165,15 @@ const LiveClassRoom: React.FC = () => {
         }));
         socket.on('hand_lowered', (data) => setHandsRaised(prev => prev.filter(h => h.id !== data.studentId)));
         socket.on('hand_approved', async (data) => {
+            // Grant permission globally
+            setStudentsWithUnmutePermission(prev => new Set(prev).add(String(data.studentId)));
+            // Remove from raised hands list for everyone
+            setHandsRaised(prev => prev.filter(h => h.id !== data.studentId));
+
             if (String(user?.id) === String(data.studentId)) {
                 setAudioLocked(false);
                 setVideoLocked(false);
                 setScreenLocked(false);
-
 
                 // Auto-enable media as specified
                 try {
@@ -161,7 +181,7 @@ const LiveClassRoom: React.FC = () => {
                     if (!cameraOn) await toggleCamera();
                 } catch (e) { console.error(e); }
 
-                alert("Instructor approved your request. Microphone and Camera enabled.");
+                showToast("Instructor approved your request. Microphone and Camera enabled.", 'success');
             }
         });
 
@@ -199,12 +219,82 @@ const LiveClassRoom: React.FC = () => {
 
         socket.on('user_left', (data) => {
             setOnlineUsers(prev => prev.filter(u => u.userId !== data.userId));
+            setStudentsWithUnmutePermission(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(String(data.userId));
+                return newSet;
+            });
+            showToast(`${data.username || 'A student'} left the meeting`, 'info');
         });
 
-        socket.on('si_class_ended', () => {
+        socket.on('class_ended', () => {
             if (!isInstructor) {
-                alert("The Super Instructor has ended the live session.");
-                navigate('/student');
+                showToast("The instructor has ended the live session.", 'warning');
+                setTimeout(() => navigate('/student'), 2000);
+            }
+        });
+
+        // --- NEW: Mute/Unmute Handlers ---
+        socket.on('force_mute_student', async (data) => {
+            // Update permission set for everyone
+            setStudentsWithUnmutePermission(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(String(data.studentId));
+                return newSet;
+            });
+
+            if (String(user?.id) === String(data.studentId)) {
+                if (localAudioTrackRef.current) {
+                    await localAudioTrackRef.current.setEnabled(false);
+                    if (clientRef.current) await clientRef.current.unpublish(localAudioTrackRef.current); // Use ref
+                    setMicOn(false);
+                    showToast("You have been muted by the instructor.", 'warning');
+                }
+            }
+        });
+
+        socket.on('force_mute_all', async () => {
+            if (!isInstructor) {
+                // Clear all unmute permissions
+                setStudentsWithUnmutePermission(new Set());
+
+                if (localAudioTrackRef.current) {
+                    await localAudioTrackRef.current.setEnabled(false);
+                    if (clientRef.current) await clientRef.current.unpublish(localAudioTrackRef.current); // Use ref
+                    setMicOn(false);
+                    showToast("Instructor muted everyone.", 'warning');
+                }
+            }
+        });
+
+        socket.on('grant_unmute_permission', (data) => {
+            // Grant permission in local state for everyone so UI updates
+            setStudentsWithUnmutePermission(prev => new Set(prev).add(String(data.studentId)));
+
+            if (String(user?.id) === String(data.studentId)) {
+                setAudioLocked(false);
+                setVideoLocked(false);
+                setScreenLocked(false);
+
+                // Auto-enable media as specified (mimicking hand raise approval)
+                (async () => {
+                    try {
+                        if (!micOn) await toggleMic(true);
+                        if (!cameraOn) await toggleCamera();
+                    } catch (e) { console.error(e); }
+                })();
+
+                showToast("Instructor granted you permission to unmute. Microphone and Camera enabled.", 'success');
+            }
+        });
+
+        socket.on('request_unmute_student', async (data) => {
+            if (String(user?.id) === String(data.studentId)) {
+                if (window.confirm("The instructor is requesting you to unmute your microphone. Allow?")) {
+                    // Grant permission and unmute
+                    setStudentsWithUnmutePermission(prev => new Set(prev).add(String(user?.id)));
+                    if (!micOn) toggleMic();
+                }
             }
         });
 
@@ -313,6 +403,7 @@ const LiveClassRoom: React.FC = () => {
             const agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
             agoraClient.enableAudioVolumeIndicator();
             setClient(agoraClient);
+            clientRef.current = agoraClient; // Sync ref
 
             agoraClient.on("volume-indicator", (volumes) => {
                 const highest = volumes.reduce((prev, current) => (prev.level > current.level) ? prev : current, { level: 0, uid: 0 as any });
@@ -403,16 +494,30 @@ const LiveClassRoom: React.FC = () => {
             localScreenTrack?.close();
             client?.leave();
         };
-    }, [isLive]);
+    }, [isLive, user?.id]);
 
-    const toggleMic = async () => {
-        if (!isInstructor && audioLocked) return;
+    const toggleMic = async (bypassPermission: boolean = false) => {
+        // Check if student has permission to unmute
+        if (!bypassPermission && !isInstructor && !studentsWithUnmutePermission.has(String(user?.id))) {
+            showToast("You don't have permission to unmute. Please raise your hand or wait for the instructor to grant permission.", 'error');
+            return;
+        }
+
         if (localAudioTrack) {
-            await localAudioTrack.setEnabled(!micOn);
-            setMicOn(!micOn);
+            const newMicState = !micOn;
+            await localAudioTrack.setEnabled(newMicState);
+            localAudioTrackRef.current = localAudioTrack; // Sync ref
+            setMicOn(newMicState);
+
+            if (newMicState && client) {
+                try { await client.publish(localAudioTrack); } catch (e) { console.warn(e); }
+            } else if (!newMicState && client) {
+                try { await client.unpublish(localAudioTrack); } catch (e) { console.warn(e); }
+            }
         } else {
             const track = await AgoraRTC.createMicrophoneAudioTrack();
             setLocalAudioTrack(track);
+            localAudioTrackRef.current = track; // Sync ref
             await client?.publish(track);
             setMicOn(true);
         }
@@ -524,6 +629,22 @@ const LiveClassRoom: React.FC = () => {
 
     const handleWhiteboardClear = () => {
         socketRef.current?.emit('whiteboard_clear', { classId: id });
+    };
+
+    // --- Admin Audio Controls ---
+    const handleMuteStudent = (studentId: string) => {
+        socketRef.current?.emit('admin_mute_student', { classId: id, studentId });
+    };
+
+    const handleGrantUnmutePermission = (studentId: string) => {
+        // Grant unmute permission to a specific student
+        socketRef.current?.emit('admin_grant_unmute', { classId: id, studentId });
+    };
+
+    const handleMuteAll = () => {
+        if (window.confirm("Mute all students?")) {
+            socketRef.current?.emit('admin_mute_all', { classId: id });
+        }
     };
 
     const sendMessage = (e: React.FormEvent) => {
@@ -828,7 +949,7 @@ const LiveClassRoom: React.FC = () => {
                         <div className="h-8 w-px bg-slate-100" />
                         <div className="flex gap-3">
                             <button
-                                onClick={toggleMic}
+                                onClick={() => toggleMic()}
                                 disabled={!isInstructor && audioLocked}
                                 className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md group ${micOn ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-blue-600 border-blue-700 text-white animate-pulse shadow-blue-500/20'}`}
                                 title={micOn ? "Disable Microphone" : "Enable Microphone"}
@@ -999,6 +1120,16 @@ const LiveClassRoom: React.FC = () => {
                                         <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
                                             <p className="text-xs font-bold text-blue-900">Total: {onlineUsers.length} participant{onlineUsers.length !== 1 ? 's' : ''}</p>
                                         </div>
+                                        {isInstructor && (
+                                            <div className="mb-4">
+                                                <button
+                                                    onClick={handleMuteAll}
+                                                    className="w-full bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors shadow-sm"
+                                                >
+                                                    Mute All Students
+                                                </button>
+                                            </div>
+                                        )}
                                         <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl border-2 border-blue-200 shadow-sm">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xs font-black uppercase shadow-md">
@@ -1033,8 +1164,41 @@ const LiveClassRoom: React.FC = () => {
                                                                 <span className="text-[10px] font-bold text-slate-500 uppercase">{u.role || 'Student'}</span>
                                                             </div>
                                                         </div>
-                                                        <div className="flex gap-2">
-                                                            {rUser?.hasAudio ? <FaMicrophone size={14} className="text-emerald-500" /> : <FaMicrophoneSlash size={14} className="text-slate-300" />}
+                                                        <div className="flex gap-2 items-center">
+                                                            {remoteUsers.find(ru => String(ru.uid) === String(u.userId) || Number(ru.uid) === Number(u.userId))?.hasAudio ? (
+                                                                <>
+                                                                    <FaMicrophone size={14} className="text-emerald-500" />
+                                                                    {isInstructor && (
+                                                                        <button
+                                                                            onClick={() => handleMuteStudent(u.userId)}
+                                                                            className="ml-2 text-[9px] bg-red-100 text-red-600 px-2 py-1 rounded font-bold uppercase hover:bg-red-200"
+                                                                        >
+                                                                            Mute
+                                                                        </button>
+                                                                    )}
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <FaMicrophoneSlash size={14} className="text-slate-300" />
+                                                                    {isInstructor && (
+                                                                        studentsWithUnmutePermission.has(String(u.userId)) ? (
+                                                                            <button
+                                                                                onClick={() => handleMuteStudent(u.userId)}
+                                                                                className="ml-2 text-[9px] bg-amber-100 text-amber-600 px-2 py-1 rounded font-bold uppercase hover:bg-amber-200"
+                                                                            >
+                                                                                Revoke Unmute
+                                                                            </button>
+                                                                        ) : (
+                                                                            <button
+                                                                                onClick={() => handleGrantUnmutePermission(u.userId)}
+                                                                                className="ml-2 text-[9px] bg-blue-100 text-blue-600 px-2 py-1 rounded font-bold uppercase hover:bg-blue-200"
+                                                                            >
+                                                                                Grant Unmute
+                                                                            </button>
+                                                                        )
+                                                                    )}
+                                                                </>
+                                                            )}
                                                             {rUser?.hasVideo ? <FaVideo size={14} className="text-emerald-500" /> : <FaVideoSlash size={14} className="text-slate-300" />}
                                                         </div>
                                                     </div>
@@ -1103,6 +1267,23 @@ const LiveClassRoom: React.FC = () => {
                     background: rgba(255, 255, 255, 0.1);
                 }
             `}</style>
+
+            {/* Toast Notification */}
+            {notification && (
+                <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
+                    <div className={`px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md border ${notification.type === 'error' ? 'bg-red-500/90 border-red-400 text-white' :
+                        notification.type === 'success' ? 'bg-emerald-500/90 border-emerald-400 text-white' :
+                            notification.type === 'warning' ? 'bg-amber-500/90 border-amber-400 text-white' :
+                                'bg-blue-600/90 border-blue-400 text-white'
+                        }`}>
+                        {notification.type === 'error' && <FaTimesCircle size={20} />}
+                        {notification.type === 'success' && <FaCheckCircle size={20} />}
+                        {notification.type === 'warning' && <FaExclamationTriangle size={20} />}
+                        {notification.type === 'info' && <FaInfoCircle size={20} />}
+                        <span className="font-bold text-sm tracking-wide">{notification.message}</span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

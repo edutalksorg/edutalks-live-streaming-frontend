@@ -43,6 +43,8 @@ const LiveClassRoom: React.FC = () => {
 
     // Socket & Signaling
     const socketRef = useRef<Socket | null>(null);
+    const clientRef = useRef<IAgoraRTCClient | null>(null);
+    const localAudioTrackRef = useRef<IMicrophoneAudioTrack | null>(null); // Ref to avoid stale closure for track access
     const containerRef = useRef<HTMLDivElement>(null);
     const [messages, setMessages] = useState<any[]>([]);
     const [unreadMsgCount, setUnreadMsgCount] = useState(0);
@@ -148,11 +150,13 @@ const LiveClassRoom: React.FC = () => {
         }));
         socket.on('hand_lowered', (data) => setHandsRaised(prev => prev.filter(h => h.id !== data.studentId)));
         socket.on('hand_approved', async (data) => {
+            // Remove from raised hands list for everyone
+            setHandsRaised(prev => prev.filter(h => h.id !== data.studentId));
+
             if (String(user?.id) === String(data.studentId)) {
                 setAudioLocked(false);
                 setVideoLocked(false);
                 setScreenLocked(false);
-
 
                 // Auto-enable media as specified
                 try {
@@ -204,6 +208,52 @@ const LiveClassRoom: React.FC = () => {
             if (!isInstructor) {
                 alert("The Super Instructor has ended the live session.");
                 navigate('/student');
+            }
+        });
+
+        socket.on('grant_unmute_permission', (data) => {
+            // Remove from raised hands list for everyone just in case
+            setHandsRaised(prev => prev.filter(h => h.id !== data.studentId));
+
+            if (String(user?.id) === String(data.studentId)) {
+                setAudioLocked(false);
+                setVideoLocked(false);
+                setScreenLocked(false);
+
+                // Auto-enable media as specified (mimicking hand raise approval)
+                (async () => {
+                    try {
+                        if (!micOn) await toggleMic(true);
+                        if (!cameraOn) await toggleCamera(); // Camera logic doesn't strictly need bypass but good for consistency if locked
+                    } catch (e) { console.error(e); }
+                })();
+
+                alert("Instructor granted you permission to unmute. Microphone and Camera enabled.");
+            }
+        });
+
+        socket.on('force_mute_student', async (data) => {
+            if (String(user?.id) === String(data.studentId)) {
+                // Lock audio to prevent immediate unmute
+                setAudioLocked(true);
+
+                if (localAudioTrackRef.current) {
+                    await localAudioTrackRef.current.setEnabled(false);
+                    if (clientRef.current) await clientRef.current.unpublish(localAudioTrackRef.current);
+                    setMicOn(false);
+                    alert("You have been muted by the instructor.");
+                }
+            }
+        });
+
+        socket.on('force_mute_all', async () => {
+            if (!isInstructor) {
+                if (localAudioTrackRef.current) {
+                    await localAudioTrackRef.current.setEnabled(false);
+                    if (clientRef.current) await clientRef.current.unpublish(localAudioTrackRef.current);
+                    setMicOn(false);
+                    alert("Instructor muted everyone.");
+                }
             }
         });
 
@@ -312,6 +362,7 @@ const LiveClassRoom: React.FC = () => {
             const agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
             agoraClient.enableAudioVolumeIndicator();
             setClient(agoraClient);
+            clientRef.current = agoraClient; // Sync ref
 
             agoraClient.on("volume-indicator", (volumes) => {
                 const highest = volumes.reduce((prev, current) => (prev.level > current.level) ? prev : current, { level: 0, uid: 0 as any });
@@ -404,16 +455,45 @@ const LiveClassRoom: React.FC = () => {
         };
     }, [isLive]);
 
-    const toggleMic = async () => {
-        if (!isInstructor && audioLocked) return;
-        if (localAudioTrack) {
-            await localAudioTrack.setEnabled(!micOn);
-            setMicOn(!micOn);
-        } else {
-            const track = await AgoraRTC.createMicrophoneAudioTrack();
-            setLocalAudioTrack(track);
-            await client?.publish(track);
-            setMicOn(true);
+    const toggleMic = async (bypassLock = false) => {
+        if (!isInstructor && audioLocked && !bypassLock) {
+            alert("You don't have permission to unmute. Please raise your hand or wait for the instructor to grant permission.");
+            return;
+        }
+
+        try {
+            if (localAudioTrack) {
+                const newMicState = !micOn;
+                await localAudioTrack.setEnabled(newMicState);
+                localAudioTrackRef.current = localAudioTrack; // Sync Ref
+                setMicOn(newMicState);
+
+                // Ensure published if turning on, Unpublish if turning off
+                if (newMicState && client) {
+                    try {
+                        await client.publish(localAudioTrack);
+                    } catch (err: any) {
+                        if (err.code !== 'TRACK_IS_ALREADY_PUBLISHED' && err.message !== 'track is already published') {
+                            console.warn("Microphone republish warning:", err);
+                        }
+                    }
+                } else if (!newMicState && client) {
+                    try {
+                        await client.unpublish(localAudioTrack);
+                    } catch (err) {
+                        console.warn("Microphone unpublish warning:", err);
+                    }
+                }
+            } else {
+                const track = await AgoraRTC.createMicrophoneAudioTrack();
+                setLocalAudioTrack(track);
+                localAudioTrackRef.current = track; // Sync Ref
+                await client?.publish(track);
+                setMicOn(true);
+            }
+        } catch (err) {
+            console.error("Toggle Mic Error:", err);
+            alert("Failed to toggle microphone. Please check permissions.");
         }
     };
 
@@ -734,7 +814,7 @@ const LiveClassRoom: React.FC = () => {
 
                                     {/* Online Participants (Remote) - Exclude Sharer to avoid double playback conflict */}
                                     {onlineUsers.filter(u => String(u.userId) !== String(user?.id) && String(u.userId) !== String(screenSharerUid)).map((u) => {
-                                        const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId));
+                                        const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId) || Number(ru.uid) === Number(u.userId));
                                         return (
                                             <div key={u.userId} className={`relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border-2 transition-all duration-300 shadow-md ${activeSpeakerUid === Number(u.userId) ? 'border-emerald-500 ring-4 ring-emerald-500/10 scale-95' : 'border-slate-200'}`}>
                                                 <div id={`sidebar-video-${u.userId}`} className="w-full h-full" ref={(el) => { if (el && rUser?.hasVideo) rUser.videoTrack?.play(el) }} />
@@ -779,7 +859,7 @@ const LiveClassRoom: React.FC = () => {
 
                                 {/* online Participants (Remote) - Exclude Sharer to avoid double playback conflict */}
                                 {onlineUsers.filter(u => String(u.userId) !== String(user?.id) && String(u.userId) !== String(screenSharerUid)).map((u) => {
-                                    const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId));
+                                    const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId) || Number(ru.uid) === Number(u.userId));
                                     return (
                                         <div key={u.userId} className={`relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border-2 shadow-xl group transition-all duration-300 ${activeSpeakerUid === Number(u.userId) ? 'border-emerald-500 scale-[1.02] z-10' : 'border-slate-200'}`}>
                                             <div id={`video-${u.userId}`} className="w-full h-full" ref={(el) => { if (el && rUser?.hasVideo) rUser.videoTrack?.play(el) }} />
@@ -832,7 +912,7 @@ const LiveClassRoom: React.FC = () => {
                         <div className="h-8 w-px bg-slate-100" />
                         <div className="flex gap-3">
                             <button
-                                onClick={toggleMic}
+                                onClick={() => toggleMic()}
                                 disabled={!isInstructor && audioLocked}
                                 className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md group ${micOn ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-blue-600 border-blue-700 text-white animate-pulse shadow-blue-500/20'}`}
                                 title={micOn ? "Disable Microphone" : "Enable Microphone"}
