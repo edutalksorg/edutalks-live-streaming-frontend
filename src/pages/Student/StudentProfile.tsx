@@ -18,6 +18,12 @@ interface ProfileData {
 const StudentProfile: React.FC = () => {
     const [data, setData] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState({
+        name: '',
+        email: '',
+        phone: ''
+    });
 
     useEffect(() => {
         fetchProfile();
@@ -42,9 +48,41 @@ const StudentProfile: React.FC = () => {
 
     const user = data?.user;
 
+    const handleEditClick = () => {
+        if (data?.user) {
+            setEditForm({
+                name: data.user.name,
+                email: data.user.email,
+                phone: data.user.phone || ''
+            });
+            setIsEditing(true);
+        }
+    };
+
+    const handleSaveProfile = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await api.put('/api/student/profile', editForm);
+            alert('Profile updated successfully!');
+            setIsEditing(false);
+            fetchProfile(); // Refresh data
+        } catch (err: any) {
+            console.error("Failed to update profile", err);
+            alert(err.response?.data?.message || 'Failed to update profile');
+        }
+    };
+
     return (
         <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700">
-            <h2 className="text-4xl font-black text-accent-white italic tracking-tighter uppercase">OPERATIONAL <span className="text-gradient-red">PROFILE</span></h2>
+            <div className="flex justify-between items-center">
+                <h2 className="text-4xl font-black text-accent-white italic tracking-tighter uppercase">OPERATIONAL <span className="text-gradient-red">PROFILE</span></h2>
+                <button
+                    onClick={handleEditClick}
+                    className="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-bold uppercase tracking-wider text-sm transition-colors"
+                >
+                    Edit Profile
+                </button>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 {/* User Info Card */}
@@ -188,6 +226,72 @@ const StudentProfile: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Edit Modal */}
+            {isEditing && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-surface border border-surface-border rounded-2xl p-8 max-w-md w-full relative animate-in zoom-in duration-300">
+                        <button
+                            onClick={() => setIsEditing(false)}
+                            className="absolute top-4 right-4 text-accent-gray hover:text-white"
+                        >
+                            ✕
+                        </button>
+
+                        <h3 className="text-2xl font-black text-accent-white uppercase italic tracking-tighter mb-6">Edit Profile</h3>
+
+                        <form onSubmit={handleSaveProfile} className="space-y-6">
+                            <div>
+                                <label className="block text-accent-gray text-xs font-bold uppercase tracking-widest mb-2">Name</label>
+                                <input
+                                    type="text"
+                                    value={editForm.name}
+                                    onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                                    className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-accent-gray text-xs font-bold uppercase tracking-widest mb-2">Email</label>
+                                <input
+                                    type="email"
+                                    value={editForm.email}
+                                    onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                                    className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-accent-gray text-xs font-bold uppercase tracking-widest mb-2">Phone</label>
+                                <input
+                                    type="tel"
+                                    value={editForm.phone}
+                                    onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                                    className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none"
+                                />
+                            </div>
+
+                            <div className="pt-4 flex gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditing(false)}
+                                    className="flex-1 bg-surface-light border border-surface-border text-accent-gray py-3 rounded-lg font-bold uppercase tracking-wider text-sm hover:text-white"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-1 bg-primary hover:bg-primary-hover text-white py-3 rounded-lg font-bold uppercase tracking-wider text-sm transition-colors"
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
