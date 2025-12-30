@@ -161,7 +161,7 @@ const LiveClassRoom: React.FC = () => {
                 // Auto-enable media as specified
                 try {
                     if (!micOn) await toggleMic();
-                    if (!cameraOn) await toggleCamera();
+                    await toggleCamera(true); // Force camera ON (won't toggle if already on)
                 } catch (e) { console.error(e); }
 
                 alert("Instructor approved your request. Microphone and Camera enabled.");
@@ -224,7 +224,7 @@ const LiveClassRoom: React.FC = () => {
                 (async () => {
                     try {
                         if (!micOn) await toggleMic(true);
-                        if (!cameraOn) await toggleCamera(); // Camera logic doesn't strictly need bypass but good for consistency if locked
+                        if (!cameraOn) await toggleCamera(true); // Force camera ON (won't toggle if already on)
                     } catch (e) { console.error(e); }
                 })();
 
@@ -497,20 +497,38 @@ const LiveClassRoom: React.FC = () => {
         }
     };
 
-    const toggleCamera = async () => {
-        if (!isInstructor && videoLocked) return;
+    const toggleCamera = async (forceOn = false) => {
+        if (!isInstructor && videoLocked && !forceOn) return;
+
+        // If forceOn is true and camera is already on, do nothing
+        if (forceOn && cameraOn) return;
+
         if (localVideoTrack) {
-            await localVideoTrack.setEnabled(!cameraOn);
-            setCameraOn(!cameraOn);
-            if (!cameraOn) {
-                // localVideoTrack.play('local-player'); // Removed: Handled by JSX ref
+            const newCameraState = forceOn ? true : !cameraOn;
+            await localVideoTrack.setEnabled(newCameraState);
+            setCameraOn(newCameraState);
+
+            // Ensure published if turning on, Unpublish if turning off
+            if (newCameraState && client) {
+                try {
+                    await client.publish(localVideoTrack);
+                } catch (err: any) {
+                    if (err.code !== 'TRACK_IS_ALREADY_PUBLISHED' && err.message !== 'track is already published') {
+                        console.warn("Camera republish warning:", err);
+                    }
+                }
+            } else if (!newCameraState && client) {
+                try {
+                    await client.unpublish(localVideoTrack);
+                } catch (err) {
+                    console.warn("Camera unpublish warning:", err);
+                }
             }
         } else {
             const track = await AgoraRTC.createCameraVideoTrack();
             setLocalVideoTrack(track);
             await client?.publish(track);
             setCameraOn(true);
-            // track.play('local-player'); // Removed: Handled by JSX ref
         }
     };
 
@@ -920,7 +938,7 @@ const LiveClassRoom: React.FC = () => {
                                 {micOn ? <FaMicrophone size={18} /> : <FaMicrophoneSlash size={18} />}
                             </button>
                             <button
-                                onClick={toggleCamera}
+                                onClick={() => toggleCamera()}
                                 disabled={!isInstructor && videoLocked}
                                 className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${cameraOn ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-blue-600 border-blue-700 text-white shadow-blue-500/20'}`}
                                 title={cameraOn ? "Disable Visuals" : "Enable Visuals"}

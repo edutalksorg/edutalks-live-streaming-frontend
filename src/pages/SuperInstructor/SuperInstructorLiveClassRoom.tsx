@@ -202,7 +202,7 @@ const LiveClassRoom: React.FC = () => {
                 // Auto-enable media as specified
                 try {
                     if (!micOn) await toggleMic();
-                    if (!cameraOn) await toggleCamera();
+                    await toggleCamera(true); // Force camera ON (won't toggle if already on)
                 } catch (e) { console.error(e); }
 
                 showToast("Instructor approved your request. Microphone and Camera enabled.", 'success');
@@ -308,7 +308,7 @@ const LiveClassRoom: React.FC = () => {
                 (async () => {
                     try {
                         if (!micOnRef.current) await toggleMic(true);
-                        if (!cameraOnRef.current) await toggleCamera();
+                        await toggleCamera(true); // Force camera ON (won't toggle if already on)
                     } catch (e) { console.error(e); }
                 })();
 
@@ -579,16 +579,20 @@ const LiveClassRoom: React.FC = () => {
         }
     };
 
-    const toggleCamera = async () => {
-        if (!isInstructor && videoLockedRef.current) {
+    const toggleCamera = async (forceOn = false) => {
+        if (!isInstructor && videoLockedRef.current && !forceOn) {
             showToast("Camera is locked by the instructor.", 'error');
             return;
         }
+
+        // If forceOn is true and camera is already on, do nothing
+        if (forceOn && cameraOnRef.current) return;
+
         const currentTrack = localVideoTrackRef.current;
         const currentCameraOn = cameraOnRef.current;
 
         if (currentTrack) {
-            const newCameraState = !currentCameraOn;
+            const newCameraState = forceOn ? true : !currentCameraOn;
             await currentTrack.setEnabled(newCameraState);
             setCameraOn(newCameraState);
             if (newCameraState && clientRef.current) {
@@ -596,7 +600,7 @@ const LiveClassRoom: React.FC = () => {
             } else if (!newCameraState && clientRef.current) {
                 try { await clientRef.current.unpublish(currentTrack); } catch (e) { console.warn(e); }
             }
-        } else if (!currentCameraOn) {
+        } else if (!currentCameraOn || forceOn) {
             try {
                 const track = await AgoraRTC.createCameraVideoTrack();
                 setLocalVideoTrack(track);
@@ -1033,7 +1037,7 @@ const LiveClassRoom: React.FC = () => {
                                 {micOn ? <FaMicrophone size={18} /> : <FaMicrophoneSlash size={18} />}
                             </button>
                             <button
-                                onClick={toggleCamera}
+                                onClick={() => toggleCamera()}
                                 disabled={!isInstructor && videoLocked}
                                 className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${cameraOn ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-blue-600 border-blue-700 text-white shadow-blue-500/20'}`}
                                 title={cameraOn ? "Disable Visuals" : "Enable Visuals"}
