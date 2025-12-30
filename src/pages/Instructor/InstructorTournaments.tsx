@@ -127,7 +127,9 @@ const InstructorTournaments: React.FC = () => {
         const isOwner = tournament.instructor_id === user?.id;
 
         const canEdit = isOwner && ['DRAFT', 'UPCOMING'].includes(tournament.status);
-        const canDelete = isOwner && tournament.status === 'DRAFT';
+        // Allow deletion for DRAFT and UPCOMING (before registration starts)
+        const registrationStarted = new Date(tournament.registration_start) <= new Date();
+        const canDelete = isOwner && (tournament.status === 'DRAFT' || (tournament.status === 'UPCOMING' && !registrationStarted));
         const canPublish = isOwner && tournament.status === 'DRAFT';
         const canPublishResults = isOwner && (tournament.status === 'COMPLETED' || (tournament.status === 'LIVE' && isPastExam));
 

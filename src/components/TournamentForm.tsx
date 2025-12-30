@@ -184,11 +184,20 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
         if (!validateForm()) return;
 
         try {
+            // Prepare payload with UTC ISO dates
+            const payload = {
+                ...formData,
+                registration_start: new Date(formData.registration_start).toISOString(),
+                registration_end: new Date(formData.registration_end).toISOString(),
+                exam_start: new Date(formData.exam_start).toISOString(),
+                exam_end: new Date(formData.exam_end).toISOString(),
+            };
+
             if (tournament) {
-                await api.put(`/api/tournaments/${tournament.id}`, formData);
+                await api.put(`/api/tournaments/${tournament.id}`, payload);
                 alert('Tournament updated successfully!');
             } else {
-                await api.post('/api/tournaments', formData);
+                await api.post('/api/tournaments', payload);
                 alert('Tournament created successfully!');
             }
             onSuccess();
