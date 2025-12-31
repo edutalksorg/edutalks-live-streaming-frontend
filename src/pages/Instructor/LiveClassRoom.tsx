@@ -12,7 +12,8 @@ import {
     FaPhoneSlash, FaHandPaper,
     FaDesktop, FaChalkboard,
     FaUsers, FaComments, FaClock, FaExpand, FaCompress,
-    FaTimesCircle, FaCheckCircle, FaExclamationTriangle, FaInfoCircle
+    FaTimesCircle, FaCheckCircle, FaExclamationTriangle, FaInfoCircle,
+    FaShieldAlt
 } from 'react-icons/fa';
 
 const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID;
@@ -90,6 +91,13 @@ const LiveClassRoom: React.FC = () => {
     const [screenLocked, setScreenLocked] = useState(false);
     const screenLockedRef = useRef(screenLocked);
     useEffect(() => { screenLockedRef.current = screenLocked; }, [screenLocked]);
+
+    const [recordingProtected, setRecordingProtected] = useState(false);
+    const recordingProtectedRef = useRef(recordingProtected);
+    useEffect(() => { recordingProtectedRef.current = recordingProtected; }, [recordingProtected]);
+
+    const [watermarkPos, setWatermarkPos] = useState({ top: '10%', left: '10%' });
+    const [isWindowBlurred, setIsWindowBlurred] = useState(false);
 
     // Notification State
     const [notification, setNotification] = useState<{ message: string, type: 'info' | 'success' | 'error' | 'warning' } | null>(null);
@@ -170,6 +178,14 @@ const LiveClassRoom: React.FC = () => {
             if (data.locked && !isInstructorRef.current && isScreenSharingRef.current) {
                 toggleScreenShare(); // Logic handles stop and unpublish
             }
+        });
+
+        socket.on('recording_protection_status', (data) => {
+            setRecordingProtected(data.active);
+        });
+
+        socket.on('student_violation', (data) => {
+            showToast(`Security Alert: ${data.studentName} switched tabs/blurred window!`, 'error');
         });
 
         socket.on('whiteboard_visibility', (data) => {
@@ -446,6 +462,48 @@ const LiveClassRoom: React.FC = () => {
 
         return () => clearInterval(timer);
     }, [classDetails, isLive]);
+
+    // Watermark Movement & Focus Management (for student protection)
+    useEffect(() => {
+        if (!recordingProtected || isInstructor) return;
+
+        const moveWatermark = () => {
+            const top = Math.floor(Math.random() * 80) + 10 + '%';
+            const left = Math.floor(Math.random() * 80) + 10 + '%';
+            setWatermarkPos({ top, left });
+        };
+
+        const interval = setInterval(moveWatermark, 5000);
+
+        const handleBlur = () => setIsWindowBlurred(true);
+        const handleFocus = () => setIsWindowBlurred(false);
+        const handleVisibilityChange = () => {
+            if (document.visibilityState !== 'visible') {
+                setIsWindowBlurred(true);
+                // Report violation if recording protection is on and they switch away
+                socketRef.current?.emit('violation_report', {
+                    classId: id,
+                    studentId: user?.id,
+                    studentName: user?.name,
+                    type: 'TAB_SWITCH',
+                    timestamp: new Date()
+                });
+            } else {
+                setIsWindowBlurred(false);
+            }
+        };
+
+        window.addEventListener('blur', handleBlur);
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('blur', handleBlur);
+            window.removeEventListener('focus', handleFocus);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [recordingProtected, isInstructor, id, user?.id, user?.name]);
 
     useEffect(() => {
         if (!isLive) return;
@@ -825,7 +883,35 @@ const LiveClassRoom: React.FC = () => {
     );
 
     return (
-        <div ref={containerRef} className="h-screen w-screen bg-[#F1F5F9] text-slate-800 font-sans flex overflow-hidden selection:bg-primary/20">
+        <div ref={containerRef} className="h-screen w-screen bg-[#0A0A10] text-[#F8FAFC] font-sans flex overflow-hidden selection:bg-primary/20 relative">
+            {/* Recording Protection: Blur Overlay */}
+            {!isInstructor && recordingProtected && isWindowBlurred && (
+                <div className="absolute inset-0 z-[9999] bg-slate-900/80 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-8 pointer-events-auto">
+                    <div className="w-24 h-24 mb-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 animate-pulse">
+                        <FaShieldAlt size={48} />
+                    </div>
+                    <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">Content Protected</h2>
+                    <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">Live stream is blurred because protection is active and you have left the focal area.</p>
+                    <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em] animate-bounce">Return to focal tab to resume</p>
+                </div>
+            )}
+
+            {/* Recording Protection: Watermark */}
+            {!isInstructor && recordingProtected && (
+                <div
+                    className="absolute z-[9998] pointer-events-none transition-all duration-[3000ms] opacity-20 select-none whitespace-nowrap"
+                    style={{
+                        top: watermarkPos.top,
+                        left: watermarkPos.left,
+                        transform: 'rotate(-25deg)'
+                    }}
+                >
+                    <div className="flex flex-col items-center">
+                        <span className="text-2xl font-black text-slate-400 uppercase tracking-[0.3em] leading-none mb-1 italic">{user?.name}</span>
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest opacity-50 italic">{user?.id} • {new Date().toLocaleDateString()}</span>
+                    </div>
+                </div>
+            )}
             {/* Main Stage */}
             <div className="flex-1 flex flex-col relative overflow-hidden h-full">
                 {/* Minimal Tactical Header */}
@@ -1100,6 +1186,20 @@ const LiveClassRoom: React.FC = () => {
                                     title="Open Whiteboard"
                                 >
                                     <FaChalkboard size={18} />
+                                </button>
+                            )}
+                            {isInstructor && (
+                                <button
+                                    onClick={() => {
+                                        const next = !recordingProtected;
+                                        setRecordingProtected(next);
+                                        socketRef.current?.emit('toggle_recording_protection', { classId: id, active: next });
+                                        showToast(next ? "Screen Recording Protection ENABLED" : "Screen Recording Protection DISABLED", next ? "warning" : "info");
+                                    }}
+                                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${recordingProtected ? 'bg-orange-600 border-orange-700 text-white animate-pulse' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
+                                    title={recordingProtected ? "Disable Anti-Recording" : "Enable Anti-Recording"}
+                                >
+                                    <FaShieldAlt size={18} />
                                 </button>
                             )}
                         </div>
