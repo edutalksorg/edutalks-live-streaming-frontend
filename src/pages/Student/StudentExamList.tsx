@@ -5,6 +5,8 @@ import api from '../../services/api';
 import { FaClock, FaClipboardCheck, FaPlay } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL.replace('/api', '');
+
 interface Exam {
     id: number;
     title: string;
@@ -26,6 +28,7 @@ const StudentExamList: React.FC = () => {
 
     const [exams, setExams] = useState<Exam[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     const fetchExams = useCallback(async () => {
         try {
@@ -41,8 +44,7 @@ const StudentExamList: React.FC = () => {
     useEffect(() => {
         fetchExams();
 
-        // Setup real-time sync
-        const socket = io(import.meta.env.VITE_API_URL.replace('/api', ''));
+        const socket = io(SOCKET_URL);
 
         socket.on('global_sync', (payload) => {
             console.log('[StudentExamList] Sync received:', payload);
@@ -51,8 +53,14 @@ const StudentExamList: React.FC = () => {
             }
         });
 
+        // Ticker for auto-activating exams when time passes
+        const ticker = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 10000); // Check every 10 seconds
+
         return () => {
             socket.disconnect();
+            clearInterval(ticker);
         };
     }, [fetchExams]);
 
@@ -67,9 +75,10 @@ const StudentExamList: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                 {exams.map(exam => {
-                    const isExpired = exam.expiry_date && new Date() > new Date(exam.expiry_date);
+                    const isExpired = exam.expiry_date && currentTime > new Date(exam.expiry_date);
+                    const isUpcoming = currentTime < new Date(exam.date);
                     const noAttemptsLeft = exam.attempt_count >= exam.attempts_allowed;
-                    const canAttempt = !isExpired && !noAttemptsLeft;
+                    const canAttempt = !isExpired && !noAttemptsLeft && !isUpcoming;
 
                     return (
                         <div key={exam.id} className={`premium-card p-10 flex flex-col justify-between transition-all duration-500 group ${isExpired ? 'opacity-50 grayscale' : 'hover:scale-[1.02]'}`}>
@@ -184,7 +193,7 @@ const StudentExamList: React.FC = () => {
                                         </div>
                                     ) : (
                                         <button disabled className="w-full py-4 rounded-full bg-surface-light border border-surface-border text-accent-gray/40 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 cursor-not-allowed">
-                                            {isExpired ? 'TIME-LOCK ACTIVE' : 'LIMIT EXCEEDED'}
+                                            {isUpcoming ? 'COMMENCING SOON' : (isExpired ? 'TIME-LOCK ACTIVE' : 'LIMIT EXCEEDED')}
                                         </button>
                                     )}
                                 </div>

@@ -104,7 +104,7 @@ const StudentLayout: React.FC = () => {
                     >
                         <link.icon size={isActive(link.path) ? 22 : 20} className="md:size-[22px]" />
                         <span className={`text-[8px] md:text-[10px] font-black tracking-widest uppercase transition-opacity duration-300 ${isActive(link.path) ? 'opacity-100' : 'opacity-60'}`}>
-                            {link.label.substring(0, 5)}
+                            {link.label}
                         </span>
                     </Link>
                 ))}

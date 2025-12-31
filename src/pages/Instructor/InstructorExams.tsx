@@ -23,6 +23,23 @@ interface Exam {
     attempts_allowed: number;
 }
 
+const formatForDateTimeLocal = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+        const pad = (num: number) => num.toString().padStart(2, '0');
+        const year = date.getFullYear();
+        const month = pad(date.getMonth() + 1);
+        const day = pad(date.getDate());
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch (e) {
+        return '';
+    }
+};
+
 const InstructorExams: React.FC = () => {
     const { showAlert, showConfirm } = useModal();
     const [exams, setExams] = useState<Exam[]>([]);
@@ -68,8 +85,8 @@ const InstructorExams: React.FC = () => {
     const handleEdit = (exam: any) => {
         setEditingExam(exam);
         setTitle(exam.title);
-        setDate(new Date(exam.date).toISOString().slice(0, 16));
-        setExpiryDate(exam.expiry_date ? new Date(exam.expiry_date).toISOString().slice(0, 16) : '');
+        setDate(formatForDateTimeLocal(exam.date));
+        setExpiryDate(formatForDateTimeLocal(exam.expiry_date));
         setDuration(exam.duration);
         setExamType(exam.type);
         setSubjectId(exam.subject_id?.toString() || '');
@@ -122,8 +139,10 @@ const InstructorExams: React.FC = () => {
         }
         try {
             const payload = {
-                title, date, duration, questions,
-                expiry_date: expiryDate || null,
+                title,
+                date: new Date(date).toISOString(),
+                duration, questions,
+                expiry_date: expiryDate ? new Date(expiryDate).toISOString() : null,
                 subject_id: parseInt(subjectId),
                 total_marks: questions.length,
                 type: examType,

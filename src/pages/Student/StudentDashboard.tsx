@@ -8,7 +8,7 @@ import { FaVideo, FaBook, FaChevronDown, FaChevronUp, FaFileAlt, FaCheckCircle, 
 import { io } from 'socket.io-client';
 import SubscriptionPopup from '../../components/SubscriptionPopup';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL.replace('/api', '');
 
 interface Subject {
     id: number;
@@ -74,6 +74,7 @@ const StudentDashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [expandedSubject, setExpandedSubject] = useState<number | null>(null);
     const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
+    const [currentTime, setCurrentTime] = useState(new Date());
     const navigate = useNavigate();
 
     const checkAccess = (e: React.MouseEvent, action?: () => void) => {
@@ -139,8 +140,14 @@ const StudentDashboard: React.FC = () => {
         socket.on('class_live', () => fetchData());
         socket.on('class_ended', () => fetchData());
 
+        // Heartbeat for auto-activating items
+        const ticker = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 10000);
+
         return () => {
             socket.disconnect();
+            clearInterval(ticker);
         };
     }, []);
 
@@ -192,9 +199,9 @@ const StudentDashboard: React.FC = () => {
                                 <div className="text-4xl md:text-7xl font-black text-primary italic tracking-tighter group-hover/card:scale-110 transition-transform">{dashboardData?.stats.upcomingExams}</div>
                                 <div className="text-[8px] md:text-[10px] uppercase font-black text-accent-gray tracking-[0.4em] mt-2 whitespace-nowrap">Active Exams</div>
                             </div>
-                            <div onClick={(e) => checkAccess(e, () => navigate('/student/materials'))} className="flex-shrink-0 bg-surface-light/50 backdrop-blur-3xl border border-surface-border p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] text-center w-40 md:w-64 hover:border-primary/30 transition-all cursor-pointer group/card lg:translate-x-10 shadow-premium block">
-                                <div className="text-4xl md:text-7xl font-black text-accent-white italic tracking-tighter group-hover/card:scale-110 transition-transform">{dashboardData?.stats.studyMaterials}</div>
-                                <div className="text-[8px] md:text-[10px] uppercase font-black text-accent-gray tracking-[0.4em] mt-2 whitespace-nowrap">Materials</div>
+                            <div onClick={(e) => checkAccess(e, () => navigate('/student/materials'))} className="flex-shrink-0 bg-surface-light/50 backdrop-blur-3xl border border-surface-border p-4 sm:p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] text-center w-32 sm:w-40 md:w-64 hover:border-primary/30 transition-all cursor-pointer group/card lg:translate-x-10 shadow-premium block">
+                                <div className="text-3xl sm:text-4xl md:text-7xl font-black text-accent-white italic tracking-tighter group-hover/card:scale-110 transition-transform">{dashboardData?.stats.studyMaterials}</div>
+                                <div className="text-[7px] sm:text-[8px] md:text-[10px] uppercase font-black text-accent-gray tracking-[0.2em] sm:tracking-[0.4em] mt-2">Materials</div>
                             </div>
                         </div>
                     </div>
@@ -342,9 +349,9 @@ const StudentDashboard: React.FC = () => {
                                                 <div className="space-y-4 md:space-y-5">
                                                     {subject.exams.map((exam: any, idx) => (
                                                         <React.Fragment key={idx}>
-                                                            <div className="bg-surface-dark p-4 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border border-surface-border flex flex-col sm:flex-row items-center justify-between gap-4 group/exam hover:bg-surface-light hover:border-primary/20 transition-all duration-500">
-                                                                <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto">
-                                                                    <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover/exam:rotate-12 flex-shrink-0 ${exam.status === 'Completed' ? 'bg-accent-emerald text-white shadow-accent-emerald/20' :
+                                                            <div className="bg-surface-dark p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] border border-surface-border flex flex-col gap-6 group/exam hover:bg-surface-light transition-all duration-500 h-full">
+                                                                <div className="flex items-start gap-4 md:gap-6">
+                                                                    <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover/exam:rotate-12 flex-shrink-0 ${exam.status === 'Completed' ? 'bg-accent-emerald text-white shadow-accent-emerald/20' :
                                                                         exam.status === 'Pending' ? 'bg-surface text-accent-white border border-surface-border' :
                                                                             exam.status === 'Expired' ? 'bg-surface-dark text-accent-gray border border-surface-border opacity-50' :
                                                                                 'bg-primary text-white animate-pulse shadow-primary/40'
@@ -354,26 +361,37 @@ const StudentDashboard: React.FC = () => {
                                                                                 exam.status === 'Expired' ? <FaTimes size={20} /> :
                                                                                     <FaPlayCircle size={24} />}
                                                                     </div>
-                                                                    <div className="min-w-0">
-                                                                        <div className="text-base md:text-lg font-black text-accent-white tracking-tight truncate">{exam.title}</div>
-                                                                        <div className="text-[9px] md:text-[10px] text-accent-gray font-black uppercase tracking-widest mt-1 flex flex-wrap items-center gap-x-2 md:gap-x-3">
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <div className="text-base md:text-xl font-black text-accent-white tracking-tight leading-tight mb-2">{exam.title}</div>
+                                                                        <div className="text-[9px] md:text-[11px] text-accent-gray font-black uppercase tracking-widest flex flex-wrap items-center gap-x-2 md:gap-x-3">
                                                                             <span className={`${exam.status === 'Completed' ? 'text-emerald-500' : exam.status === 'Expired' ? 'text-primary' : ''}`}>{exam.status}</span>
-                                                                            {exam.score !== null && <span className="opacity-50 whitespace-nowrap">• {exam.score}/{exam.total_marks} Marks</span>}
-                                                                            <span className="opacity-50 whitespace-nowrap">• {exam.attempts_done || 0}/{exam.attempts_allowed || 1} Att.</span>
+                                                                            {exam.score !== null && <span className="opacity-50 whitespace-nowrap">• {exam.score}/{exam.total_marks}</span>}
+                                                                            <span className="opacity-50 whitespace-nowrap">• {exam.attempts_done || 0}/{exam.attempts_allowed || 1} ATTS</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+
+                                                                <div className="grid grid-cols-1 gap-3 mt-auto">
                                                                     <div
-                                                                        onClick={(e) => checkAccess(e, () => navigate(exam.status === 'Attempt Now' ? `/student/exam/${exam.id}` : (exam.attempts_done > 0 ? `/student/exam-result/${exam.id}` : '#')))}
-                                                                        className={`flex-1 sm:flex-none text-center px-4 md:px-8 py-2 md:py-3 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black tracking-[0.2em] transition-all transform hover:scale-105 cursor-pointer ${exam.status === 'Attempt Now'
-                                                                            ? 'bg-primary text-white hover:bg-primary-hover shadow-xl shadow-primary/30 uppercase'
-                                                                            : 'bg-surface border border-surface-border text-accent-gray cursor-default uppercase'
+                                                                        onClick={(e) => {
+                                                                            const isActuallyUpcoming = exam.date && currentTime < new Date(exam.date);
+                                                                            if (exam.status === 'Upcoming' || isActuallyUpcoming) return;
+
+                                                                            const isAttemptNow = exam.status === 'Attempt Now' || (exam.date && currentTime >= new Date(exam.date) && exam.status === 'Upcoming');
+
+                                                                            checkAccess(e, () => navigate(isAttemptNow ? `/student/exam/${exam.id}` : (exam.attempts_done > 0 ? `/student/exam-result/${exam.id}` : '#')));
+                                                                        }}
+                                                                        className={`text-center py-3 md:py-4 rounded-xl md:rounded-2xl text-[9px] md:text-[11px] font-black tracking-[0.2em] transition-all transform hover:scale-[1.02] cursor-pointer shadow-lg active:scale-95 ${(exam.status === 'Attempt Now' || (exam.date && currentTime >= new Date(exam.date) && exam.status === 'Upcoming'))
+                                                                                ? 'bg-primary text-white hover:bg-primary-hover shadow-primary/30 uppercase'
+                                                                                : (exam.status === 'Upcoming' || (exam.date && currentTime < new Date(exam.date))) ? 'bg-surface-light border border-surface-border text-accent-gray/40 cursor-not-allowed uppercase'
+                                                                                    : 'bg-surface border border-surface-border text-accent-gray cursor-default uppercase'
                                                                             }`}>
-                                                                        {exam.status === 'Attempt Now' ? 'START' : (exam.status === 'Expired' ? 'EXPIRED' : 'RESULT')}
+                                                                        {(exam.status === 'Attempt Now' || (exam.date && currentTime >= new Date(exam.date) && exam.status === 'Upcoming'))
+                                                                            ? 'START MISSION'
+                                                                            : ((exam.status === 'Upcoming' || (exam.date && currentTime < new Date(exam.date))) ? 'UPCOMING' : (exam.status === 'Expired' ? 'EXPIRED' : 'VIEW RESULT'))}
                                                                     </div>
                                                                     {exam.status === 'Completed' && (
-                                                                        <div className="relative group/upload">
+                                                                        <div className="relative group/upload w-full">
                                                                             <input
                                                                                 type="file"
                                                                                 id={`upload-${exam.id}`}
@@ -387,7 +405,7 @@ const StudentDashboard: React.FC = () => {
                                                                                     try {
                                                                                         await api.post(`/api/exams/submissions/${exam.all_attempts[0].id}/upload-worksheet`, formData);
                                                                                         showAlert('Tactical Intel Uploaded Successfully!', 'success');
-                                                                                        fetchData(); // Use fetchData instead of reload if possible, but reload is safer for state sync sometimes. However, fetchData updates dashboardData.
+                                                                                        fetchData();
                                                                                     } catch (err) {
                                                                                         console.error(err);
                                                                                         showAlert('Upload Failure', 'error');
@@ -396,13 +414,13 @@ const StudentDashboard: React.FC = () => {
                                                                             />
                                                                             <label
                                                                                 htmlFor={`upload-${exam.id}`}
-                                                                                className={`cursor-pointer px-6 py-3 rounded-2xl text-[9px] font-black tracking-widest transition-all flex items-center gap-3 shadow-lg ${exam.all_attempts?.[0]?.file_path
+                                                                                className={`cursor-pointer py-3 md:py-4 rounded-xl md:rounded-2xl text-[9px] md:text-[11px] font-black tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg w-full active:scale-95 ${exam.all_attempts?.[0]?.file_path
                                                                                     ? 'bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20 hover:bg-accent-emerald/20'
                                                                                     : 'bg-primary text-white hover:bg-primary-hover shadow-primary/30'
                                                                                     }`}
                                                                             >
                                                                                 <FaVideo size={14} className={exam.all_attempts?.[0]?.file_path ? '' : 'animate-bounce'} />
-                                                                                {exam.all_attempts?.[0]?.file_path ? 'PHOTO ATTACHED' : 'UPLOAD WORKSHEET'}
+                                                                                <span className="truncate">{exam.all_attempts?.[0]?.file_path ? 'PHOTO ATTACHED' : 'UPLOAD WORKSHEET'}</span>
                                                                             </label>
                                                                         </div>
                                                                     )}
@@ -440,7 +458,7 @@ const StudentDashboard: React.FC = () => {
                                                                     <div className="text-[8px] md:text-[10px] text-accent-gray font-black uppercase tracking-widest mt-1">Resource</div>
                                                                 </div>
                                                             </div>
-                                                            <div onClick={(e) => checkAccess(e, () => window.open(`http://localhost:5000${note.file_path}`, '_blank'))} className="cursor-pointer bg-surface border border-surface-border text-accent-white px-4 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl font-black text-[8px] md:text-[10px] tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm">
+                                                            <div onClick={(e) => checkAccess(e, () => window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}${note.file_path}`, '_blank'))} className="cursor-pointer bg-surface border border-surface-border text-accent-white px-4 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl font-black text-[8px] md:text-[10px] tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm">
                                                                 PDF
                                                             </div>
                                                         </div>

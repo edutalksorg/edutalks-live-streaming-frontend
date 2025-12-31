@@ -14,6 +14,8 @@ interface Note {
     uploaded_at: string;
 }
 
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL.replace('/api', '');
+
 const StudentNotes: React.FC = () => {
     const { user } = useContext(AuthContext)!;
     const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
@@ -35,7 +37,7 @@ const StudentNotes: React.FC = () => {
         fetchNotes();
 
         // Setup real-time sync
-        const socket = io(import.meta.env.VITE_API_URL.replace('/api', ''));
+        const socket = io(SOCKET_URL);
 
         socket.on('global_sync', (payload) => {
             console.log('[StudentNotes] Sync received:', payload);
@@ -78,7 +80,7 @@ const StudentNotes: React.FC = () => {
                             </p>
                         </div>
 
-                        <div className="w-full mt-8 flex gap-3">
+                        <div className="w-full mt-8 flex flex-col sm:flex-row gap-3">
                             <button
                                 onClick={(e) => {
                                     e.preventDefault();

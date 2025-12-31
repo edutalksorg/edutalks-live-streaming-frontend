@@ -5,6 +5,9 @@ import { FaTrophy, FaMedal, FaCheckCircle, FaPlayCircle } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 import { useModal } from '../../context/ModalContext';
 import SubscriptionPopup from '../../components/SubscriptionPopup';
+import { io } from 'socket.io-client';
+
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL.replace('/api', '');
 
 interface Tournament {
     id: number;
@@ -41,14 +44,33 @@ const StudentTournaments: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'available' | 'registered' | 'completed'>('available');
     const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
         fetchTournaments();
+
+        const socket = io(SOCKET_URL);
+        socket.on('global_sync', (payload) => {
+            console.log('[StudentTournaments] Sync received:', payload);
+            if (payload.type === 'tournaments') {
+                fetchTournaments();
+            }
+        });
+
+        // Heartbeat for auto-activating tournaments
+        const ticker = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 10000);
+
+        return () => {
+            socket.disconnect();
+            clearInterval(ticker);
+        };
     }, []);
 
     useEffect(() => {
         filterTournaments();
-    }, [tournaments, activeTab]);
+    }, [tournaments, activeTab, currentTime]);
 
     const fetchTournaments = async () => {
         try {
@@ -63,12 +85,11 @@ const StudentTournaments: React.FC = () => {
     };
 
     const filterTournaments = () => {
-        const now = new Date();
         switch (activeTab) {
             case 'available':
                 setFilteredTournaments(
                     tournaments.filter(t => {
-                        const isExpired = now >= new Date(t.exam_end);
+                        const isExpired = currentTime >= new Date(t.exam_end);
                         return !isExpired && !t.is_registered;
                     })
                 );
@@ -76,7 +97,7 @@ const StudentTournaments: React.FC = () => {
             case 'registered':
                 setFilteredTournaments(
                     tournaments.filter(t => {
-                        const isExpired = now >= new Date(t.exam_end);
+                        const isExpired = currentTime >= new Date(t.exam_end);
                         return t.is_registered && !isExpired;
                     })
                 );
@@ -84,7 +105,7 @@ const StudentTournaments: React.FC = () => {
             case 'completed':
                 setFilteredTournaments(
                     tournaments.filter(t => {
-                        const isExpired = now >= new Date(t.exam_end);
+                        const isExpired = currentTime >= new Date(t.exam_end);
                         return isExpired || t.status === 'COMPLETED' || t.status === 'RESULT_PUBLISHED';
                     })
                 );
@@ -132,9 +153,9 @@ const StudentTournaments: React.FC = () => {
     };
 
     const getTimeRemaining = (targetDate: string): string => {
-        const now = new Date().getTime();
+        const nowMs = currentTime.getTime();
         const target = new Date(targetDate).getTime();
-        const difference = target - now;
+        const difference = target - nowMs;
 
         if (difference < 0) return 'Started';
 
@@ -148,7 +169,6 @@ const StudentTournaments: React.FC = () => {
     };
 
     const getStatusBadge = (tournament: Tournament) => {
-        const now = new Date();
         const regEnd = new Date(tournament.registration_end);
         const examStart = new Date(tournament.exam_start);
         const examEnd = new Date(tournament.exam_end);
@@ -159,27 +179,26 @@ const StudentTournaments: React.FC = () => {
         if (tournament.status === 'COMPLETED') {
             return <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Completed</span>;
         }
-        if (tournament.status === 'LIVE' && now >= examStart && now <= examEnd) {
+        if ((tournament.status === 'LIVE' || (tournament.status === 'UPCOMING' && currentTime >= examStart)) && currentTime <= examEnd) {
             return <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 animate-pulse">🔴 LIVE NOW</span>;
         }
-        if (tournament.status === 'UPCOMING' && now < regEnd) {
+        if (tournament.status === 'UPCOMING' && currentTime < regEnd) {
             return <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Open for Registration</span>;
         }
-        if (tournament.status === 'UPCOMING' && now >= regEnd && now < examStart) {
+        if (tournament.status === 'UPCOMING' && currentTime >= regEnd && currentTime < examStart) {
             return <span className="px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700">Registration Closed</span>;
         }
         return <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">{tournament.status}</span>;
     };
 
     const TournamentCard = ({ tournament }: { tournament: Tournament }) => {
-        const now = new Date();
         const regEnd = new Date(tournament.registration_end);
         const examStart = new Date(tournament.exam_start);
         const examEnd = new Date(tournament.exam_end);
-        const canRegister = now >= new Date(tournament.registration_start) && now < regEnd && !tournament.is_registered;
+        const canRegister = currentTime >= new Date(tournament.registration_start) && currentTime < regEnd && !tournament.is_registered;
 
         // Resilience: Allow starting if status is LIVE OR if status is UPCOMING but exam has started
-        const isLiveOrStarted = (tournament.status === 'LIVE' || (tournament.status === 'UPCOMING' && now >= examStart)) && now <= examEnd;
+        const isLiveOrStarted = (tournament.status === 'LIVE' || (tournament.status === 'UPCOMING' && currentTime >= examStart)) && currentTime <= examEnd;
         const canAttempt = tournament.is_registered && isLiveOrStarted && !tournament.has_attempted;
 
         return (

@@ -26,6 +26,13 @@ const ExamRunner: React.FC = () => {
         const fetchExam = async () => {
             try {
                 const res = await api.get(`/api/exams/${id}`);
+                // Protection: Check start time
+                if (new Date() < new Date(res.data.date)) {
+                    showAlert('Access Denied: This assessment has not commenced yet.', 'error', 'TEMPORAL LOCK');
+                    navigate('/student/tests');
+                    return;
+                }
+
                 setExam(res.data);
                 const parsedQuestions = typeof res.data.questions === 'string'
                     ? JSON.parse(res.data.questions)
