@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { FaUserGraduate, FaChalkboardTeacher, FaCheck, FaUsers } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
+import { useModal } from '../../context/ModalContext';
 
 interface User {
     id: number;
@@ -14,6 +15,7 @@ interface User {
 
 const SuperInstructorUsers: React.FC = () => {
     const { theme } = useTheme();
+    const { showAlert, showConfirm } = useModal();
     const [activeTab, setActiveTab] = useState<'instructors' | 'students'>('instructors');
     const [instructors, setInstructors] = useState<User[]>([]);
     const [students, setStudents] = useState<User[]>([]);
@@ -40,13 +42,14 @@ const SuperInstructorUsers: React.FC = () => {
     }, []);
 
     const handleApprove = async (id: number) => {
-        if (!window.confirm("Approve this instructor?")) return;
+        const confirmed = await showConfirm("Approve this instructor?", "warning", "Approve Instructor");
+        if (!confirmed) return;
         try {
             await api.post('/api/super-instructor/approve-instructor', { instructorId: id });
-            alert("Instructor Approved!");
+            showAlert("Instructor Approved!", "success");
             fetchData();
         } catch (err) {
-            alert("Failed to approve");
+            showAlert("Failed to approve", "error");
         }
     };
 

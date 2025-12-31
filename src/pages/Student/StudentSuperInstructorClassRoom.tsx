@@ -6,6 +6,7 @@ import { io, Socket } from 'socket.io-client';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../services/api';
 import Whiteboard from '../../components/Whiteboard';
+import { useModal } from '../../context/ModalContext';
 import {
     FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash,
     FaPhoneSlash, FaHandPaper,
@@ -20,6 +21,7 @@ const LiveClassRoom: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { user } = useContext(AuthContext)!;
     const navigate = useNavigate();
+    const { showAlert, showConfirm } = useModal();
 
     // --- State Management ---
     const [classDetails, setClassDetails] = useState<any>(null);
@@ -164,13 +166,14 @@ const LiveClassRoom: React.FC = () => {
                     await toggleCamera(true); // Force camera ON (won't toggle if already on)
                 } catch (e) { console.error(e); }
 
-                alert("Instructor approved your request. Microphone and Camera enabled.");
+                showAlert("Instructor approved your request. Microphone and Camera enabled.", "success");
             }
         });
 
-        socket.on('receive_screen_share_request', (data) => {
+        socket.on('receive_screen_share_request', async (data) => {
             if (isInstructor) {
-                if (window.confirm(`${data.studentName} wants to share their screen. Allow?`)) {
+                const confirmed = await showConfirm(`${data.studentName} wants to share their screen. Allow?`, "info", "STREAM REQUEST");
+                if (confirmed) {
                     socket.emit('approve_screen_share', { classId: id, studentId: data.studentId });
                 }
             }
@@ -206,8 +209,9 @@ const LiveClassRoom: React.FC = () => {
 
         socket.on('si_class_ended', () => {
             if (!isInstructor) {
-                alert("The Super Instructor has ended the live session.");
-                navigate('/student');
+                showAlert("The Super Instructor has ended the live session.", "info").then(() => {
+                    navigate('/student');
+                });
             }
         });
 
@@ -228,7 +232,7 @@ const LiveClassRoom: React.FC = () => {
                     } catch (e) { console.error(e); }
                 })();
 
-                alert("Instructor granted you permission to unmute. Microphone and Camera enabled.");
+                showAlert("Instructor granted you permission to unmute. Microphone and Camera enabled.", "success");
             }
         });
 
@@ -241,7 +245,7 @@ const LiveClassRoom: React.FC = () => {
                     await localAudioTrackRef.current.setEnabled(false);
                     if (clientRef.current) await clientRef.current.unpublish(localAudioTrackRef.current);
                     setMicOn(false);
-                    alert("You have been muted by the instructor.");
+                    showAlert("You have been muted by the instructor.", "warning");
                 }
             }
         });
@@ -252,7 +256,7 @@ const LiveClassRoom: React.FC = () => {
                     await localAudioTrackRef.current.setEnabled(false);
                     if (clientRef.current) await clientRef.current.unpublish(localAudioTrackRef.current);
                     setMicOn(false);
-                    alert("Instructor muted everyone.");
+                    showAlert("Instructor muted everyone.", "warning");
                 }
             }
         });
@@ -457,7 +461,7 @@ const LiveClassRoom: React.FC = () => {
 
     const toggleMic = async (bypassLock = false) => {
         if (!isInstructor && audioLocked && !bypassLock) {
-            alert("You don't have permission to unmute. Please raise your hand or wait for the instructor to grant permission.");
+            showAlert("You don't have permission to unmute. Please raise your hand or wait for the instructor to grant permission.", "warning", "MIC LOCKED");
             return;
         }
 
@@ -493,7 +497,7 @@ const LiveClassRoom: React.FC = () => {
             }
         } catch (err) {
             console.error("Toggle Mic Error:", err);
-            alert("Failed to toggle microphone. Please check permissions.");
+            showAlert("Failed to toggle microphone. Please check permissions.", "error");
         }
     };
 
@@ -610,7 +614,8 @@ const LiveClassRoom: React.FC = () => {
 
     const handleEndClass = async () => {
         if (!isInstructor) return;
-        if (window.confirm("Are you sure you want to end this class for everyone?")) {
+        const confirmed = await showConfirm("Are you sure you want to end this class for everyone?", "warning", "TERMINATE SESSION");
+        if (confirmed) {
             try {
                 await api.post(`/api/super-instructor/classes/${id}/end`);
                 navigate('/super-instructor/live-classes');
@@ -677,7 +682,7 @@ const LiveClassRoom: React.FC = () => {
             toggleScreenShare();
         } else {
             socketRef.current?.emit('request_screen_share', { classId: id, studentId: user?.id, studentName: user?.name });
-            alert("Request sent to Super Instructor...");
+            showAlert("Request sent to Super Instructor...", "info", "UPLINK REQUEST");
         }
     };
 

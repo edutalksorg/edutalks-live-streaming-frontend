@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../services/api';
 import { FaClipboardList, FaExternalLinkAlt } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 
 interface Submission {
     id: number;
@@ -23,6 +24,7 @@ const InstructorGrading: React.FC = () => {
     const [reviewText, setReviewText] = useState('');
     const [exam, setExam] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const { showAlert } = useModal();
 
     useEffect(() => {
         if (examId) fetchSubmissions();
@@ -51,14 +53,14 @@ const InstructorGrading: React.FC = () => {
                 reviewText,
                 score
             });
-            alert('Graded and Reviewed successfully');
+            showAlert('Graded and Reviewed successfully', 'success');
             setScore('');
             setReviewText('');
             setSelectedSubmission(null);
             fetchSubmissions();
         } catch (err) {
             console.error(err);
-            alert('Failed to submit review');
+            showAlert('Failed to submit review', 'error');
         }
     };
 
@@ -75,7 +77,7 @@ const InstructorGrading: React.FC = () => {
             <div className="w-96 bg-surface rounded-[2.5rem] shadow-2xl border border-surface-border flex flex-col overflow-hidden">
                 <div className="p-8 bg-surface-dark/50 border-b border-surface-border">
                     <h3 className="text-[10px] font-black text-accent-white uppercase tracking-[0.4em] italic mb-1">CANDIDATE QUEUE</h3>
-                    <p className="text-[8px] text-accent-gray italic font-medium opacity-50 uppercase tracking-widest">{submissions.length} Total Units</p>
+                    <p className="text-[8px] text-accent-gray italic font-medium opacity-80 uppercase tracking-widest">{submissions.length} Total Units</p>
                 </div>
                 <div className="flex-1 overflow-y-auto scrollbar-premium">
                     {submissions.length === 0 ? (
@@ -95,7 +97,7 @@ const InstructorGrading: React.FC = () => {
                                     <div className={`font-black italic text-lg tracking-tighter uppercase transition-colors ${selectedSubmission?.id === sub.id ? 'text-primary' : 'text-accent-white group-hover:text-primary'}`}>{sub.student_name}</div>
                                     <div className="text-[10px] font-black italic text-primary bg-primary/10 px-2 py-0.5 rounded-lg border border-primary/20">ATMT {sub.attempt_number}</div>
                                 </div>
-                                <div className="text-[9px] text-accent-gray font-black tracking-widest opacity-30 group-hover:opacity-60 truncate mb-4 uppercase">{sub.student_email}</div>
+                                <div className="text-[9px] text-accent-gray font-black tracking-widest opacity-60 group-hover:opacity-100 truncate mb-4 uppercase">{sub.student_email}</div>
                                 <div className="flex justify-between items-center">
                                     <span className={`text-[8px] font-black tracking-[0.2em] px-3 py-1 rounded-full border ${sub.reviewed_score !== null ? 'bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20' : 'bg-primary/10 text-primary border-primary/20'}`}>
                                         {sub.reviewed_score !== null ? 'EVALUATED' : 'ANOMALY DETECTED'}
@@ -115,10 +117,10 @@ const InstructorGrading: React.FC = () => {
                         <div className="p-8 border-b border-surface-border flex justify-between items-center bg-surface-dark/30">
                             <div>
                                 <h2 className="text-3xl font-black text-accent-white italic tracking-tighter uppercase leading-none">{selectedSubmission.student_name}</h2>
-                                <p className="text-[9px] text-accent-gray font-black tracking-[0.3em] uppercase opacity-40 mt-2">{selectedSubmission.student_email}</p>
+                                <p className="text-[9px] text-accent-gray font-black tracking-[0.3em] uppercase opacity-70 mt-2">{selectedSubmission.student_email}</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-[8px] text-accent-gray font-black uppercase tracking-widest opacity-30 mb-1">SUBMISSION TIMESTAMP</p>
+                                <p className="text-[8px] text-accent-gray font-black uppercase tracking-widest opacity-60 mb-1">SUBMISSION TIMESTAMP</p>
                                 <p className="text-[10px] font-black text-primary italic tracking-widest">{new Date(selectedSubmission.submitted_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).toUpperCase()}</p>
                             </div>
                         </div>
@@ -144,7 +146,7 @@ const InstructorGrading: React.FC = () => {
                                             return (
                                                 <div key={idx} className={`p-8 rounded-[1.5rem] border-2 transition-all group ${q.type === 'photo' ? 'border-primary/10 bg-primary/5 italic opacity-60' : (isCorrect ? 'border-accent-emerald/10 bg-accent-emerald/5' : 'border-primary/20 bg-primary/5')}`}>
                                                     <div className="flex justify-between items-start mb-4">
-                                                        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-accent-gray opacity-40">SORTIE UNIT {idx + 1} • {q.type.toUpperCase()}</span>
+                                                        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-accent-gray opacity-70">SORTIE UNIT {idx + 1} • {q.type.toUpperCase()}</span>
                                                         {q.type !== 'photo' && (
                                                             <span className={`text-[8px] font-black px-3 py-1 rounded-full border tracking-widest ${isCorrect ? 'bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20' : 'bg-primary/20 text-primary border-primary/30'}`}>
                                                                 {isCorrect ? 'VALIDATED' : 'ANOMALY'}
@@ -166,12 +168,12 @@ const InstructorGrading: React.FC = () => {
                                                     {q.type === 'fib' && (
                                                         <div className="flex items-center gap-6">
                                                             <div className="space-y-1">
-                                                                <p className="text-[8px] font-black text-accent-gray uppercase tracking-widest opacity-30">INPUT</p>
+                                                                <p className="text-[8px] font-black text-accent-gray uppercase tracking-widest opacity-60">INPUT</p>
                                                                 <p className={`text-sm font-black italic tracking-widest ${isCorrect ? 'text-accent-emerald' : 'text-primary'}`}>{studentAns || 'NULL RESPONSE'}</p>
                                                             </div>
                                                             {!isCorrect && (
                                                                 <div className="space-y-1 pl-6 border-l border-surface-border">
-                                                                    <p className="text-[8px] font-black text-accent-gray uppercase tracking-widest opacity-30">REQUIRED</p>
+                                                                    <p className="text-[8px] font-black text-accent-gray uppercase tracking-widest opacity-60">REQUIRED</p>
                                                                     <p className="text-sm font-black italic tracking-widest text-accent-emerald">{q.correctAnswer}</p>
                                                                 </div>
                                                             )}
@@ -232,7 +234,7 @@ const InstructorGrading: React.FC = () => {
                                                     <span className="text-[9px] font-black text-primary uppercase tracking-widest">ATMT {other.attempt_number}</span>
                                                     <span className="text-[10px] font-black italic text-accent-white">{other.reviewed_score || other.score || 0}/{exam.total_marks}</span>
                                                 </div>
-                                                <div className="text-[8px] text-accent-gray uppercase tracking-tighter mb-4 opacity-50">
+                                                <div className="text-[8px] text-accent-gray uppercase tracking-tighter mb-4 opacity-80">
                                                     {new Date(other.submitted_at).toLocaleString()}
                                                 </div>
                                                 {other.review_text && (
@@ -289,7 +291,7 @@ const InstructorGrading: React.FC = () => {
                             <FaClipboardList />
                         </div>
                         <h3 className="text-3xl font-black text-accent-white italic tracking-tighter uppercase mb-4">SELECT CANDIDATE</h3>
-                        <p className="text-sm text-accent-gray italic font-medium max-w-sm opacity-40 leading-relaxed uppercase tracking-widest">Awaiting unit assignment from the tactical queue. Select a student to begin operational evaluation.</p>
+                        <p className="text-sm text-accent-gray italic font-medium max-w-sm opacity-70 leading-relaxed uppercase tracking-widest">Awaiting unit assignment from the tactical queue. Select a student to begin operational evaluation.</p>
                     </div>
                 )}
             </div>

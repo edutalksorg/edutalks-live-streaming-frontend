@@ -4,6 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { FaBook, FaVideo, FaUsers, FaBell, FaCheck, FaChalkboardTeacher, FaUserClock, FaUserTie, FaClipboardList } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 import SuperInstructorAllocation from './SuperInstructorAllocation';
 import SuperInstructorUsers from './SuperInstructorUsers';
 import BatchManagement from '../Instructor/BatchManagement';
@@ -29,6 +30,7 @@ interface Stats {
 }
 
 const SuperInstructorDashboard: React.FC = () => {
+    const { showAlert, showConfirm } = useModal();
     const { } = useContext(AuthContext)!;
     const { theme } = useTheme();
     const navigate = useNavigate();
@@ -66,13 +68,14 @@ const SuperInstructorDashboard: React.FC = () => {
     }, []);
 
     const handleApprove = async (id: number) => {
-        if (!window.confirm("Approve this instructor?")) return;
+        const confirmed = await showConfirm("Approve this instructor?", 'warning');
+        if (!confirmed) return;
         try {
             await api.post('/api/super-instructor/approve-instructor', { instructorId: id });
-            alert("Instructor Approved!");
+            showAlert("Instructor Approved!", 'success');
             fetchData();
         } catch (err) {
-            alert("Failed to approve");
+            showAlert("Failed to approve", 'error');
         }
     };
 
@@ -88,7 +91,7 @@ const SuperInstructorDashboard: React.FC = () => {
             navigate(`/super-instructor/classroom/${res.data.id}`);
         } catch (err) {
             console.error("Failed to start live class:", err);
-            alert("Failed to start live class");
+            showAlert("Failed to start live class", 'error');
         }
     };
 

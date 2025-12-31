@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { FaEdit } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 
 interface Batch {
     id: number;
@@ -25,6 +26,7 @@ interface User {
 }
 
 const BatchManagement: React.FC = () => {
+    const { showAlert } = useModal();
     const [batches, setBatches] = useState<Batch[]>([]);
     const [instructors, setInstructors] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ const BatchManagement: React.FC = () => {
             setEditingBatch(null);
             fetchData();
         } catch (err) {
-            alert('Failed to update instructor');
+            showAlert('Failed to update instructor', 'error');
         }
     };
 
@@ -100,8 +102,8 @@ const BatchManagement: React.FC = () => {
                                                     <div key={student.id} className="flex items-center gap-2 text-xs bg-surface-dark/50 px-2 py-1 rounded-md border border-white/5">
                                                         <span className="text-accent-white font-bold">{student.name}</span>
                                                         <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-black tracking-wider ${student.plan_name === 'Free' ? 'bg-gray-500/20 text-gray-400' :
-                                                                student.plan_name === 'Pro' ? 'bg-amber-500/20 text-amber-500' :
-                                                                    'bg-emerald-500/20 text-emerald-400'
+                                                            student.plan_name === 'Pro' ? 'bg-amber-500/20 text-amber-500' :
+                                                                'bg-emerald-500/20 text-emerald-400'
                                                             }`}>
                                                             {student.plan_name}
                                                         </span>
@@ -139,7 +141,7 @@ const BatchManagement: React.FC = () => {
 
             {editingBatch && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setEditingBatch(null)}></div>
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-md transition-opacity" onClick={() => setEditingBatch(null)}></div>
                     <div className="bg-surface p-8 rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 w-full max-w-md relative z-10 animate-fadeInTransform">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-2xl font-black text-accent-white italic tracking-tighter">Assign <span className="text-primary">Instructor</span></h3>

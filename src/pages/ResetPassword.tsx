@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const ResetPassword: React.FC = () => {
     const { token } = useParams<{ token: string }>();
@@ -8,6 +9,8 @@ const ResetPassword: React.FC = () => {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
 
@@ -67,26 +70,44 @@ const ResetPassword: React.FC = () => {
                         <label className="block text-accent-gray text-xs font-bold uppercase tracking-widest mb-2">
                             New Password
                         </label>
-                        <input
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none"
-                            required
-                        />
+                        <div className="relative">
+                            <input
+                                type={showNewPassword ? 'text' : 'password'}
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-accent-white focus:border-primary focus:outline-none pr-12"
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-accent-gray/60 hover:text-primary transition-colors"
+                            >
+                                {showNewPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                            </button>
+                        </div>
                     </div>
 
                     <div>
                         <label className="block text-accent-gray text-xs font-bold uppercase tracking-widest mb-2">
                             Confirm Password
                         </label>
-                        <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none"
-                            required
-                        />
+                        <div className="relative">
+                            <input
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-accent-white focus:border-primary focus:outline-none pr-12"
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-accent-gray/60 hover:text-primary transition-colors"
+                            >
+                                {showConfirmPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                            </button>
+                        </div>
                     </div>
 
                     <button
@@ -100,7 +121,7 @@ const ResetPassword: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/login')}
-                        className="w-full bg-surface-light border border-surface-border text-accent-gray py-3 rounded-lg font-bold uppercase tracking-wider text-sm hover:text-white transition-colors"
+                        className="w-full bg-surface-light border border-surface-border text-accent-gray py-3 rounded-lg font-bold uppercase tracking-wider text-sm hover:text-primary transition-colors"
                     >
                         Back to Login
                     </button>

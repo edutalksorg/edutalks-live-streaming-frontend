@@ -51,10 +51,10 @@ const StudentLayout: React.FC = () => {
                                         to={link.path}
                                         className={`flex items-center gap-3 px-6 py-3 rounded-full text-sm font-black transition-all duration-300 ${isActive(link.path)
                                             ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105'
-                                            : 'text-accent-gray hover:bg-surface hover:text-white'
+                                            : 'text-accent-gray hover:bg-primary/10 hover:text-primary'
                                             }`}
                                     >
-                                        <link.icon className={isActive(link.path) ? 'text-white' : 'text-accent-gray group-hover:text-white'} size={16} />
+                                        <link.icon className={isActive(link.path) ? 'text-white' : 'text-accent-gray group-hover:text-primary'} size={16} />
                                         <span className="uppercase tracking-wide text-xs">{link.label}</span>
                                     </Link>
                                 ))}
@@ -99,7 +99,7 @@ const StudentLayout: React.FC = () => {
                     <Link
                         key={link.path}
                         to={link.path}
-                        className={`flex flex-col items-center gap-1 transition-all duration-300 ${isActive(link.path) ? 'text-primary scale-110' : 'text-accent-gray hover:text-white'
+                        className={`flex flex-col items-center gap-1 transition-all duration-300 ${isActive(link.path) ? 'text-primary scale-110' : 'text-accent-gray hover:text-primary'
                             }`}
                     >
                         <link.icon size={isActive(link.path) ? 22 : 20} className="md:size-[22px]" />

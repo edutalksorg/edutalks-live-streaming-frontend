@@ -179,7 +179,7 @@ const Register: React.FC = () => {
 
             {/* Success Modal */}
             {showSuccess && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
                     <div className="bg-surface p-8 rounded-[2rem] max-w-sm w-full text-center shadow-[0_0_50px_rgba(238,29,35,0.15)] border border-white/10 relative overflow-hidden animate-in zoom-in-95 duration-300">
                         <div className="absolute inset-0 bg-primary/5 pointer-events-none"></div>
                         <div className="relative z-10">

@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { FaCheckCircle, FaTimesCircle, FaChevronLeft } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 
 const StudentExamResult: React.FC = () => {
     const { submissionId } = useParams<{ submissionId: string }>();
     const navigate = useNavigate();
+    const { showAlert } = useModal();
     const [submission, setSubmission] = useState<any>(null);
     const [exam, setExam] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -118,11 +120,11 @@ const StudentExamResult: React.FC = () => {
 
                                 try {
                                     await api.post(`/api/exams/submissions/${submissionId}/upload-worksheet`, formData);
-                                    alert('MISSION INTEL TRANSMITTED: Worksheet uploaded successfully!');
+                                    showAlert('MISSION INTEL TRANSMITTED: Worksheet uploaded successfully!', 'success');
                                     window.location.reload();
                                 } catch (err) {
                                     console.error(err);
-                                    alert('TRANSMISSION FAILURE: Upload failed');
+                                    showAlert('TRANSMISSION FAILURE: Upload failed', 'error');
                                 }
                             }}
                         />

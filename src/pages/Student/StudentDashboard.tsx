@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useModal } from '../../context/ModalContext';
 import { FaVideo, FaBook, FaChevronDown, FaChevronUp, FaFileAlt, FaCheckCircle, FaPlayCircle, FaHourglassHalf, FaTimes, FaClock } from 'react-icons/fa';
 import { io } from 'socket.io-client';
 import SubscriptionPopup from '../../components/SubscriptionPopup';
@@ -65,6 +66,7 @@ interface ClassSession {
 const StudentDashboard: React.FC = () => {
     const { user } = useContext(AuthContext)!;
     const { theme } = useTheme();
+    const { showAlert } = useModal();
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [liveClasses, setLiveClasses] = useState<ClassSession[]>([]);
@@ -384,11 +386,11 @@ const StudentDashboard: React.FC = () => {
                                                                                     formData.append('file', file);
                                                                                     try {
                                                                                         await api.post(`/api/exams/submissions/${exam.all_attempts[0].id}/upload-worksheet`, formData);
-                                                                                        alert('Tactical Intel Uploaded Successfully!');
-                                                                                        window.location.reload();
+                                                                                        showAlert('Tactical Intel Uploaded Successfully!', 'success');
+                                                                                        fetchData(); // Use fetchData instead of reload if possible, but reload is safer for state sync sometimes. However, fetchData updates dashboardData.
                                                                                     } catch (err) {
                                                                                         console.error(err);
-                                                                                        alert('Upload Failure');
+                                                                                        showAlert('Upload Failure', 'error');
                                                                                     }
                                                                                 }}
                                                                             />
@@ -489,11 +491,11 @@ const StudentDashboard: React.FC = () => {
                                                                     formData.append('file', file);
                                                                     try {
                                                                         await api.post(`/api/exams/submissions/${result.submission_id}/upload-worksheet`, formData);
-                                                                        alert('Uplink Established!');
-                                                                        window.location.reload();
+                                                                        showAlert('Uplink Established!', 'success');
+                                                                        fetchData();
                                                                     } catch (err) {
                                                                         console.error(err);
-                                                                        alert('Uplink Failed');
+                                                                        showAlert('Uplink Failed', 'error');
                                                                     }
                                                                 }}
                                                             />

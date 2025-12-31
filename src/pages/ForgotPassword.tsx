@@ -49,7 +49,7 @@ const ForgotPassword: React.FC = () => {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none"
+                            className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-accent-white focus:border-primary focus:outline-none"
                             required
                         />
                     </div>
@@ -65,7 +65,7 @@ const ForgotPassword: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/login')}
-                        className="w-full bg-surface-light border border-surface-border text-accent-gray py-3 rounded-lg font-bold uppercase tracking-wider text-sm hover:text-white transition-colors"
+                        className="w-full bg-surface-light border border-surface-border text-accent-gray py-3 rounded-lg font-bold uppercase tracking-wider text-sm hover:text-primary transition-colors"
                     >
                         Back to Login
                     </button>

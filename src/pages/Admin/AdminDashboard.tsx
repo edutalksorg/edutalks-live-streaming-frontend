@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FaChalkboardTeacher, FaUserGraduate, FaVideo, FaBell, FaCheck, FaTimes } from 'react-icons/fa';
 import api from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useModal } from '../../context/ModalContext';
 
 interface User {
     id: number;
@@ -15,6 +16,7 @@ interface User {
 
 const AdminDashboard: React.FC = () => {
     const { theme } = useTheme();
+    const { showAlert, showConfirm } = useModal();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
@@ -66,16 +68,17 @@ const AdminDashboard: React.FC = () => {
         const action = isActive ? 'deactivate' : 'approve';
         const actionText = isActive ? 'Deactivate' : 'Approve';
 
-        if (!window.confirm(`Are you sure you want to ${actionText.toLowerCase()} this user?`)) return;
+        const confirmed = await showConfirm(`Are you sure you want to ${actionText.toLowerCase()} this user?`, isActive ? 'error' : 'warning', `${actionText} User`);
+        if (!confirmed) return;
 
         try {
             const endpoint = isActive ? `/api/admin/deactivate/${id}` : `/api/admin/approve/${id}`;
             await api.put(endpoint);
-            alert(`User ${actionText.toLowerCase()}d successfully!`);
+            showAlert(`User ${actionText.toLowerCase()}d successfully!`, 'success');
             fetchUsers(); // Refresh data
         } catch (err) {
             console.error(`Failed to ${action} user`, err);
-            alert(`Failed to ${action} user.`);
+            showAlert(`Failed to ${action} user.`, 'error');
         }
     };
 

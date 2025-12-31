@@ -2,12 +2,14 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
-import { FaCheckCircle, FaChevronLeft, FaChevronRight, FaFileUpload, FaTrash, FaEye, FaTimes, FaHourglassHalf } from 'react-icons/fa';
+import { FaCheckCircle, FaChevronLeft, FaChevronRight, FaFileUpload, FaTrash, FaEye } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 
 const ExamRunner: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { user } = useContext(AuthContext)!;
     const navigate = useNavigate();
+    const { showAlert, showConfirm } = useModal();
 
     const [exam, setExam] = useState<any>(null);
     const [questions, setQuestions] = useState<any[]>([]);
@@ -19,14 +21,6 @@ const ExamRunner: React.FC = () => {
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    // Custom Modal State
-    const [modal, setModal] = useState<{
-        show: boolean;
-        type: 'success' | 'error' | 'confirm';
-        title: string;
-        message: string;
-        onConfirm?: () => void;
-    }>({ show: false, type: 'success', title: '', message: '' });
 
     useEffect(() => {
         const fetchExam = async () => {
@@ -92,30 +86,17 @@ const ExamRunner: React.FC = () => {
             const { submissionId, status, score } = res.data;
 
             if (status === 'graded') {
-                setModal({
-                    show: true,
-                    type: 'success',
-                    title: 'EXTRACTION COMPLETE',
-                    message: `Exam Submitted Successfully! Final Score: ${score}`,
-                    onConfirm: () => navigate(`/student/exam-result/${submissionId}`)
+                showAlert(`Exam Submitted Successfully! Final Score: ${score}`, 'success', 'EXTRACTION COMPLETE').then(() => {
+                    navigate(`/student/exam-result/${submissionId}`);
                 });
             } else {
-                setModal({
-                    show: true,
-                    type: 'success',
-                    title: 'INTEL SYNCED',
-                    message: 'Exam Submitted Successfully! Digital answers are graded, handwritten parts are pending review.',
-                    onConfirm: () => navigate('/student/tests')
+                showAlert('Exam Submitted Successfully! Digital answers are graded, handwritten parts are pending review.', 'success', 'INTEL SYNCED').then(() => {
+                    navigate('/student/tests');
                 });
             }
         } catch (err) {
             console.error(err);
-            setModal({
-                show: true,
-                type: 'error',
-                title: 'UPLINK FAILURE',
-                message: 'Submission failed. Please check your connection and retry extraction.'
-            });
+            showAlert('Submission failed. Please check your connection and retry extraction.', 'error', 'UPLINK FAILURE');
         } finally {
             setIsSubmitting(false);
         }
@@ -318,14 +299,15 @@ const ExamRunner: React.FC = () => {
                             </div>
                         )}
                         <button
-                            onClick={() => {
-                                setModal({
-                                    show: true,
-                                    type: 'confirm',
-                                    title: 'ABORT OPERATION?',
-                                    message: 'Operational progress will be lost. Are you sure you want to terminate the session?',
-                                    onConfirm: () => navigate('/student/tests')
-                                });
+                            onClick={async () => {
+                                const confirmed = await showConfirm(
+                                    'Operational progress will be lost. Are you sure you want to terminate the session?',
+                                    'warning',
+                                    'ABORT OPERATION?'
+                                );
+                                if (confirmed) {
+                                    navigate('/student/tests');
+                                }
                             }}
                             className="w-full text-accent-gray hover:text-primary font-black text-[10px] uppercase tracking-[0.4em] transition-colors py-3 md:py-4 bg-surface-dark border border-surface-border rounded-xl hover:bg-surface-light flex items-center justify-center gap-2 group"
                         >
@@ -335,54 +317,6 @@ const ExamRunner: React.FC = () => {
                 </div>
             </div>
 
-            {/* Custom Tactical Modal */}
-            {modal.show && (
-                <div className="fixed inset-0 z-[200] bg-background/80 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-surface border border-surface-border p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center space-y-8 animate-in zoom-in duration-300 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -z-10"></div>
-
-                        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border-4 ${modal.type === 'success' ? 'bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20' :
-                            modal.type === 'error' ? 'bg-primary/10 text-primary border-primary/20' :
-                                'bg-accent-blue/10 text-accent-blue border-accent-blue/20'
-                            }`}>
-                            {modal.type === 'success' ? <FaCheckCircle size={32} /> :
-                                modal.type === 'error' ? <FaTimes size={32} /> :
-                                    <FaHourglassHalf size={32} className="animate-pulse" />}
-                        </div>
-
-                        <div>
-                            <h3 className="text-2xl font-black text-accent-white uppercase tracking-tighter mb-3 italic">
-                                {modal.title}
-                            </h3>
-                            <p className="text-accent-gray font-medium italic leading-relaxed">
-                                {modal.message}
-                            </p>
-                        </div>
-
-                        <div className="flex gap-4">
-                            {modal.type === 'confirm' && (
-                                <button
-                                    onClick={() => setModal({ ...modal, show: false })}
-                                    className="flex-1 px-8 py-4 bg-surface-light text-accent-gray font-black uppercase tracking-widest text-[10px] rounded-2xl hover:text-accent-white transition-all shadow-lg"
-                                >
-                                    BACK TO MISSION
-                                </button>
-                            )}
-                            <button
-                                onClick={() => {
-                                    setModal({ ...modal, show: false });
-                                    if (modal.onConfirm) modal.onConfirm();
-                                }}
-                                className={`flex-1 px-10 py-4 font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-xl transition-all active:scale-95 ${modal.type === 'error' ? 'bg-primary hover:bg-primary-hover shadow-primary/20' :
-                                    'bg-accent-blue hover:bg-accent-blue/80 shadow-accent-blue/20'
-                                    } text-white`}
-                            >
-                                {modal.type === 'confirm' ? 'CONFIRM ABORT' : 'ACKNOWLEDGE'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

@@ -64,8 +64,8 @@ const TournamentLeaderboard: React.FC = () => {
                     {/* Rank 2 */}
                     {leaderboard[1] && (
                         <div className="order-2 md:order-1 premium-card p-10 border-surface-border text-center group bg-surface/40 hover:-translate-y-2 transition-transform h-fit mt-12">
-                            <div className="relative mb-6">
-                                <div className="absolute inset-0 bg-surface-light border-4 border-surface-border rounded-full w-20 h-20 flex items-center justify-center mx-auto group-hover:border-accent-gray/40 transition-colors">
+                            <div className="relative w-20 h-20 mx-auto mb-6">
+                                <div className="bg-surface-light border-4 border-surface-border rounded-full w-full h-full flex items-center justify-center group-hover:border-accent-gray/40 transition-colors">
                                     <FaUserCircle size={40} className="text-accent-gray" />
                                 </div>
                                 <div className="absolute -bottom-2 right-1/2 translate-x-1/2 bg-accent-gray text-white w-8 h-8 rounded-full border-4 border-surface-dark flex items-center justify-center font-black italic shadow-lg">2</div>
@@ -73,6 +73,16 @@ const TournamentLeaderboard: React.FC = () => {
                             <div className="text-xl font-black text-accent-white italic uppercase mb-2 line-clamp-1 px-2">{leaderboard[1].student_name}</div>
                             <div className="text-3xl font-black text-accent-gray italic">{leaderboard[1].score}</div>
                             <div className="text-[10px] text-accent-gray font-bold uppercase tracking-widest mt-1 opacity-50">Points Secured</div>
+                            <div className="flex justify-center gap-4 mt-4 pt-4 border-t border-white/5">
+                                <div className="text-center">
+                                    <div className="text-[10px] font-black text-accent-white italic">{leaderboard[1].accuracy}%</div>
+                                    <div className="text-[7px] text-accent-gray uppercase tracking-widest mt-0.5">Acc</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-[10px] font-black text-accent-white italic">{Math.floor(leaderboard[1].time_taken / 60)}m</div>
+                                    <div className="text-[7px] text-accent-gray uppercase tracking-widest mt-0.5">Time</div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -80,8 +90,8 @@ const TournamentLeaderboard: React.FC = () => {
                     {leaderboard[0] && (
                         <div className="order-1 md:order-2 premium-card p-12 border-primary/30 text-center scale-110 shadow-3xl shadow-primary/20 bg-surface/60 relative overflow-hidden group hover:scale-[1.12] transition-transform">
                             <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 rounded-full blur-[60px] -z-10"></div>
-                            <div className="relative mb-8">
-                                <div className="absolute inset-0 bg-primary/20 border-4 border-primary/50 rounded-full w-28 h-28 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                            <div className="relative w-28 h-28 mx-auto mb-8">
+                                <div className="bg-primary/20 border-4 border-primary/50 rounded-full w-full h-full flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <FaAward size={56} className="text-primary" />
                                 </div>
                                 <div className="absolute -bottom-4 right-1/2 translate-x-1/2 bg-primary text-white w-12 h-12 rounded-full border-4 border-surface-dark flex items-center justify-center font-black italic text-xl shadow-2xl">1</div>
@@ -89,14 +99,24 @@ const TournamentLeaderboard: React.FC = () => {
                             <div className="text-2xl font-black text-accent-white italic uppercase mb-2 line-clamp-1 px-4">{leaderboard[0].student_name}</div>
                             <div className="text-5xl font-black text-primary italic drop-shadow-[0_0_15px_rgba(238,29,35,0.4)]">{leaderboard[0].score}</div>
                             <div className="text-[11px] text-accent-gray font-bold uppercase tracking-[0.3em] mt-3 italic opacity-80">Prime Champion</div>
+                            <div className="flex justify-center gap-6 mt-6 pt-6 border-t border-primary/10">
+                                <div className="text-center">
+                                    <div className="text-xs font-black text-accent-white italic">{leaderboard[0].accuracy}%</div>
+                                    <div className="text-[8px] text-accent-gray uppercase tracking-widest mt-1">Precision</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-xs font-black text-accent-white italic">{Math.floor(leaderboard[0].time_taken / 60)}m {leaderboard[0].time_taken % 60}s</div>
+                                    <div className="text-[8px] text-accent-gray uppercase tracking-widest mt-1">Duration</div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
                     {/* Rank 3 */}
                     {leaderboard[2] && (
                         <div className="order-3 premium-card p-8 border-surface-border text-center group bg-surface/40 hover:-translate-y-2 transition-transform h-fit md:mt-16">
-                            <div className="relative mb-6">
-                                <div className="absolute inset-0 bg-surface-light border-4 border-surface-border rounded-full w-16 h-16 flex items-center justify-center mx-auto group-hover:border-orange-500/40 transition-colors">
+                            <div className="relative w-16 h-16 mx-auto mb-6">
+                                <div className="bg-surface-light border-4 border-surface-border rounded-full w-full h-full flex items-center justify-center group-hover:border-orange-500/40 transition-colors">
                                     <FaUserCircle size={32} className="text-orange-500/60" />
                                 </div>
                                 <div className="absolute -bottom-2 right-1/2 translate-x-1/2 bg-orange-700 text-white w-8 h-8 rounded-full border-4 border-surface-dark flex items-center justify-center font-black italic shadow-lg">3</div>
@@ -104,6 +124,16 @@ const TournamentLeaderboard: React.FC = () => {
                             <div className="text-lg font-black text-accent-white italic uppercase mb-2 line-clamp-1 px-2">{leaderboard[2].student_name}</div>
                             <div className="text-2xl font-black text-orange-500/80 italic">{leaderboard[2].score}</div>
                             <div className="text-[10px] text-accent-gray font-bold uppercase tracking-widest mt-1 opacity-50">Points Secured</div>
+                            <div className="flex justify-center gap-4 mt-4 pt-4 border-t border-white/5">
+                                <div className="text-center">
+                                    <div className="text-[10px] font-black text-accent-white italic">{leaderboard[2].accuracy}%</div>
+                                    <div className="text-[7px] text-accent-gray uppercase tracking-widest mt-0.5">Acc</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-[10px] font-black text-accent-white italic">{Math.floor(leaderboard[2].time_taken / 60)}m</div>
+                                    <div className="text-[7px] text-accent-gray uppercase tracking-widest mt-0.5">Time</div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -122,10 +152,10 @@ const TournamentLeaderboard: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-surface-border">
-                                {leaderboard.slice(3).map((entry, idx) => (
-                                    <tr key={entry.student_id} className="group hover:bg-surface-light/20 transition-colors">
+                                {leaderboard.map((entry, idx) => (
+                                    <tr key={entry.student_id} className={`group hover:bg-surface-light/20 transition-colors ${idx < 3 ? 'bg-primary/5' : ''}`}>
                                         <td className="px-6 py-6">
-                                            <span className="text-base font-black text-accent-gray italic group-hover:text-accent-white transition-colors">#{idx + 4}</span>
+                                            <span className={`text-base font-black italic transition-colors ${idx < 3 ? 'text-primary' : 'text-accent-gray group-hover:text-accent-white'}`}>#{idx + 1}</span>
                                         </td>
                                         <td className="px-6 py-6">
                                             <div className="flex items-center gap-3">

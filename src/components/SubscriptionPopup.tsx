@@ -23,8 +23,8 @@ const SubscriptionPopup: React.FC<SubscriptionPopupProps> = ({ isOpen, onClose, 
                     <FaCrown size={40} />
                 </div>
 
-                <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Premium Access</h2>
-                <p className="text-gray-500 dark:text-gray-400 mb-8 font-medium">
+                <h2 className="text-3xl font-black text-accent-white mb-2">Premium Access</h2>
+                <p className="text-accent-gray mb-8 font-medium">
                     {message || "Unlock exams, live classes, and tournaments with EduTalks Pro."}
                 </p>
 
@@ -33,8 +33,8 @@ const SubscriptionPopup: React.FC<SubscriptionPopupProps> = ({ isOpen, onClose, 
                         <FaLock size={20} />
                     </div>
                     <div>
-                        <div className="text-sm font-bold text-gray-900 dark:text-white">Restricted Content</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Upgrade to view this content.</div>
+                        <div className="text-sm font-bold text-accent-white">Restricted Content</div>
+                        <div className="text-xs text-accent-gray">Upgrade to view this content.</div>
                     </div>
                 </div>
 

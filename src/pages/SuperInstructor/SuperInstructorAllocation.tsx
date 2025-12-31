@@ -340,8 +340,8 @@ const SuperInstructorAllocation: React.FC = () => {
             {
                 isDrawerOpen && (
                     <div className="fixed inset-0 z-50 overflow-hidden">
-                        <div className="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity duration-500" onClick={() => setIsDrawerOpen(false)}></div>
-                        <div className="absolute inset-y-0 right-0 max-w-md w-full flex">
+                        <div className="absolute inset-0 bg-black/50 backdrop-blur-md transition-opacity duration-500" onClick={() => setIsDrawerOpen(false)}></div>
+                        <div className="absolute inset-0 flex">
                             <div className="h-full w-full bg-surface border-l border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)] flex flex-col animate-slideInRight duration-500">
                                 {/* Drawer Header */}
                                 <div className="p-10 bg-gradient-to-br from-primary/30 to-surface border-b border-white/5 flex justify-between items-start">
@@ -446,7 +446,7 @@ const SuperInstructorAllocation: React.FC = () => {
             {/* Custom Confirmation Modal */}
             {confirmationModal.isOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity animate-fadeIn" onClick={closeConfirmation}></div>
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity animate-fadeIn" onClick={closeConfirmation}></div>
                     <div className="bg-surface p-8 rounded-[2rem] border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-sm w-full relative z-10 animate-scaleIn transform hover:scale-[1.02] transition-transform">
                         <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 shadow-glow ${confirmationModal.type === 'danger' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-primary/10 text-primary border border-primary/20'}`}>
                             {confirmationModal.type === 'danger' ? <FaTrash size={24} /> : <FaBook size={24} />}

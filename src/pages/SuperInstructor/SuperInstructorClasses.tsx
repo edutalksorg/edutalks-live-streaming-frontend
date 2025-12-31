@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import api from '../../services/api';
 import { FaPlayCircle, FaCalendarDay, FaEdit, FaTrash, FaPlus, FaClock } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 import { io } from 'socket.io-client';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
@@ -21,7 +22,7 @@ interface ClassSession {
 }
 
 const SuperInstructorClasses: React.FC = () => {
-
+    const { showAlert, showConfirm } = useModal();
     const navigate = useNavigate();
     const [classes, setClasses] = useState<ClassSession[]>([]);
     const [subjects, setSubjects] = useState<any[]>([]);
@@ -85,7 +86,7 @@ const SuperInstructorClasses: React.FC = () => {
             fetchClasses();
         } catch (err) {
             console.error('Error saving class:', err);
-            alert('Failed to save class');
+            showAlert('Failed to save class', 'error');
         }
     };
 
@@ -102,13 +103,15 @@ const SuperInstructorClasses: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm('Are you sure you want to delete this class?')) return;
+        const confirmed = await showConfirm('Are you sure you want to delete this class?', 'error', 'Delete Class');
+        if (!confirmed) return;
         try {
             await api.delete(`/api/super-instructor/classes/${id}`);
             fetchClasses();
+            showAlert('Class deleted successfully', 'success');
         } catch (err) {
             console.error('Error deleting class:', err);
-            alert('Failed to delete class');
+            showAlert('Failed to delete class', 'error');
         }
     };
 
@@ -122,7 +125,7 @@ const SuperInstructorClasses: React.FC = () => {
             navigate(`/super-instructor/classroom/${res.data.id}`);
         } catch (err) {
             console.error('Error starting immediate class:', err);
-            alert('Failed to start class');
+            showAlert('Failed to start class', 'error');
         }
     };
 

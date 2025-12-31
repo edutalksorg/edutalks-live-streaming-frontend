@@ -4,6 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaVideo, FaClipboardList, FaUsers, FaMedal, FaBookOpen } from 'react-icons/fa';
 import api from '../../services/api';
+import { useModal } from '../../context/ModalContext';
 
 const InstructorDashboard: React.FC = () => {
     const { user } = useContext(AuthContext)!;
@@ -16,6 +17,7 @@ const InstructorDashboard: React.FC = () => {
     const [liveTitle, setLiveTitle] = useState('');
     const [liveSubjectId, setLiveSubjectId] = useState('');
     const navigate = useNavigate();
+    const { showAlert } = useModal();
 
     useEffect(() => {
         fetchDashboardData();
@@ -43,7 +45,7 @@ const InstructorDashboard: React.FC = () => {
             navigate(`/instructor/live/${res.data.id}`);
         } catch (err) {
             console.error("Failed to start immediate class", err);
-            alert("Failed to start class. Please try again.");
+            showAlert("Failed to start class. Please try again.", "error");
         }
     };
 
@@ -55,7 +57,7 @@ const InstructorDashboard: React.FC = () => {
                 <h2 className="text-4xl font-extrabold text-gradient-red mb-2 italic tracking-tight">
                     Welcome back, {user?.name}
                 </h2>
-                <p className="text-accent-gray font-black uppercase tracking-[0.2em] text-[10px] opacity-70 italic">Manage your batches, conduct live classes, and review students.</p>
+                <p className="text-accent-gray font-black uppercase tracking-[0.2em] text-[10px] opacity-90 italic">Manage your batches, conduct live classes, and review students.</p>
             </header>
 
             {/* Stats Grid */}
@@ -110,7 +112,7 @@ const InstructorDashboard: React.FC = () => {
                             </div>
                         )) : (
                             <div className="col-span-2 bg-surface-dark/50 border-2 border-dashed border-surface-border rounded-[2.5rem] p-20 text-center">
-                                <p className="text-accent-gray font-black uppercase tracking-[0.4em] text-[10px] italic opacity-50">No batches assigned yet.</p>
+                                <p className="text-accent-gray font-black uppercase tracking-[0.4em] text-[10px] italic opacity-80">No batches assigned yet.</p>
                             </div>
                         )}
                     </div>
@@ -138,7 +140,7 @@ const InstructorDashboard: React.FC = () => {
                             Quick Actions
                         </h3>
                         <div className="space-y-4">
-                            <p className="text-accent-gray text-[10px] font-black uppercase tracking-widest italic mb-8 opacity-70">Connect with students and share notes to help them prepare for exams.</p>
+                            <p className="text-accent-gray text-[10px] font-black uppercase tracking-widest italic mb-8 opacity-90">Connect with students and share notes to help them prepare for exams.</p>
                             <Link to="/instructor/notes" className="flex items-center gap-6 p-6 rounded-[1.5rem] border border-surface-border hover:border-primary/20 hover:bg-primary/5 transition-all group">
                                 <div className="p-4 bg-surface-dark text-accent-gray group-hover:bg-primary group-hover:text-white rounded-2xl transition-all shadow-xl group-hover:rotate-6">
                                     <FaBookOpen size={20} />
@@ -159,7 +161,7 @@ const InstructorDashboard: React.FC = () => {
 
                         <form onSubmit={handleStartImmediate} className="space-y-8">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">SESSION TITLE</label>
+                                <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-70">SESSION TITLE</label>
                                 <input
                                     type="text" placeholder="e.g. Doubts Clearing Session" required
                                     className="w-full bg-surface-light border-2 border-surface-border rounded-xl p-4 text-accent-white font-medium italic focus:border-primary outline-none transition-all"
@@ -168,7 +170,7 @@ const InstructorDashboard: React.FC = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">SELECT SUBJECT</label>
+                                <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-70">SELECT SUBJECT</label>
                                 <select
                                     className="w-full bg-surface-light border-2 border-surface-border rounded-xl p-4 text-accent-white font-medium italic focus:border-primary outline-none transition-all"
                                     value={liveSubjectId} onChange={e => setLiveSubjectId(e.target.value)} required

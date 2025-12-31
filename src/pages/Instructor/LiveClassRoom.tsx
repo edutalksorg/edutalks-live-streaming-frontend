@@ -6,6 +6,7 @@ import { io, Socket } from 'socket.io-client';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../services/api';
 import Whiteboard from '../../components/Whiteboard';
+import { useModal } from '../../context/ModalContext';
 import {
     FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash,
     FaPhoneSlash, FaHandPaper,
@@ -21,6 +22,7 @@ const LiveClassRoom: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { user } = useContext(AuthContext)!;
     const navigate = useNavigate();
+    const { showAlert, showConfirm } = useModal();
 
     // --- State Management ---
     const [classDetails, setClassDetails] = useState<any>(null);
@@ -207,9 +209,10 @@ const LiveClassRoom: React.FC = () => {
             }
         });
 
-        socket.on('receive_screen_share_request', (data) => {
+        socket.on('receive_screen_share_request', async (data) => {
             if (isInstructor) {
-                if (window.confirm(`${data.studentName} wants to share their screen. Allow?`)) {
+                const confirmed = await showConfirm(`${data.studentName} wants to share their screen. Allow?`, "info", "SCREEN REQUEST");
+                if (confirmed) {
                     socket.emit('approve_screen_share', { classId: id, studentId: data.studentId });
                 }
             }
@@ -332,7 +335,8 @@ const LiveClassRoom: React.FC = () => {
 
         socket.on('request_unmute_student', async (data) => {
             if (String(user?.id) === String(data.studentId)) {
-                if (window.confirm("The instructor is requesting you to unmute your microphone. Allow?")) {
+                const confirmed = await showConfirm("The instructor is requesting you to unmute your microphone. Allow?", "info", "UNMUTE REQUEST");
+                if (confirmed) {
                     // Grant permission and unmute
                     setStudentsWithUnmutePermission(prev => new Set(prev).add(String(user?.id)));
                     if (!micOnRef.current) toggleMic(true);
@@ -702,7 +706,8 @@ const LiveClassRoom: React.FC = () => {
 
     const handleEndClass = async () => {
         if (!isInstructor) return;
-        if (window.confirm("Are you sure you want to end this class for everyone?")) {
+        const confirmed = await showConfirm("Are you sure you want to end this class for everyone?", "warning", "TERMINATE SESSION");
+        if (confirmed) {
             try {
                 await api.post(`/api/classes/${id}/end`);
                 navigate('/instructor');
@@ -738,14 +743,16 @@ const LiveClassRoom: React.FC = () => {
         socketRef.current?.emit('admin_grant_unmute', { classId: id, studentId });
     };
 
-    const handleMuteAll = () => {
-        if (window.confirm("Mute all students?")) {
+    const handleMuteAll = async () => {
+        const confirmed = await showConfirm("Mute all students?", "warning", "MUTE ALL");
+        if (confirmed) {
             socketRef.current?.emit('admin_mute_all', { classId: id });
         }
     };
 
-    const handleUnlockAll = () => {
-        if (window.confirm("Unlock all student microphones?")) {
+    const handleUnlockAll = async () => {
+        const confirmed = await showConfirm("Unlock all student microphones?", "info", "UNLOCK ALL");
+        if (confirmed) {
             socketRef.current?.emit('admin_unlock_all', { classId: id });
         }
     };
@@ -795,7 +802,7 @@ const LiveClassRoom: React.FC = () => {
             toggleScreenShare();
         } else {
             socketRef.current?.emit('request_screen_share', { classId: id, studentId: user?.id, studentName: user?.name });
-            alert("Request sent to instructor...");
+            showAlert("Request sent to instructor...", "info", "STREAM REQUEST");
         }
     };
 
@@ -804,7 +811,7 @@ const LiveClassRoom: React.FC = () => {
             <div className="w-24 h-24 border-8 border-primary border-t-transparent rounded-full animate-spin shadow-[0_0_50px_rgba(238,29,35,0.3)]"></div>
             <div className="space-y-2">
                 <h1 className="text-3xl font-black text-white italic tracking-[0.2em] uppercase">Initializing Nexus</h1>
-                <p className="text-accent-gray italic font-bold tracking-widest opacity-40 uppercase text-xs">Synchronizing Neural Frequencies...</p>
+                <p className="text-accent-gray italic font-bold tracking-widest opacity-70 uppercase text-xs">Synchronizing Neural Frequencies...</p>
             </div>
         </div>
     );
@@ -932,11 +939,11 @@ const LiveClassRoom: React.FC = () => {
                             {layoutMode !== 'focus' && (
                                 <div className="w-[30%] bg-slate-50 border-l border-slate-200 flex flex-col p-4 overflow-y-auto gap-4 scrollbar-minimal animate-in slide-in-from-right duration-500">
                                     <div className="flex items-center justify-between mb-2">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Nexus Matrix</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Nexus Matrix</p>
                                         <div className="flex gap-1">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                            <span className="text-[8px] font-bold text-slate-400 uppercase">{onlineUsers.length} ONLINE</span>
+                                            <span className="text-[8px] font-bold text-slate-500 uppercase">{onlineUsers.length} ONLINE</span>
                                         </div>
                                     </div>
 
@@ -1043,7 +1050,7 @@ const LiveClassRoom: React.FC = () => {
                             <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-900 leading-none">{classDetails.title}</h2>
                             <div className="flex items-center gap-1.5 mt-1.5">
                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-                                <p className="text-[8px] text-slate-400 font-bold uppercase tracking-[0.2em]">Session Active</p>
+                                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em]">Session Active</p>
                             </div>
                         </div>
                         <div className="h-8 w-px bg-slate-100" />
@@ -1181,7 +1188,7 @@ const LiveClassRoom: React.FC = () => {
                                         <div className="flex-1 p-4 space-y-4">
                                             {messages.map((m, i) => (
                                                 <div key={i} className={`flex flex-col ${m.senderName === user?.name ? 'items-end' : 'items-start'}`}>
-                                                    <span className="text-[8px] font-bold text-slate-400 uppercase mb-1">{m.senderName}</span>
+                                                    <span className="text-[8px] font-bold text-slate-500 uppercase mb-1">{m.senderName}</span>
                                                     <div className={`p-3 rounded-2xl text-xs max-w-[80%] ${m.senderName === user?.name ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-800 rounded-tl-none'}`}>
                                                         {m.message}
                                                     </div>

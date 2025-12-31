@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { FaPlus } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 
 interface User {
     id: number;
@@ -12,6 +13,7 @@ interface User {
 
 const InstructorManagement: React.FC = () => {
     const [instructors, setInstructors] = useState<User[]>([]);
+    const { showAlert } = useModal();
 
     const [showModal, setShowModal] = useState(false);
     const [newInstructor, setNewInstructor] = useState({ name: '', email: '', password: '' });
@@ -41,7 +43,7 @@ const InstructorManagement: React.FC = () => {
             setNewInstructor({ name: '', email: '', password: '' });
             fetchInstructors();
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to create instructor');
+            showAlert(err.response?.data?.message || 'Failed to create instructor', "error");
         }
     };
 

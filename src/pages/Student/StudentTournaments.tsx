@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { FaTrophy, FaMedal, FaCheckCircle, FaPlayCircle } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
+import { useModal } from '../../context/ModalContext';
 import SubscriptionPopup from '../../components/SubscriptionPopup';
 
 interface Tournament {
@@ -32,6 +33,7 @@ interface Tournament {
 
 const StudentTournaments: React.FC = () => {
     const { user } = useContext(AuthContext)!;
+    const { showAlert } = useModal();
     const navigate = useNavigate();
 
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -103,10 +105,10 @@ const StudentTournaments: React.FC = () => {
         checkAccess(async () => {
             try {
                 await api.post(`/api/tournaments/${tournamentId}/register`);
-                alert('Successfully registered for tournament!');
+                showAlert('Successfully registered for tournament!', 'success');
                 fetchTournaments(); // Refresh to update registration status
             } catch (err: any) {
-                alert(err.response?.data?.message || 'Registration failed');
+                showAlert(err.response?.data?.message || 'Registration failed', 'error');
             }
         });
     };

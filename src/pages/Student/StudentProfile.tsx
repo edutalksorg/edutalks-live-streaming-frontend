@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { FaUser, FaEnvelope, FaPhone, FaSchool, FaCrown, FaCreditCard, FaLock, FaExclamationCircle, FaCalendarAlt, FaArrowRight } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 
 interface ProfileData {
     user: {
@@ -16,6 +17,7 @@ interface ProfileData {
 }
 
 const StudentProfile: React.FC = () => {
+    const { showAlert } = useModal();
     const [data, setData] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -63,12 +65,12 @@ const StudentProfile: React.FC = () => {
         e.preventDefault();
         try {
             await api.put('/api/student/profile', editForm);
-            alert('Profile updated successfully!');
+            showAlert('Profile updated successfully!', 'success');
             setIsEditing(false);
             fetchProfile(); // Refresh data
         } catch (err: any) {
             console.error("Failed to update profile", err);
-            alert(err.response?.data?.message || 'Failed to update profile');
+            showAlert(err.response?.data?.message || 'Failed to update profile', 'error');
         }
     };
 
@@ -229,7 +231,7 @@ const StudentProfile: React.FC = () => {
 
             {/* Edit Modal */}
             {isEditing && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-center justify-center p-4">
                     <div className="bg-surface border border-surface-border rounded-2xl p-8 max-w-md w-full relative animate-in zoom-in duration-300">
                         <button
                             onClick={() => setIsEditing(false)}
@@ -247,7 +249,7 @@ const StudentProfile: React.FC = () => {
                                     type="text"
                                     value={editForm.name}
                                     onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                                    className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none"
+                                    className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-accent-white focus:border-primary focus:outline-none"
                                     required
                                 />
                             </div>
@@ -258,7 +260,7 @@ const StudentProfile: React.FC = () => {
                                     type="email"
                                     value={editForm.email}
                                     onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                                    className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none"
+                                    className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-accent-white focus:border-primary focus:outline-none"
                                     required
                                 />
                             </div>
@@ -269,7 +271,7 @@ const StudentProfile: React.FC = () => {
                                     type="tel"
                                     value={editForm.phone}
                                     onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
-                                    className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none"
+                                    className="w-full bg-surface-dark border border-surface-border rounded-lg px-4 py-3 text-accent-white focus:border-primary focus:outline-none"
                                 />
                             </div>
 

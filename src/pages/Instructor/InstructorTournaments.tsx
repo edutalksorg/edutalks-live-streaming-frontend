@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { FaTrophy, FaPlus, FaEdit, FaTrash, FaUsers, FaClock, FaChartBar, FaCheckCircle, FaUserGraduate } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 import TournamentForm from '../../components/TournamentForm.tsx';
 import { AuthContext } from '../../context/AuthContext';
 
@@ -24,6 +25,7 @@ interface Tournament {
 }
 
 const InstructorTournaments: React.FC = () => {
+    const { showAlert, showConfirm } = useModal();
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
@@ -58,14 +60,14 @@ const InstructorTournaments: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm('Are you sure you want to delete this tournament?')) return;
-
+        const confirmed = await showConfirm('Are you sure you want to delete this tournament?', 'error', 'Delete Tournament');
+        if (!confirmed) return;
         try {
             await api.delete(`/api/tournaments/${id}`);
-            alert('Tournament deleted successfully');
+            showAlert('Tournament deleted successfully', 'success');
             fetchTournaments();
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to delete tournament');
+            showAlert(err.response?.data?.message || 'Failed to delete tournament', 'error');
         }
     };
 
@@ -81,26 +83,26 @@ const InstructorTournaments: React.FC = () => {
     };
 
     const handlePublish = async (id: number) => {
-        if (!window.confirm('Are you sure you want to publish this tournament? This will make it visible to students.')) return;
-
+        const confirmed = await showConfirm('Are you sure you want to publish this tournament? This will make it visible to students.', 'warning', 'Publish Tournament');
+        if (!confirmed) return;
         try {
             await api.put(`/api/tournaments/${id}`, { status: 'UPCOMING' });
-            alert('Tournament published successfully!');
+            showAlert('Tournament published successfully!', 'success');
             fetchTournaments();
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to publish tournament');
+            showAlert(err.response?.data?.message || 'Failed to publish tournament', 'error');
         }
     };
 
     const handlePublishResults = async (id: number) => {
-        if (!window.confirm('Are you sure you want to publish results? This cannot be undone.')) return;
-
+        const confirmed = await showConfirm('Are you sure you want to publish results? This cannot be undone.', 'warning', 'Publish Results');
+        if (!confirmed) return;
         try {
             await api.post(`/api/tournaments/${id}/publish-results`);
-            alert('Results published successfully!');
+            showAlert('Results published successfully!', 'success');
             fetchTournaments();
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to publish results');
+            showAlert(err.response?.data?.message || 'Failed to publish results', 'error');
         }
     };
 
@@ -127,7 +129,6 @@ const InstructorTournaments: React.FC = () => {
         const isOwner = tournament.instructor_id === user?.id;
 
         const canEdit = isOwner && ['DRAFT', 'UPCOMING'].includes(tournament.status);
-        // Allow deletion for DRAFT and UPCOMING (before registration starts)
         const registrationStarted = new Date(tournament.registration_start) <= new Date();
         const canDelete = isOwner && (tournament.status === 'DRAFT' || (tournament.status === 'UPCOMING' && !registrationStarted));
         const canPublish = isOwner && tournament.status === 'DRAFT';
@@ -136,7 +137,6 @@ const InstructorTournaments: React.FC = () => {
         return (
             <div className="bg-white dark:bg-surface-dark rounded-lg shadow-md hover:shadow-xl transition-all duration-300 border-l-4 border-yellow-500 overflow-hidden">
                 <div className="p-6">
-                    {/* Header */}
                     <div className="flex justify-between items-start mb-3">
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white">{tournament.name}</h3>
                         {getStatusBadge(tournament.status)}
@@ -144,7 +144,6 @@ const InstructorTournaments: React.FC = () => {
 
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{tournament.description}</p>
 
-                    {/* Info Grid */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
                         <div className="flex items-center gap-2 text-sm">
                             <FaTrophy className="text-yellow-500" />
@@ -168,7 +167,6 @@ const InstructorTournaments: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Prize */}
                     {tournament.prize && (
                         <div className="mb-4">
                             <span className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-bold">
@@ -177,7 +175,6 @@ const InstructorTournaments: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Timing Matrix */}
                     <div className="mb-4 text-[11px] space-y-3 bg-gray-50 dark:bg-surface-light/20 p-3 rounded-lg border border-gray-100 dark:border-surface-border">
                         <div className="space-y-1">
                             <span className="font-black uppercase tracking-widest text-primary/60 block mb-1">Registration Window</span>
@@ -204,7 +201,6 @@ const InstructorTournaments: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex gap-2 flex-wrap">
                         {isOwner && canEdit && (
                             <button
@@ -242,7 +238,6 @@ const InstructorTournaments: React.FC = () => {
                             </button>
                         )}
 
-                        {/* Monitor/Real-time Results - Visible for LIVE (Owner) or Any Instructor of Same Grade */}
                         {(tournament.status === 'LIVE' || (isPastExam && tournament.status !== 'RESULT_PUBLISHED')) && (
                             <button
                                 onClick={() => navigate(`/instructor/tournament-monitor/${tournament.id}`)}
@@ -252,7 +247,6 @@ const InstructorTournaments: React.FC = () => {
                             </button>
                         )}
 
-                        {/* View Results/Leaderboard - Visible after results are published or exam ends */}
                         {(tournament.status === 'COMPLETED' || tournament.status === 'RESULT_PUBLISHED' || isPastExam) && (
                             <button
                                 onClick={() => navigate(`/instructor/tournament-leaderboard/${tournament.id}`)}
@@ -262,7 +256,6 @@ const InstructorTournaments: React.FC = () => {
                             </button>
                         )}
 
-                        {/* View Questions - For non-owners to see what the test is about */}
                         {!isOwner && tournament.status === 'UPCOMING' && (
                             <button
                                 onClick={() => navigate(`/instructor/tournament-preview/${tournament.id}`)}
@@ -279,7 +272,6 @@ const InstructorTournaments: React.FC = () => {
 
     return (
         <div className="p-4 md:p-6">
-            {/* Header */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                 <div>
                     <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3 text-gray-900 dark:text-white mb-2">
@@ -296,7 +288,6 @@ const InstructorTournaments: React.FC = () => {
                 </button>
             </div>
 
-            {/* Loading State */}
             {loading && (
                 <div className="text-center py-12">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-yellow-500 border-t-transparent"></div>
@@ -304,7 +295,6 @@ const InstructorTournaments: React.FC = () => {
                 </div>
             )}
 
-            {/* Empty State */}
             {!loading && tournaments.length === 0 && (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                     <FaTrophy className="text-6xl text-gray-300 dark:text-gray-600 mx-auto mb-4" />
@@ -319,7 +309,6 @@ const InstructorTournaments: React.FC = () => {
                 </div>
             )}
 
-            {/* Tournament Grid */}
             {!loading && tournaments.length > 0 && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     {tournaments.map(tournament => (
@@ -328,7 +317,6 @@ const InstructorTournaments: React.FC = () => {
                 </div>
             )}
 
-            {/* Tournament Form Modal */}
             {showForm && (
                 <TournamentForm
                     tournament={editingTournament}

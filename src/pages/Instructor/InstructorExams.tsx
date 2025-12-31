@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { Link } from 'react-router-dom';
 import { FaPlus, FaTrash, FaClipboardList } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 
 interface Question {
     text: string;
@@ -23,12 +24,12 @@ interface Exam {
 }
 
 const InstructorExams: React.FC = () => {
+    const { showAlert, showConfirm } = useModal();
     const [exams, setExams] = useState<Exam[]>([]);
     const [batches, setBatches] = useState<any[]>([]);
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [editingExam, setEditingExam] = useState<Exam | null>(null);
-    const [successModal, setSuccessModal] = useState<{ show: boolean, message: string }>({ show: false, message: '' });
 
     // Form State
     const [title, setTitle] = useState('');
@@ -78,11 +79,12 @@ const InstructorExams: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm('Are you sure you want to delete this exam?')) return;
+        const confirmed = await showConfirm('Are you sure you want to delete this exam?', 'error', 'Delete Exam');
+        if (!confirmed) return;
         try {
             await api.delete(`/api/instructor/exams/${id}`);
             fetchInitialData();
-            alert('Exam Deleted');
+            showAlert('Exam Deleted', 'success');
         } catch (err) {
             console.error("Failed to delete exam");
         }
@@ -114,7 +116,10 @@ const InstructorExams: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!subjectId) return alert('Please select a subject');
+        if (!subjectId) {
+            showAlert('Please select a subject', 'warning');
+            return;
+        }
         try {
             const payload = {
                 title, date, duration, questions,
@@ -128,10 +133,10 @@ const InstructorExams: React.FC = () => {
 
             if (editingExam) {
                 await api.put(`/api/instructor/exams/${editingExam.id}`, payload);
-                setSuccessModal({ show: true, message: 'Exam Updated Successfully' });
+                showAlert('Exam Updated Successfully', 'success');
             } else {
                 await api.post('/api/instructor/exams', payload);
-                setSuccessModal({ show: true, message: 'Exam Created Successfully' });
+                showAlert('Exam Created Successfully', 'success');
             }
 
             setShowModal(false);
@@ -160,7 +165,7 @@ const InstructorExams: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
                 <div>
                     <h2 className="text-4xl font-black text-accent-white italic mb-2 tracking-tighter uppercase">EXAM <span className="text-primary">ENGINE</span></h2>
-                    <p className="text-accent-gray uppercase tracking-[0.3em] text-[10px] font-black opacity-70">Architecture & Assessment Management</p>
+                    <p className="text-accent-gray uppercase tracking-[0.3em] text-[10px] font-black opacity-90">Architecture & Assessment Management</p>
                 </div>
                 <button
                     onClick={() => { resetForm(); setEditingExam(null); setShowModal(true); }}
@@ -176,7 +181,7 @@ const InstructorExams: React.FC = () => {
                         <div>
                             <div className="flex justify-between items-start mb-6">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-3 py-1.5 rounded-full">{exam.type}</span>
-                                <span className="text-xs text-accent-gray font-black uppercase tracking-tighter opacity-50">{new Date(exam.date).toLocaleDateString()}</span>
+                                <span className="text-xs text-accent-gray font-black uppercase tracking-tighter opacity-80">{new Date(exam.date).toLocaleDateString()}</span>
                             </div>
                             <h3 className="text-xl font-black text-accent-white italic mb-3 uppercase leading-tight">{exam.title}</h3>
                             <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -215,7 +220,7 @@ const InstructorExams: React.FC = () => {
                     <div className="p-8 border-b border-surface-border flex justify-between items-center bg-surface-light/30">
                         <div>
                             <h3 className="text-2xl font-black text-accent-white italic tracking-tighter uppercase">{editingExam ? 'MODIFY' : 'INITIALIZE'} <span className="text-primary">EXAMINATION</span></h3>
-                            <p className="text-[10px] text-accent-gray font-black uppercase tracking-[0.2em] opacity-70">Configuration Dashboard</p>
+                            <p className="text-[10px] text-accent-gray font-black uppercase tracking-[0.2em] opacity-90">Configuration Dashboard</p>
                         </div>
                         <button onClick={() => { setShowModal(false); setEditingExam(null); }} className="p-3 bg-surface-light hover:bg-primary/20 text-accent-gray hover:text-primary rounded-2xl transition-all font-black text-2xl leading-none">×</button>
                     </div>
@@ -224,11 +229,11 @@ const InstructorExams: React.FC = () => {
                         <div className="max-w-5xl mx-auto p-10 space-y-12">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Examination Title</label>
+                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1 opacity-70">Examination Title</label>
                                     <input type="text" placeholder="e.g. Advanced Quantum Mechanics" className="w-full" value={title} onChange={e => setTitle(e.target.value)} required />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Target Subject Node</label>
+                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1 opacity-70">Target Subject Node</label>
                                     <select className="w-full" value={subjectId} onChange={e => setSubjectId(e.target.value)} required>
                                         <option value="">Select Batch...</option>
                                         {batches.map(b => (
@@ -237,19 +242,19 @@ const InstructorExams: React.FC = () => {
                                     </select>
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Lifecycle Start (Date/Time)</label>
+                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1 opacity-70">Lifecycle Start (Date/Time)</label>
                                     <input type="datetime-local" className="w-full" value={date} onChange={e => setDate(e.target.value)} required />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Lifecycle Termination (Expiry)</label>
+                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1 opacity-70">Lifecycle Termination (Expiry)</label>
                                     <input type="datetime-local" className="w-full" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Operational Duration (Mins)</label>
+                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1 opacity-70">Operational Duration (Mins)</label>
                                     <input type="number" className="w-full" value={duration} onChange={e => setDuration(parseInt(e.target.value))} required />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Assessment Category</label>
+                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1 opacity-70">Assessment Category</label>
                                     <select className="w-full" value={examType} onChange={e => setExamType(e.target.value)}>
                                         <option value="hourly">Hourly Test</option>
                                         <option value="weekly">Weekly Assessment</option>
@@ -258,7 +263,7 @@ const InstructorExams: React.FC = () => {
                                     </select>
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Execution Limit (Attempts)</label>
+                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1 opacity-70">Execution Limit (Attempts)</label>
                                     <input type="number" min="1" className="w-full font-black text-primary" value={attemptsAllowed} onChange={e => setAttemptsAllowed(parseInt(e.target.value))} required />
                                 </div>
                             </div>
@@ -287,7 +292,7 @@ const InstructorExams: React.FC = () => {
                                                         {qIdx + 1}
                                                     </span>
                                                     <div className="flex flex-col">
-                                                        <span className="text-[10px] font-black uppercase text-accent-gray tracking-[0.2em] mb-1">NODE TYPE</span>
+                                                        <span className="text-[10px] font-black uppercase text-accent-gray tracking-[0.2em] mb-1 opacity-70">NODE TYPE</span>
                                                         <select
                                                             value={q.type}
                                                             onChange={(e) => {
@@ -399,27 +404,6 @@ const InstructorExams: React.FC = () => {
                             </div>
                         </div>
                     </form>
-                </div>
-            )}
-
-            {/* Success Modal */}
-            {successModal.show && (
-                <div className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-surface border border-surface-border p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center space-y-6 animate-in zoom-in duration-300">
-                        <div className="w-16 h-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-black text-accent-white uppercase tracking-tight mb-2">Success!</h3>
-                            <p className="text-accent-gray font-medium">{successModal.message}</p>
-                        </div>
-                        <button
-                            onClick={() => setSuccessModal({ show: false, message: '' })}
-                            className="btn-primary w-full py-3 shadow-lg shadow-primary/20 hover:shadow-primary/40"
-                        >
-                            ACKNOWLEDGE
-                        </button>
-                    </div>
                 </div>
             )}
         </div >

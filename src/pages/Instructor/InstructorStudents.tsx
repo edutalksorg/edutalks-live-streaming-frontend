@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useSearchParams } from 'react-router-dom';
 import { FaEnvelope, FaPhone, FaLayerGroup } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 
 interface Student {
     id: number;
@@ -148,6 +149,7 @@ const ProgressModal: React.FC<{ student: Student; results: ExamResult[]; onClose
 };
 
 const InstructorStudents: React.FC = () => {
+    const { showAlert } = useModal();
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchParams] = useSearchParams();
@@ -183,7 +185,7 @@ const InstructorStudents: React.FC = () => {
             setSelectedStudent(student);
         } catch (err) {
             console.error("Failed to fetch progress:", err);
-            alert("Failed to load student progress. Please try again.");
+            showAlert("Failed to load student progress. Please try again.", "error");
         } finally {
             setFetchingProgress(false);
         }
@@ -201,7 +203,7 @@ const InstructorStudents: React.FC = () => {
         <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700">
             <header>
                 <h2 className="text-4xl font-black text-accent-white italic tracking-tighter uppercase">OPERATIONAL <span className="text-gradient-red">ROSTER</span></h2>
-                <p className="text-accent-gray italic font-medium mt-2 opacity-60">DEPLOYED STUDENT ASSETS WITHIN YOUR TACTICAL SECTORS</p>
+                <p className="text-accent-gray italic font-medium mt-2 opacity-80">DEPLOYED STUDENT ASSETS WITHIN YOUR TACTICAL SECTORS</p>
             </header>
 
             <div className="premium-card p-0 overflow-hidden border-surface-border shadow-2xl">
@@ -209,10 +211,10 @@ const InstructorStudents: React.FC = () => {
                     <table className="w-full text-left">
                         <thead className="bg-surface-dark/50 border-b border-surface-border">
                             <tr>
-                                <th className="px-8 py-6 text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">STUDENT IDENTIFIER</th>
-                                <th className="px-8 py-6 text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">COMMUNICATION FREQUENCY</th>
-                                <th className="px-8 py-6 text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">BATCH & SECTOR</th>
-                                <th className="px-8 py-6 text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40 text-right">OPERATIONS</th>
+                                <th className="px-8 py-6 text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-70">STUDENT IDENTIFIER</th>
+                                <th className="px-8 py-6 text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-70">COMMUNICATION FREQUENCY</th>
+                                <th className="px-8 py-6 text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-70">BATCH & SECTOR</th>
+                                <th className="px-8 py-6 text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-70 text-right">OPERATIONS</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-surface-border/50">
@@ -225,7 +227,7 @@ const InstructorStudents: React.FC = () => {
                                             </div>
                                             <div>
                                                 <div className="text-base font-black text-accent-white italic tracking-tighter uppercase group-hover:text-primary transition-colors">{student.name}</div>
-                                                <div className="text-[9px] text-accent-gray font-black tracking-widest opacity-30 mt-1 uppercase">ID: EXT-{student.id}</div>
+                                                <div className="text-[9px] text-accent-gray font-black tracking-widest opacity-60 mt-1 uppercase">ID: EXT-{student.id}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -244,7 +246,7 @@ const InstructorStudents: React.FC = () => {
                                             <span className="inline-flex items-center px-4 py-1 rounded-xl text-[9px] font-black bg-primary/10 text-primary border border-primary/20 w-fit uppercase tracking-widest">
                                                 <FaLayerGroup className="mr-2" /> {student.batch_name}
                                             </span>
-                                            <span className="text-[10px] text-accent-gray font-black italic uppercase tracking-tighter ml-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                                            <span className="text-[10px] text-accent-gray font-black italic uppercase tracking-tighter ml-1 opacity-70 group-hover:opacity-100 transition-opacity">
                                                 {student.subject_name}
                                             </span>
                                         </div>

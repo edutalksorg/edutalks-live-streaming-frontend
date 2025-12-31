@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import api from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
-import { FaFileUpload, FaTrash, FaDownload } from 'react-icons/fa';
+import { FaTrash, FaFileUpload, FaDownload } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 import { io } from 'socket.io-client';
 
 interface Note {
@@ -15,6 +16,7 @@ interface Note {
 
 const InstructorNotes: React.FC = () => {
     const { user } = useContext(AuthContext)!;
+    const { showAlert, showConfirm } = useModal();
     const [notes, setNotes] = useState<Note[]>([]);
     const [batches, setBatches] = useState<any[]>([]);
     const [newNote, setNewNote] = useState({ title: '', description: '', subject_id: '' });
@@ -24,7 +26,6 @@ const InstructorNotes: React.FC = () => {
     useEffect(() => {
         fetchNotes();
 
-        // Setup real-time sync
         const socket = io(import.meta.env.VITE_API_URL.replace('/api', ''));
 
         socket.on('global_sync', (payload) => {
@@ -58,7 +59,10 @@ const InstructorNotes: React.FC = () => {
 
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!file) return alert('Please select a file');
+        if (!file) {
+            showAlert('Please select a file', 'warning');
+            return;
+        }
 
         const formData = new FormData();
         formData.append('title', newNote.title);
@@ -74,42 +78,37 @@ const InstructorNotes: React.FC = () => {
             });
             setNewNote({ title: '', description: '', subject_id: newNote.subject_id });
             setFile(null);
+            (e.target as HTMLFormElement).reset();
             fetchNotes();
+            showAlert('Material uploaded successfully!', 'success');
         } catch (err: any) {
             console.error('Upload failed', err);
-            alert(err.response?.data?.message || 'Upload failed');
+            showAlert(err.response?.data?.message || 'Upload failed', 'error');
         } finally {
             setLoading(false);
         }
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm('Are you sure you want to delete this resource?')) return;
-
-        // Optimistic Update: Remove from UI immediately
-        const previousNotes = [...notes];
-        setNotes(notes.filter(n => n.id !== id));
-
+        const confirmed = await showConfirm('Are you sure you want to delete this resource?', 'error', 'Delete Resource');
+        if (!confirmed) return;
         try {
             await api.delete(`/api/notes/${id}`);
-            // Success - no need to do anything as it's already removed from state
+            fetchNotes();
+            showAlert('Resource deleted successfully', 'success');
         } catch (err: any) {
-            console.error('Failed to delete note:', err);
-            alert(err.response?.data?.message || 'Failed to delete note. Please try again.');
-            // Rollback on failure
-            setNotes(previousNotes);
+            showAlert(err.response?.data?.message || 'Failed to delete note. Please try again.', 'error');
         }
     };
 
     return (
         <div className="animate-in fade-in duration-700">
             <div className="mb-10">
-                <h2 className="text-4xl font-black text-accent-white italic mb-2 tracking-tighter">STUDY <span className="text-primary">MATERIAL</span> & NOTES</h2>
+                <h2 className="text-4xl font-black text-accent-white italic mb-2 tracking-tighter uppercase">STUDY <span className="text-primary">MATERIAL</span> & NOTES</h2>
                 <p className="text-accent-gray uppercase tracking-[0.3em] text-[10px] font-black opacity-70">Academic Resource Management</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
-                {/* Upload Section */}
                 <div className="md:col-span-2 space-y-6">
                     <div className="premium-card p-8">
                         <div className="flex items-center gap-3 mb-8">
@@ -117,7 +116,7 @@ const InstructorNotes: React.FC = () => {
                                 <FaFileUpload className="text-primary text-xl" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black text-accent-white italic leading-tight">UPLOAD</h3>
+                                <h3 className="text-lg font-black text-accent-white italic leading-tight uppercase">UPLOAD</h3>
                                 <p className="text-[10px] text-accent-gray font-black uppercase tracking-widest opacity-70">New Resource</p>
                             </div>
                         </div>
@@ -175,10 +174,9 @@ const InstructorNotes: React.FC = () => {
                     </div>
                 </div>
 
-                {/* List Section */}
                 <div className="md:col-span-3 space-y-8">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-black text-accent-white italic">UPLOADED <span className="text-primary">MATERIALS</span></h3>
+                        <h3 className="text-xl font-black text-accent-white italic uppercase">UPLOADED <span className="text-primary">MATERIALS</span></h3>
                         <span className="bg-surface-light border border-surface-border px-4 py-1.5 rounded-full text-[10px] font-bold text-accent-gray uppercase tracking-widest">
                             {notes.length} Total Files
                         </span>

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../../services/api';
-import { FaPlus, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaCheck, FaTimes, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 
 interface User {
     id: number;
@@ -13,9 +14,11 @@ interface User {
 }
 
 const UserManagement: React.FC = () => {
+    const { showAlert, showConfirm } = useModal();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const [filter, setFilter] = useState<'all' | 'pending'>('all');
 
     // New User State
@@ -50,7 +53,7 @@ const UserManagement: React.FC = () => {
             setNewUser({ name: '', email: '', password: '', role: 'admin', grade: '', phone: '' });
             fetchUsers();
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to create user');
+            showAlert(err.response?.data?.message || 'Failed to create user', 'error');
         }
     };
 
@@ -64,13 +67,15 @@ const UserManagement: React.FC = () => {
     };
 
     const deleteUser = async (id: number) => {
-        if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+        const confirmed = await showConfirm('Are you sure you want to delete this user? This action cannot be undone.', 'error', 'Delete User');
+        if (!confirmed) return;
         try {
             await api.delete(`/api/users/${id}`);
+            showAlert('User deleted successfully', 'success');
             fetchUsers();
         } catch (err) {
             console.error(err);
-            alert('Failed to delete user');
+            showAlert('Failed to delete user', 'error');
         }
     };
 
@@ -151,7 +156,7 @@ const UserManagement: React.FC = () => {
             {/* Modal */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setShowModal(false)}></div>
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-md transition-opacity" onClick={() => setShowModal(false)}></div>
                     <div className="bg-surface p-8 rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 w-full max-w-md relative z-10 animate-fadeInTransform">
                         <div className="flex justify-between items-center mb-8">
                             <h3 className="text-2xl font-black text-accent-white italic tracking-tighter">Create New <span className="text-primary">User</span></h3>
@@ -177,11 +182,20 @@ const UserManagement: React.FC = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-2">Password</label>
-                                    <input
-                                        type="password" placeholder="••••••••" required
-                                        className="w-full bg-surface-dark border border-white/5 rounded-2xl p-4 text-accent-white focus:border-primary/50 outline-none transition-all placeholder:text-white/10"
-                                        value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type={showPassword ? 'text' : 'password'} placeholder="••••••••" required
+                                            className="w-full bg-surface-dark border border-white/5 rounded-2xl p-4 pr-12 text-accent-white focus:border-primary/50 outline-none transition-all placeholder:text-white/10"
+                                            value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-accent-gray hover:text-primary transition-colors"
+                                        >
+                                            {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-2">Phone</label>

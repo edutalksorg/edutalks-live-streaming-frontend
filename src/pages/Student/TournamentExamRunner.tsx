@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { FaTrophy, FaClock, FaCheckCircle, FaChevronLeft, FaChevronRight, FaExclamationTriangle, FaTimes, FaShieldAlt } from 'react-icons/fa';
+import { FaTrophy, FaClock, FaChevronLeft, FaChevronRight, FaExclamationTriangle, FaShieldAlt } from 'react-icons/fa';
+import { useModal } from '../../context/ModalContext';
 
 const TournamentExamRunner: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { showAlert, showConfirm } = useModal();
 
     const [tournament, setTournament] = useState<any>(null);
     const [questions, setQuestions] = useState<any[]>([]);
@@ -15,13 +17,6 @@ const TournamentExamRunner: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [tabSwitches, setTabSwitches] = useState(0);
 
-    const [modal, setModal] = useState<{
-        show: boolean;
-        type: 'success' | 'error' | 'confirm' | 'warning';
-        title: string;
-        message: string;
-        onConfirm?: () => void;
-    }>({ show: false, type: 'success', title: '', message: '' });
 
     // Fetch Tournament & Questions
     useEffect(() => {
@@ -53,12 +48,8 @@ const TournamentExamRunner: React.FC = () => {
                     return;
                 }
 
-                setModal({
-                    show: true,
-                    type: 'error',
-                    title: 'ACCESS DENIED',
-                    message: errorMsg,
-                    onConfirm: () => navigate('/student/tournaments')
+                showAlert(errorMsg, 'error', 'ACCESS DENIED').then(() => {
+                    navigate('/student/tournaments');
                 });
             }
         };
@@ -92,12 +83,8 @@ const TournamentExamRunner: React.FC = () => {
                 logActivity('tab_switch', `User left the page. Total switches: ${newCount}`);
 
                 if (tournament?.tab_switch_limit && newCount >= tournament.tab_switch_limit) {
-                    setModal({
-                        show: true,
-                        type: 'warning',
-                        title: 'SECURITY BREACH',
-                        message: 'You have exceeded the tab switch limit. Your exam will be submitted automatically.',
-                        onConfirm: () => handleSubmit()
+                    showAlert('You have exceeded the tab switch limit. Your exam will be submitted automatically.', 'warning', 'SECURITY BREACH').then(() => {
+                        handleSubmit();
                     });
                 }
             }
@@ -125,21 +112,12 @@ const TournamentExamRunner: React.FC = () => {
 
         try {
             const res = await api.post(`/api/tournaments/${id}/submit`, { answers });
-            setModal({
-                show: true,
-                type: 'success',
-                title: 'TOURNAMENT COMPLETE',
-                message: `Your results are being calculated. Score: ${res.data.score}`,
-                onConfirm: () => navigate(`/student/tournament-result/${id}`)
+            showAlert(`Your results are being calculated. Score: ${res.data.score}`, 'success', 'TOURNAMENT COMPLETE').then(() => {
+                navigate(`/student/tournament-result/${id}`);
             });
         } catch (err) {
             console.error('Submit Error:', err);
-            setModal({
-                show: true,
-                type: 'error',
-                title: 'SYNC ERROR',
-                message: 'Failed to submit tournament. Please try again or contact support.'
-            });
+            showAlert('Failed to submit tournament. Please try again or contact support.', 'error', 'SYNC ERROR');
         } finally {
             setIsSubmitting(false);
         }
@@ -306,13 +284,16 @@ const TournamentExamRunner: React.FC = () => {
 
                     <div className="p-10 border-t border-surface-border">
                         <button
-                            onClick={() => setModal({
-                                show: true,
-                                type: 'confirm',
-                                title: 'ABORT TOURNAMENT?',
-                                message: 'Operational progress will be lost and your score will be zero. Termination is final.',
-                                onConfirm: () => navigate('/student/tournaments')
-                            })}
+                            onClick={async () => {
+                                const confirmed = await showConfirm(
+                                    'Operational progress will be lost and your score will be zero. Termination is final.',
+                                    'warning',
+                                    'ABORT TOURNAMENT?'
+                                );
+                                if (confirmed) {
+                                    navigate('/student/tournaments');
+                                }
+                            }}
                             className="w-full text-accent-gray hover:text-primary font-black text-[11px] uppercase tracking-[0.5em] transition-all py-5 bg-surface-dark border border-surface-border rounded-2xl hover:bg-surface-light flex items-center justify-center gap-3 overflow-hidden relative group"
                         >
                             <span className="relative z-10">TERMINATE</span>
@@ -322,56 +303,6 @@ const TournamentExamRunner: React.FC = () => {
                 </div>
             </div>
 
-            {/* Tactical Modal */}
-            {modal.show && (
-                <div className="fixed inset-0 z-[200] bg-background/95 backdrop-blur-2xl flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="bg-surface border border-surface-border p-12 rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] max-w-lg w-full text-center space-y-10 animate-in zoom-in slide-in-from-bottom-20 duration-500 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full blur-[80px] -z-10"></div>
-
-                        <div className={`w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-10 border-4 shadow-2xl ${modal.type === 'success' ? 'bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20 shadow-accent-emerald/10' :
-                            modal.type === 'error' ? 'bg-primary/10 text-primary border-primary/20 shadow-primary/10' :
-                                modal.type === 'warning' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20 shadow-yellow-500/10' :
-                                    'bg-accent-blue/10 text-accent-blue border-accent-blue/20 shadow-accent-blue/10'
-                            }`}>
-                            {modal.type === 'success' ? <FaCheckCircle size={48} /> :
-                                modal.type === 'error' ? <FaTimes size={48} /> :
-                                    modal.type === 'warning' ? <FaExclamationTriangle size={48} /> :
-                                        <FaTrophy size={48} className="animate-bounce" />}
-                        </div>
-
-                        <div>
-                            <h3 className="text-3xl font-black text-accent-white uppercase tracking-tighter mb-4 italic">
-                                {modal.title}
-                            </h3>
-                            <p className="text-accent-gray text-lg font-medium italic leading-relaxed px-4">
-                                {modal.message}
-                            </p>
-                        </div>
-
-                        <div className="flex flex-col gap-4">
-                            <button
-                                onClick={() => {
-                                    setModal({ ...modal, show: false });
-                                    if (modal.onConfirm) modal.onConfirm();
-                                }}
-                                className={`w-full px-12 py-5 font-black uppercase tracking-widest text-[12px] rounded-3xl shadow-2xl transition-all active:scale-95 ${modal.type === 'error' ? 'bg-primary hover:bg-primary-hover shadow-primary/30' :
-                                    'bg-accent-blue hover:bg-accent-blue/80 shadow-accent-blue/30'
-                                    } text-white`}
-                            >
-                                {modal.type === 'confirm' ? 'CONFIRM ABORT' : 'ACKNOWLEDGE'}
-                            </button>
-                            {modal.type === 'confirm' && (
-                                <button
-                                    onClick={() => setModal({ ...modal, show: false })}
-                                    className="w-full px-12 py-5 bg-surface-dark text-accent-gray hover:text-accent-white font-black uppercase tracking-widest text-[12px] rounded-3xl transition-all border border-surface-border"
-                                >
-                                    BACK TO TOURNAMENT
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

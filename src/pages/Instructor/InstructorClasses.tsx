@@ -60,7 +60,7 @@ const InstructorClasses: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                     <h2 className="text-4xl font-black text-accent-white italic tracking-tighter uppercase">MISSION <span className="text-gradient-red">SCHEDULER</span></h2>
-                    <p className="text-accent-gray italic font-medium mt-2 opacity-60">CONFIGURE AND EXECUTE LIVE EDUCATIONAL SORTIES</p>
+                    <p className="text-accent-gray italic font-medium mt-2 opacity-80">CONFIGURE AND EXECUTE LIVE EDUCATIONAL SORTIES</p>
                 </div>
                 <button
                     onClick={() => setShowModal(true)}
@@ -87,10 +87,10 @@ const InstructorClasses: React.FC = () => {
                             <span className="w-1 h-1 bg-primary rounded-full"></span> {new Date(cls.start_time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </p>
 
-                        <p className="text-accent-gray text-sm italic font-medium mb-8 line-clamp-2 opacity-60">{cls.description}</p>
+                        <p className="text-accent-gray text-sm italic font-medium mb-8 line-clamp-2 opacity-80">{cls.description}</p>
 
                         <div className="flex justify-between items-center pt-6 border-t border-surface-border/50">
-                            <span className="text-[9px] font-black text-accent-gray uppercase tracking-widest opacity-40">DURATION: {cls.duration} MINS</span>
+                            <span className="text-[9px] font-black text-accent-gray uppercase tracking-widest opacity-70">DURATION: {cls.duration} MINS</span>
 
                             {cls.status !== 'completed' && (
                                 <button
@@ -106,7 +106,7 @@ const InstructorClasses: React.FC = () => {
                 ))}
                 {classes.length === 0 && (
                     <div className="col-span-full py-32 text-center premium-card border-dashed border-surface-border/50">
-                        <p className="text-accent-gray italic font-medium opacity-40 tracking-widest uppercase text-xs">No active missions scheduled in this sector.</p>
+                        <p className="text-accent-gray italic font-medium opacity-70 tracking-widest uppercase text-xs">No active missions scheduled in this sector.</p>
                     </div>
                 )}
             </div>
@@ -121,7 +121,7 @@ const InstructorClasses: React.FC = () => {
 
                         <form onSubmit={handleCreateClass} className="space-y-8">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">MISSION TITLE</label>
+                                <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-70">MISSION TITLE</label>
                                 <input
                                     type="text" placeholder="Title of the session" required
                                     className="w-full bg-surface-light border-2 border-surface-border rounded-xl p-4 text-accent-white font-medium italic focus:border-primary focus:shadow-[0_0_20px_rgba(238,29,35,0.05)] outline-none transition-all"
@@ -130,7 +130,7 @@ const InstructorClasses: React.FC = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">MISSION BRIEFING</label>
+                                <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-70">MISSION BRIEFING</label>
                                 <textarea
                                     placeholder="Details and objectives..."
                                     className="w-full bg-surface-light border-2 border-surface-border rounded-xl p-4 text-accent-white font-medium italic focus:border-primary focus:shadow-[0_0_20px_rgba(238,29,35,0.05)] outline-none transition-all min-h-[120px]"
@@ -139,7 +139,7 @@ const InstructorClasses: React.FC = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">SELECT SUBJECT</label>
+                                <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-70">SELECT SUBJECT</label>
                                 <select
                                     className="w-full bg-surface-light border-2 border-surface-border rounded-xl p-4 text-accent-white font-medium italic focus:border-primary focus:shadow-[0_0_20px_rgba(238,29,35,0.05)] outline-none transition-all"
                                     value={newClass.subject_id} onChange={e => setNewClass({ ...newClass, subject_id: e.target.value })} required
@@ -153,7 +153,7 @@ const InstructorClasses: React.FC = () => {
 
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">DEPLOYMENT TIME</label>
+                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-70">DEPLOYMENT TIME</label>
                                     <input
                                         type="datetime-local" required
                                         className="w-full bg-surface-light border-2 border-surface-border rounded-xl p-4 text-accent-white font-medium italic focus:border-primary focus:shadow-[0_0_20px_rgba(238,29,35,0.05)] outline-none transition-all"
@@ -161,7 +161,7 @@ const InstructorClasses: React.FC = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-40">INTENSIONAL SPAN (MINS)</label>
+                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-70">INTENSIONAL SPAN (MINS)</label>
                                     <input
                                         type="number" placeholder="60" required
                                         className="w-full bg-surface-light border-2 border-surface-border rounded-xl p-4 text-accent-white font-medium italic focus:border-primary focus:shadow-[0_0_20px_rgba(238,29,35,0.05)] outline-none transition-all"

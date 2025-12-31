@@ -6,6 +6,7 @@ import { io, Socket } from 'socket.io-client';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../services/api';
 import Whiteboard from '../../components/Whiteboard';
+import { useModal } from '../../context/ModalContext';
 import {
     FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash,
     FaPhoneSlash, FaHandPaper,
@@ -21,6 +22,7 @@ const LiveClassRoom: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { user } = useContext(AuthContext)!;
     const navigate = useNavigate();
+    const { showAlert, showConfirm } = useModal();
 
     // --- State Management ---
     const [classDetails, setClassDetails] = useState<any>(null);
@@ -209,9 +211,10 @@ const LiveClassRoom: React.FC = () => {
             }
         });
 
-        socket.on('receive_screen_share_request', (data) => {
+        socket.on('receive_screen_share_request', async (data) => {
             if (isInstructor) {
-                if (window.confirm(`${data.studentName} wants to share their screen. Allow?`)) {
+                const confirmed = await showConfirm(`${data.studentName} wants to share their screen. Allow?`, "info", "SCREEN REQUEST");
+                if (confirmed) {
                     socket.emit('approve_screen_share', { classId: id, studentId: data.studentId });
                 }
             }
@@ -318,7 +321,8 @@ const LiveClassRoom: React.FC = () => {
 
         socket.on('request_unmute_student', async (data) => {
             if (String(user?.id) === String(data.studentId)) {
-                if (window.confirm("The instructor is requesting you to unmute your microphone. Allow?")) {
+                const confirmed = await showConfirm("The instructor is requesting you to unmute your microphone. Allow?", "info", "UNMUTE REQUEST");
+                if (confirmed) {
                     // Grant permission and unmute
                     setStudentsWithUnmutePermission(prev => new Set(prev).add(String(user?.id)));
                     if (!micOnRef.current) toggleMic(true);
@@ -687,7 +691,8 @@ const LiveClassRoom: React.FC = () => {
 
     const handleEndClass = async () => {
         if (!isInstructor) return;
-        if (window.confirm("Are you sure you want to end this class for everyone?")) {
+        const confirmed = await showConfirm("Are you sure you want to end this class for everyone?", "warning", "TERMINATE SESSION");
+        if (confirmed) {
             try {
                 await api.post(`/api/super-instructor/classes/${id}/end`);
                 navigate('/super-instructor/live-classes');
@@ -715,14 +720,16 @@ const LiveClassRoom: React.FC = () => {
         socketRef.current?.emit('admin_grant_unmute', { classId: id, studentId });
     };
 
-    const handleMuteAll = () => {
-        if (window.confirm("Mute all students?")) {
+    const handleMuteAll = async () => {
+        const confirmed = await showConfirm("Mute all students?", "warning", "MUTE ALL");
+        if (confirmed) {
             socketRef.current?.emit('admin_mute_all', { classId: id });
         }
     };
 
-    const handleUnlockAll = () => {
-        if (window.confirm("Unlock all student microphones?")) {
+    const handleUnlockAll = async () => {
+        const confirmed = await showConfirm("Unlock all student microphones?", "info", "UNLOCK ALL");
+        if (confirmed) {
             socketRef.current?.emit('admin_unlock_all', { classId: id });
         }
     };
@@ -776,7 +783,7 @@ const LiveClassRoom: React.FC = () => {
             toggleScreenShare();
         } else {
             socketRef.current?.emit('request_screen_share', { classId: id, studentId: user?.id, studentName: user?.name });
-            alert("Request sent to Super Instructor...");
+            showAlert("Request sent to Super Instructor...", "info", "UPLINK REQUEST");
         }
     };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { FaTimes, FaSave } from 'react-icons/fa';
+import { useModal } from '../context/ModalContext';
 
 interface TournamentFormProps {
     tournament?: any;
@@ -39,6 +40,7 @@ const formatForDateTimeLocal = (dateStr: string) => {
 };
 
 const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, onSuccess }) => {
+    const { showAlert } = useModal();
     const [step, setStep] = useState(1);
     const [levels, setLevels] = useState<Level[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -101,7 +103,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
 
     const addQuestion = () => {
         if (!currentQuestion.question || currentQuestion.options.some(opt => !opt)) {
-            alert('Please fill all question fields');
+            showAlert('Please fill all question fields', 'warning');
             return;
         }
 
@@ -136,7 +138,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
         // Step 1 validation
         if (step === 1) {
             if (!formData.name || !formData.description || !formData.level_id || !formData.grade) {
-                alert('Please fill all required fields in Step 1');
+                showAlert('Please fill all required fields in Step 1', 'warning');
                 return false;
             }
         }
@@ -149,12 +151,12 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
             const examEnd = new Date(formData.exam_end);
 
             if (regStart >= regEnd || regEnd >= examStart || examStart >= examEnd) {
-                alert('Invalid date sequence. Check: registration_start < registration_end < exam_start < exam_end');
+                showAlert('Invalid date sequence. Check: registration_start < registration_end < exam_start < exam_end', 'error');
                 return false;
             }
 
             if (formData.duration < 10 || formData.duration > 240) {
-                alert('Duration must be between 10 and 240 minutes');
+                showAlert('Duration must be between 10 and 240 minutes', 'warning');
                 return false;
             }
         }
@@ -162,7 +164,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
         // Step 3 validation
         if (step === 3) {
             if (formData.questions.length !== formData.total_questions) {
-                alert(`Please add exactly ${formData.total_questions} questions`);
+                showAlert(`Please add exactly ${formData.total_questions} questions`, 'warning');
                 return false;
             }
         }
@@ -195,14 +197,14 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
 
             if (tournament) {
                 await api.put(`/api/tournaments/${tournament.id}`, payload);
-                alert('Tournament updated successfully!');
+                showAlert('Tournament updated successfully!', 'success');
             } else {
                 await api.post('/api/tournaments', payload);
-                alert('Tournament created successfully!');
+                showAlert('Tournament created successfully!', 'success');
             }
             onSuccess();
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to save tournament');
+            showAlert(err.response?.data?.message || 'Failed to save tournament', 'error');
         }
     };
 

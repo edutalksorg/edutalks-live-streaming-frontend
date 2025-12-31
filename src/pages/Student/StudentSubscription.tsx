@@ -3,9 +3,11 @@ import api from '../../services/api';
 import { FaCrown, FaCheck, FaTimes } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useModal } from '../../context/ModalContext';
 
 const StudentSubscription: React.FC = () => {
     const { user, login } = useContext(AuthContext)!;
+    const { showAlert } = useModal();
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -49,7 +51,7 @@ const StudentSubscription: React.FC = () => {
                         });
 
                         if (verifyRes.data.success) {
-                            alert('Payment Successful! Premium Plan Activated.');
+                            showAlert('Payment Successful! Premium Plan Activated.', 'success');
                             // Update local user context
                             if (user) {
                                 const updatedUser = { ...user, plan_name: 'Pro' }; // You might want to be more specific if planName varies
@@ -59,7 +61,7 @@ const StudentSubscription: React.FC = () => {
                         }
                     } catch (verifyErr) {
                         console.error(verifyErr);
-                        alert('Payment Verification Failed');
+                        showAlert('Payment Verification Failed', 'error');
                     }
                 },
                 prefill: {
@@ -74,7 +76,7 @@ const StudentSubscription: React.FC = () => {
 
             const rzp1 = new (window as any).Razorpay(options);
             rzp1.on('payment.failed', function (response: any) {
-                alert(response.error.description);
+                showAlert(response.error.description, 'error');
             });
             rzp1.open();
             setLoading(false);
@@ -82,17 +84,17 @@ const StudentSubscription: React.FC = () => {
         } catch (err) {
             console.error(err);
             setLoading(false);
-            alert('Failed to initiate payment.');
+            showAlert('Failed to initiate payment.', 'error');
         }
     };
 
     return (
         <div className="min-h-screen pt-24 px-4 pb-20 max-w-7xl mx-auto">
             <div className="text-center mb-16 space-y-4">
-                <h1 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-white tracking-tighter">
+                <h1 className="text-4xl md:text-6xl font-black text-accent-white tracking-tighter">
                     Unlock <span className="text-yellow-500 italic">Excellence</span>
                 </h1>
-                <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+                <p className="text-xl text-accent-gray max-w-2xl mx-auto">
                     Get unlimited access to live classes, premium materials, and competitive tournaments.
                 </p>
             </div>
@@ -100,9 +102,9 @@ const StudentSubscription: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
                 {/* Free Plan */}
                 <div className={`bg-white dark:bg-surface-dark rounded-[2.5rem] p-8 border ${(!user?.plan_name || user.plan_name === 'Free') ? 'border-primary ring-4 ring-primary/10' : 'border-gray-200 dark:border-gray-800'} relative group hover:border-gray-400 transition-all`}>
-                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">Basic</h3>
-                    <div className="text-4xl font-black text-gray-900 dark:text-white mb-6">Free</div>
-                    <p className="text-sm text-gray-500 mb-8 font-medium">Get a taste of excellence with limited access.</p>
+                    <h3 className="text-xl font-black text-accent-white mb-2">Basic</h3>
+                    <div className="text-4xl font-black text-accent-white mb-6">Free</div>
+                    <p className="text-sm text-accent-gray mb-8 font-medium">Get a taste of excellence with limited access.</p>
                     <ul className="space-y-4 mb-10 text-gray-600 dark:text-gray-400 font-bold text-sm">
                         <li className="flex items-center gap-3"><FaCheck className="text-green-500" /> Dashboard Access</li>
                         <li className="flex items-center gap-3"><FaCheck className="text-green-500" /> Basic Profile</li>
@@ -118,12 +120,12 @@ const StudentSubscription: React.FC = () => {
                 </div>
 
                 {/* Monthly Plan */}
-                <div className={`bg-white dark:bg-surface-dark rounded-[2.5rem] p-8 border-2 ${user?.plan_name === 'Monthly' ? 'border-primary ring-4 ring-primary/20' : 'border-primary'} relative shadow-2xl shadow-primary/20 transform hover:-translate-y-2 transition-transform`}>
+                <div className={`bg-white dark:bg-surface-dark rounded-[2.5rem] p-8 border-2 ${user?.plan_name === 'Monthly' ? 'border-primary ring-4 ring-primary/20' : 'border-primary'} relative shadow-2xl shadow-primary/20 transform hover:-translate-y-2 transition-transform overflow-hidden`}>
                     <div className="absolute top-0 right-0 bg-primary text-white font-bold px-4 py-1 rounded-bl-xl text-[10px] uppercase tracking-widest">Most Popular</div>
-                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">Pro Monthly</h3>
+                    <h3 className="text-xl font-black text-accent-white mb-2">Pro Monthly</h3>
                     <div className="flex items-baseline gap-1 mb-6">
-                        <span className="text-4xl font-black text-gray-900 dark:text-white">₹1</span>
-                        <span className="text-gray-500 dark:text-gray-400 font-bold text-sm">/month</span>
+                        <span className="text-4xl font-black text-accent-white">₹1</span>
+                        <span className="text-accent-gray font-bold text-sm">/month</span>
                     </div>
                     <p className="text-sm text-gray-500 mb-8 font-medium">Perfect for short-term learning goals.</p>
 
@@ -149,11 +151,11 @@ const StudentSubscription: React.FC = () => {
 
                     <div className="flex items-center gap-2 mb-2">
                         <FaCrown className="text-yellow-500" />
-                        <h3 className="text-xl font-black text-gray-900 dark:text-white">Pro Yearly</h3>
+                        <h3 className="text-xl font-black text-accent-white">Pro Yearly</h3>
                     </div>
                     <div className="flex items-baseline gap-1 mb-6">
-                        <span className="text-4xl font-black text-gray-900 dark:text-white">₹4,999</span>
-                        <span className="text-gray-500 dark:text-gray-400 font-bold text-sm">/year</span>
+                        <span className="text-4xl font-black text-accent-white">₹4,999</span>
+                        <span className="text-accent-gray font-bold text-sm">/year</span>
                     </div>
                     <p className="text-sm text-gray-500 mb-8 font-medium">Save money with annual commitment.</p>
 
