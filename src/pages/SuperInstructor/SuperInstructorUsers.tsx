@@ -101,7 +101,52 @@ const SuperInstructorUsers: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
+                <div className="md:hidden space-y-4 p-4">
+                    {(activeTab === 'instructors' ? instructors : students).map(user => (
+                        <div key={user.id} className="bg-surface-dark/50 p-6 rounded-[2rem] border border-surface-border shadow-lg">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 rounded-2xl bg-surface-dark border border-surface-border flex items-center justify-center font-black text-accent-white italic shadow-lg">
+                                    {user.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <h4 className="font-black text-accent-white italic text-lg tracking-tight">{user.name}</h4>
+                                    <p className="text-xs text-accent-gray italic opacity-70 break-all">{user.email}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 mb-6">
+                                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-accent-gray">
+                                    <span className="opacity-50">Phone</span>
+                                    <span className="text-accent-white italic">{user.phone || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-accent-gray">
+                                    <span className="opacity-50">Status</span>
+                                    {user.is_active ?
+                                        <span className="text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full flex items-center gap-2">
+                                            <div className="w-1 h-1 bg-emerald-500 rounded-full"></div> Verified
+                                        </span>
+                                        : <span className="text-amber-500 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full flex items-center gap-2 animate-pulse">
+                                            <div className="w-1 h-1 bg-amber-500 rounded-full"></div> Pending
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+
+                            {activeTab === 'instructors' && !user.is_active && (
+                                <button onClick={() => handleApprove(user.id)} className="btn-primary w-full py-4 rounded-xl shadow-lg shadow-primary/30 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3">
+                                    Authorize Instructor <FaCheck />
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                    {(activeTab === 'instructors' ? instructors : students).length === 0 && (
+                        <div className="p-20 text-center text-accent-gray italic font-black uppercase tracking-[0.4em] opacity-30 text-[10px]">
+                            Ecosystem Cohort Empty.
+                        </div>
+                    )}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left text-sm text-accent-gray">
                         <thead className="bg-surface-dark text-accent-white font-black uppercase text-[10px] tracking-[0.2em]">
                             <tr>

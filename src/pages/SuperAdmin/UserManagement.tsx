@@ -114,7 +114,38 @@ const UserManagement: React.FC = () => {
                 </button>
             </div>
 
-            <div className="premium-card overflow-hidden">
+            {/* Mobile View - Cards */}
+            <div className="md:hidden space-y-4">
+                {users.filter(u => filter === 'all' || !u.is_active).map((user) => (
+                    <div key={user.id} className="premium-card p-4 bg-surface dark:bg-surface border border-surface-border rounded-xl shadow-lg">
+                        <div className="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 className="font-black text-accent-white text-lg">{user.name}</h4>
+                                <p className="text-sm font-medium text-accent-gray/70 break-all">{user.email}</p>
+                            </div>
+                            <span className={`px-2 py-1 text-[8px] font-black uppercase tracking-wider rounded-lg border shadow-sm ${user.role_name === 'instructor' ? 'bg-purple-900/20 text-purple-400 border-purple-500/20' : user.role_name === 'super_instructor' ? 'bg-indigo-900/20 text-indigo-400 border-indigo-500/20' : 'bg-surface-dark text-accent-gray border-white/5'}`}>
+                                {user.role_name.replace('_', ' ')}
+                            </span>
+                        </div>
+
+                        <div className="flex justify-between items-center mb-4 pt-3 border-t border-surface-border">
+                            <span className="text-xs font-bold text-accent-gray uppercase tracking-widest">Status</span>
+                            {user.is_active ? (
+                                <span className="text-accent-emerald flex items-center gap-1.5 font-black uppercase text-[9px] tracking-widest"><FaCheck size={10} /> Active</span>
+                            ) : (
+                                <span className="text-primary flex items-center gap-1.5 font-black uppercase text-[9px] tracking-widest animate-pulse">Pending Review</span>
+                            )}
+                        </div>
+
+                        <div className="pt-2">
+                            <ActionButtons user={user} toggleStatus={toggleStatus} deleteUser={deleteUser} />
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Desktop View - Table */}
+            <div className="hidden md:block premium-card overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-surface-border">
                         <thead className="bg-surface-dark/50">

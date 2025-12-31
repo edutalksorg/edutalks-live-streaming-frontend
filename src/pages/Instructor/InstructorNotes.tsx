@@ -103,14 +103,14 @@ const InstructorNotes: React.FC = () => {
 
     return (
         <div className="animate-in fade-in duration-700">
-            <div className="mb-10">
-                <h2 className="text-4xl font-black text-accent-white italic mb-2 tracking-tighter uppercase">STUDY <span className="text-primary">MATERIAL</span> & NOTES</h2>
-                <p className="text-accent-gray uppercase tracking-[0.3em] text-[10px] font-black opacity-70">Academic Resource Management</p>
+            <div className="mb-6 md:mb-10">
+                <h2 className="text-2xl md:text-4xl font-black text-accent-white italic mb-1 md:mb-2 tracking-tighter uppercase">STUDY <span className="text-primary">MATERIAL</span> & NOTES</h2>
+                <p className="text-accent-gray uppercase tracking-[0.3em] text-[8px] md:text-[10px] font-black opacity-70">Academic Resource Management</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
-                <div className="md:col-span-2 space-y-6">
-                    <div className="premium-card p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 md:gap-10">
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="premium-card p-6 md:p-8">
                         <div className="flex items-center gap-3 mb-8">
                             <div className="p-3 bg-primary/10 rounded-2xl">
                                 <FaFileUpload className="text-primary text-xl" />
@@ -174,7 +174,7 @@ const InstructorNotes: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="md:col-span-3 space-y-8">
+                <div className="lg:col-span-3 space-y-8">
                     <div className="flex items-center justify-between">
                         <h3 className="text-xl font-black text-accent-white italic uppercase">UPLOADED <span className="text-primary">MATERIALS</span></h3>
                         <span className="bg-surface-light border border-surface-border px-4 py-1.5 rounded-full text-[10px] font-bold text-accent-gray uppercase tracking-widest">
@@ -189,35 +189,37 @@ const InstructorNotes: React.FC = () => {
                     ) : (
                         <div className="grid grid-cols-1 gap-4">
                             {notes.map(note => (
-                                <div key={note.id} className="premium-card p-6 flex justify-between items-center group">
-                                    <div className="flex items-center gap-5">
+                                <div key={note.id} className="premium-card p-5 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group">
+                                    <div className="flex items-center gap-4 md:gap-5">
                                         <div className="p-4 bg-accent-blue/10 rounded-2xl group-hover:scale-110 transition-transform duration-500">
                                             <FaDownload className="text-accent-blue text-xl" />
                                         </div>
                                         <div>
-                                            <h4 className="font-black text-accent-white italic text-lg leading-tight uppercase">{note.title}</h4>
-                                            <p className="text-[10px] text-accent-gray font-black uppercase tracking-widest opacity-70 mb-2">{note.subject_name || 'General'}</p>
-                                            <p className="text-sm text-accent-gray italic font-medium max-w-md line-clamp-1">{note.description}</p>
+                                            <h4 className="font-black text-accent-white italic text-base md:text-lg leading-tight uppercase">{note.title}</h4>
+                                            <p className="text-[9px] md:text-[10px] text-accent-gray font-black uppercase tracking-widest opacity-70 mb-2">{note.subject_name || 'General'}</p>
+                                            <p className="text-xs md:text-sm text-accent-gray italic font-medium max-w-md line-clamp-1">{note.description}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <p className="text-[10px] text-accent-gray font-black mr-4 uppercase tracking-tighter opacity-50">{new Date(note.uploaded_at).toLocaleDateString()}</p>
-                                        <a
-                                            href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${note.file_path}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="p-3 bg-surface-light hover:bg-accent-blue/20 text-accent-blue rounded-xl transition-all duration-300"
-                                            title="Download"
-                                        >
-                                            <FaDownload size={18} />
-                                        </a>
-                                        <button
-                                            onClick={() => handleDelete(note.id)}
-                                            className="p-3 bg-surface-light hover:bg-primary/20 text-primary rounded-xl transition-all duration-300 active:scale-90"
-                                            title="Delete"
-                                        >
-                                            <FaTrash size={18} />
-                                        </button>
+                                    <div className="flex items-center justify-between w-full sm:w-auto gap-3 pt-4 sm:pt-0 border-t sm:border-t-0 border-surface-border/50 sm:border-none">
+                                        <p className="text-[9px] text-accent-gray font-black uppercase tracking-tighter opacity-50">{new Date(note.uploaded_at).toLocaleDateString()}</p>
+                                        <div className="flex items-center gap-2">
+                                            <a
+                                                href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${note.file_path}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-3 bg-surface-light hover:bg-accent-blue/20 text-accent-blue rounded-xl transition-all duration-300"
+                                                title="Download"
+                                            >
+                                                <FaDownload size={18} />
+                                            </a>
+                                            <button
+                                                onClick={() => handleDelete(note.id)}
+                                                className="p-3 bg-surface-light hover:bg-primary/20 text-primary rounded-xl transition-all duration-300 active:scale-90"
+                                                title="Delete"
+                                            >
+                                                <FaTrash size={16} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}

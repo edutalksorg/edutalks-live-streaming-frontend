@@ -26,9 +26,9 @@ const InstructorLayout: React.FC = () => {
     };
 
     return (
-        <div className={`flex flex-col lg:flex-row h-screen ${theme === 'dark' ? 'dark' : ''} bg-surface-dark antialiased font-sans transition-colors duration-500 overflow-hidden`}>
+        <div className={`flex flex-col xl:flex-row h-screen ${theme === 'dark' ? 'dark' : ''} bg-surface-dark antialiased font-sans transition-colors duration-500 overflow-hidden`}>
             {/* Mobile Header */}
-            <div className="lg:hidden flex items-center justify-between p-4 bg-surface border-b border-surface-border z-50">
+            <div className="xl:hidden flex items-center justify-between p-4 bg-surface border-b border-surface-border z-50">
                 <Link to="/instructor" onClick={() => setIsSidebarOpen(false)}>
                     <Logo />
                 </Link>
@@ -44,20 +44,22 @@ const InstructorLayout: React.FC = () => {
             </div>
 
             {/* Sidebar Overlay */}
-            {isSidebarOpen && (
-                <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
-                    onClick={() => setIsSidebarOpen(false)}
-                />
-            )}
+            {
+                isSidebarOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 xl:hidden animate-in fade-in duration-300"
+                        onClick={() => setIsSidebarOpen(false)}
+                    />
+                )
+            }
 
             {/* Sidebar */}
             <div className={`
                 fixed inset-y-0 left-0 w-64 bg-surface text-accent-white flex flex-col shadow-2xl z-50 border-r border-surface-border transition-all duration-300 transform
                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-                lg:relative lg:translate-x-0 lg:flex
+                xl:relative xl:translate-x-0 xl:flex
             `}>
-                <div className="hidden lg:flex p-6 text-2xl font-black items-center gap-2 border-b border-surface-border">
+                <div className="hidden xl:flex p-6 text-2xl font-black items-center gap-2 border-b border-surface-border">
                     <Link to="/instructor">
                         <Logo />
                     </Link>
@@ -73,7 +75,7 @@ const InstructorLayout: React.FC = () => {
                                 <p className="text-[10px] text-primary mt-1 uppercase tracking-widest font-black">Instructor</p>
                             </div>
                         </div>
-                        <div className="hidden lg:block">
+                        <div className="hidden xl:block">
                             <ThemeToggle className="scale-75 origin-right" />
                         </div>
                     </div>
@@ -107,11 +109,11 @@ const InstructorLayout: React.FC = () => {
 
             {/* Main Content */}
             <div className="flex-1 overflow-auto bg-surface-dark transition-colors duration-500">
-                <div className="p-4 md:p-10 max-w-7xl mx-auto">
+                <div className="p-4 md:p-6 xl:p-10 max-w-7xl mx-auto">
                     <Outlet />
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

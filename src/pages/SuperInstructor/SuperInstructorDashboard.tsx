@@ -140,36 +140,61 @@ const SuperInstructorDashboard: React.FC = () => {
             case 'pending':
                 return (
                     <div className="premium-card overflow-hidden animate-fadeIn">
-                        <div className="p-10 border-b border-surface-border flex justify-between items-center bg-surface-light/30">
-                            <h3 className="text-2xl font-black text-accent-white italic tracking-tight">Pending Instructor <span className="text-primary italic">Approvals</span></h3>
+                        <div className="p-6 md:p-10 border-b border-surface-border flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-light/30">
+                            <h3 className="text-xl md:text-2xl font-black text-accent-white italic tracking-tight">Pending Instructor <span className="text-primary italic">Approvals</span></h3>
                             <span className="bg-amber-500/10 text-amber-500 border border-amber-500/20 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse shadow-lg">{pendingInstructors.length} Pending Actions</span>
                         </div>
                         {pendingInstructors.length === 0 ? (
-                            <div className="p-32 text-center text-accent-gray italic font-black uppercase tracking-[0.3em] opacity-30 text-[10px]">No pending requests at the moment.</div>
+                            <div className="p-20 md:p-32 text-center text-accent-gray italic font-black uppercase tracking-[0.3em] opacity-30 text-[10px]">No pending requests at the moment.</div>
                         ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm text-accent-gray">
-                                    <thead className="bg-surface-dark text-accent-white font-black uppercase text-[10px] tracking-[0.2em]">
-                                        <tr>
-                                            <th className="p-8">Name</th><th className="p-8">Email</th><th className="p-8">Phone</th><th className="p-8 text-center">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-surface-border">
-                                        {pendingInstructors.map(inst => (
-                                            <tr key={inst.id} className="hover:bg-primary/5 transition-colors group">
-                                                <td className="p-8 font-black text-accent-white italic text-lg">{inst.name}</td>
-                                                <td className="p-8 opacity-70 italic">{inst.email}</td>
-                                                <td className="p-8 italic font-medium">{inst.phone || '-'}</td>
-                                                <td className="p-8 text-center">
-                                                    <button onClick={() => handleApprove(inst.id)} className="btn-primary px-8 py-3 rounded-xl shadow-lg shadow-primary/30 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 mx-auto">
-                                                        <FaCheck /> Approve User
-                                                    </button>
-                                                </td>
+                            <>
+                                {/* Mobile View - Cards */}
+                                <div className="md:hidden space-y-4 p-4">
+                                    {pendingInstructors.map(inst => (
+                                        <div key={inst.id} className="bg-surface-dark/50 p-6 rounded-[1.5rem] border border-surface-border shadow-lg">
+                                            <div className="mb-4">
+                                                <h4 className="font-black text-accent-white italic text-lg">{inst.name}</h4>
+                                                <p className="text-sm text-accent-gray italic opacity-70 break-all">{inst.email}</p>
+                                            </div>
+                                            <div className="flex justify-between items-center mb-6 pt-4 border-t border-surface-border/50">
+                                                <span className="text-[10px] font-black text-accent-gray uppercase tracking-widest opacity-50">Phone</span>
+                                                <span className="text-xs text-accent-white italic font-medium">{inst.phone || 'N/A'}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleApprove(inst.id)}
+                                                className="btn-primary w-full py-4 rounded-xl shadow-lg shadow-primary/30 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3"
+                                            >
+                                                <FaCheck /> Approve Instructor
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Desktop View - Table */}
+                                <div className="hidden md:block overflow-x-auto">
+                                    <table className="w-full text-left text-sm text-accent-gray">
+                                        <thead className="bg-surface-dark text-accent-white font-black uppercase text-[10px] tracking-[0.2em]">
+                                            <tr>
+                                                <th className="p-8">Name</th><th className="p-8">Email</th><th className="p-8">Phone</th><th className="p-8 text-center">Action</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody className="divide-y divide-surface-border">
+                                            {pendingInstructors.map(inst => (
+                                                <tr key={inst.id} className="hover:bg-primary/5 transition-colors group">
+                                                    <td className="p-8 font-black text-accent-white italic text-lg">{inst.name}</td>
+                                                    <td className="p-8 opacity-70 italic">{inst.email}</td>
+                                                    <td className="p-8 italic font-medium">{inst.phone || '-'}</td>
+                                                    <td className="p-8 text-center">
+                                                        <button onClick={() => handleApprove(inst.id)} className="btn-primary px-8 py-3 rounded-xl shadow-lg shadow-primary/30 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 mx-auto">
+                                                            <FaCheck /> Approve User
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </>
                         )}
                     </div>
                 );

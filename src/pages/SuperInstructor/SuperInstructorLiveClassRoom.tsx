@@ -108,6 +108,8 @@ const LiveClassRoom: React.FC = () => {
     const mainStageRef = useRef<HTMLDivElement>(null);
 
     const isInstructor = user?.role === 'instructor' || user?.role === 'super_instructor';
+    const isInstructorRef = useRef(isInstructor);
+    useEffect(() => { isInstructorRef.current = isInstructor; }, [isInstructor]);
 
     // --- Effects ---
 
@@ -149,21 +151,25 @@ const LiveClassRoom: React.FC = () => {
         socket.on('chat_status', (data) => setChatLocked(data.locked));
         socket.on('audio_status', (data) => {
             setAudioLocked(data.locked);
-            if (data.locked && !isInstructor) {
-                setMicOn(false);
-                localAudioTrackRef.current?.setEnabled(false);
+            if (data.locked && !isInstructorRef.current && !studentsWithUnmutePermissionRef.current.has(String(user?.id))) {
+                // Force mute and unpublish if not permitted
+                (async () => {
+                    if (micOnRef.current) {
+                        await toggleMic(true, false);
+                    }
+                })();
             }
         });
         socket.on('video_status', (data) => {
             setVideoLocked(data.locked);
-            if (data.locked && !isInstructor) {
+            if (data.locked && !isInstructorRef.current) {
                 setCameraOn(false);
                 localVideoTrackRef.current?.setEnabled(false);
             }
         });
         socket.on('screen_status', (data) => {
             setScreenLocked(data.locked);
-            if (data.locked && !isInstructor && isScreenSharingRef.current) {
+            if (data.locked && !isInstructorRef.current && isScreenSharingRef.current) {
                 toggleScreenShare(); // Logic handles stop and unpublish
             }
         });
@@ -197,6 +203,7 @@ const LiveClassRoom: React.FC = () => {
             setHandsRaised(prev => prev.filter(h => h.id !== data.studentId));
 
             if (String(user?.id) === String(data.studentId)) {
+                setIsHandRaised(false);
                 setAudioLocked(false);
                 setVideoLocked(false);
                 setScreenLocked(false);
@@ -273,9 +280,9 @@ const LiveClassRoom: React.FC = () => {
             setBlockedStudents(prev => new Set(prev).add(sid));
 
             if (String(user?.id) === sid) {
-                // Force toggle OFF if currently on
+                // Force toggle OFF
                 if (micOnRef.current) {
-                    await toggleMic(true); // Pass true to force mute
+                    await toggleMic(true, false); // Force OFF
                     showToast("Instructor has muted your microphone.", 'warning');
                 }
             }
@@ -285,24 +292,28 @@ const LiveClassRoom: React.FC = () => {
             // Revoke all special permissions and block everyone for instructor UI
             setStudentsWithUnmutePermission(new Set());
 
-            if (!isInstructor) {
+            if (!isInstructorRef.current) {
                 setAudioLocked(true);
-                // When "Mute All" is called, the room is locked, so individual "blocked" status 
-                // ensure they can't bypass via unlock later unless granted permission again.
                 setBlockedStudents(prev => new Set(prev).add(String(user?.id)));
 
                 if (micOnRef.current) {
-                    await toggleMic(true); // Pass true to force mute
+                    await toggleMic(true, false); // Force OFF
                     showToast("Instructor has muted everyone.", 'warning');
                 }
             }
         });
 
         socket.on('grant_unmute_permission', (data) => {
-            // Grant permission in local state for everyone so UI updates
-            setStudentsWithUnmutePermission(prev => new Set(prev).add(String(data.studentId)));
+            // Grant permission and unblock for everyone's UI
+            const sid = String(data.studentId);
+            setStudentsWithUnmutePermission(prev => new Set(prev).add(sid));
+            setBlockedStudents(prev => {
+                const next = new Set(prev);
+                next.delete(sid);
+                return next;
+            });
 
-            if (String(user?.id) === String(data.studentId)) {
+            if (String(user?.id) === sid) {
                 setAudioLocked(false);
                 setVideoLocked(false);
                 setScreenLocked(false);
@@ -310,7 +321,7 @@ const LiveClassRoom: React.FC = () => {
                 // Auto-enable media as specified (mimicking hand raise approval)
                 (async () => {
                     try {
-                        if (!micOnRef.current) await toggleMic(true);
+                        if (!micOnRef.current) await toggleMic(true, true); // Force ON
                         await toggleCamera(true); // Force camera ON (won't toggle if already on)
                     } catch (e) { console.error(e); }
                 })();
@@ -325,15 +336,15 @@ const LiveClassRoom: React.FC = () => {
                 if (confirmed) {
                     // Grant permission and unmute
                     setStudentsWithUnmutePermission(prev => new Set(prev).add(String(user?.id)));
-                    if (!micOnRef.current) toggleMic(true);
+                    if (!micOnRef.current) await toggleMic(true, true); // Force ON
                 }
             }
         });
 
         socket.on('unlock_all_mics', () => {
             setBlockedStudents(new Set()); // Clear all blocks
+            setAudioLocked(false);
             if (!isInstructor) {
-                setAudioLocked(false);
                 showToast("Instructor has unlocked all microphones.", 'success');
             }
         });
@@ -341,7 +352,7 @@ const LiveClassRoom: React.FC = () => {
         return () => {
             socket.disconnect();
         };
-    }, [id]);
+    }, [id, user?.id]);
 
     // Main Stage Track Playback Effect
     useEffect(() => {
@@ -543,32 +554,43 @@ const LiveClassRoom: React.FC = () => {
         };
     }, [isLive, user?.id]);
 
-    const toggleMic = async (bypassChecks: boolean = false) => {
+    const toggleMic = async (bypassChecks: boolean = false, forceState?: boolean) => {
         // Check if student has permission to unmute
         const isLocked = audioLockedRef.current;
         const isBlocked = blockedStudentsRef.current.has(String(user?.id));
         const hasPermission = studentsWithUnmutePermissionRef.current.has(String(user?.id));
 
         // If explicitly blocked by instructor, cannot unmute even if room is unlocked
-        if (!bypassChecks && !isInstructor && (isBlocked || (isLocked && !hasPermission))) {
+        if (!bypassChecks && !isInstructorRef.current && (isBlocked || (isLocked && !hasPermission))) {
             showToast("You don't have permission to unmute. Please raise your hand or wait for the instructor to grant permission.", 'error');
             return;
         }
 
         const currentTrack = localAudioTrackRef.current;
         const currentMicOn = micOnRef.current;
+        const newMicState = forceState !== undefined ? forceState : !currentMicOn;
+
+        // If we are already in the target state, do nothing
+        if (currentTrack && forceState !== undefined && currentMicOn === forceState) return;
 
         if (currentTrack) {
-            const newMicState = !currentMicOn;
             await currentTrack.setEnabled(newMicState);
             setMicOn(newMicState);
 
             if (newMicState && clientRef.current) {
-                try { await clientRef.current.publish(currentTrack); } catch (e) { console.warn(e); }
+                try {
+                    await clientRef.current.publish(currentTrack);
+                } catch (e: any) {
+                    if (e.code !== 'TRACK_IS_ALREADY_PUBLISHED') console.warn(e);
+                }
             } else if (!newMicState && clientRef.current) {
-                try { await clientRef.current.unpublish(currentTrack); } catch (e) { console.warn(e); }
+                try {
+                    await clientRef.current.unpublish(currentTrack);
+                } catch (e) {
+                    console.warn(e);
+                }
             }
-        } else if (!currentMicOn) {
+        } else if (newMicState) {
             // Only create if we think it's off (to prevent double creation)
             try {
                 const track = await AgoraRTC.createMicrophoneAudioTrack();
@@ -1248,7 +1270,8 @@ const LiveClassRoom: React.FC = () => {
                                             <div className="space-y-3">
                                                 {onlineUsers.filter(u => String(u.userId) !== String(user?.id)).map(u => {
                                                     const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId) || Number(ru.uid) === Number(u.userId));
-                                                    const hasPermission = studentsWithUnmutePermission.has(String(u.userId));
+                                                    const isBlocked = blockedStudents.has(String(u.userId));
+                                                    const hasPermission = !isBlocked && (!audioLocked || studentsWithUnmutePermission.has(String(u.userId)));
                                                     const isHandRaisedByU = handsRaised.some(h => String(h.id) === String(u.userId));
 
                                                     return (
@@ -1268,9 +1291,9 @@ const LiveClassRoom: React.FC = () => {
                                                                 {rUser?.hasAudio ? (
                                                                     <FaMicrophone size={12} className="text-emerald-500" title="Speaking" />
                                                                 ) : hasPermission ? (
-                                                                    <FaMicrophone size={12} className="text-slate-400" title="Allowed but muted" />
+                                                                    <FaMicrophone size={12} className="text-slate-400 opacity-50" title="Allowed but muted" />
                                                                 ) : (
-                                                                    <FaMicrophoneSlash size={12} className="text-rose-500" title="Muted by instructor" />
+                                                                    <FaMicrophoneSlash size={12} className="text-rose-400/50" title="Muted by instructor" />
                                                                 )}
 
                                                                 {isInstructor && (

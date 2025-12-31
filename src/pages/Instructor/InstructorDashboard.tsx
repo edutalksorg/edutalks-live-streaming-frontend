@@ -49,7 +49,7 @@ const InstructorDashboard: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="flex items-center justify-center min-h-[400px] text-primary LG:text-3xl font-black uppercase tracking-widest animate-pulse italic">Accessing Instructor Portal...</div>;
+    if (loading) return <div className="flex items-center justify-center min-h-[400px] text-primary lg:text-3xl font-black uppercase tracking-widest animate-pulse italic">Accessing Instructor Portal...</div>;
 
     return (
         <div className={`max-w-7xl mx-auto transition-colors duration-500 ${theme === 'dark' ? 'dark' : ''}`}>
@@ -61,7 +61,7 @@ const InstructorDashboard: React.FC = () => {
             </header>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-12">
                 {[
                     { label: 'Assigned Students', value: stats.totalStudents, icon: FaUsers, accent: 'text-accent-blue', border: 'border-accent-blue', link: '/instructor/students' },
                     { label: 'Classes Conducted', value: stats.classesCount, icon: FaVideo, accent: 'text-accent-purple', border: 'border-accent-purple', link: '/instructor/classes' },
@@ -69,7 +69,7 @@ const InstructorDashboard: React.FC = () => {
                     { label: 'Pending Reviews', value: stats.pendingReviews, icon: FaMedal, accent: 'text-primary', border: 'border-primary', link: '/instructor/exams' },
                 ].map((item, i) => (
                     <Link to={item.link} key={i} className="block h-full">
-                        <div className={`relative overflow-hidden bg-surface p-8 rounded-[2rem] shadow-premium border-l-8 ${item.border} border border-surface-border transition-all hover:-translate-y-2 hover:shadow-premium-hover group h-full`}>
+                        <div className={`relative overflow-hidden bg-surface p-6 lg:p-8 rounded-[2rem] shadow-premium border-l-8 ${item.border} border border-surface-border transition-all hover:-translate-y-2 hover:shadow-premium-hover group h-full`}>
                             <div className="flex justify-between items-start relative z-10">
                                 <div>
                                     <p className="text-[10px] font-black text-accent-gray uppercase tracking-widest mb-2 group-hover:text-accent-white transition-colors">{item.label}</p>
@@ -85,19 +85,19 @@ const InstructorDashboard: React.FC = () => {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 {/* My Batches */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="premium-card p-8 bg-surface-light/30">
+                <div className="xl:col-span-2 space-y-6">
+                    <div className="premium-card p-6 lg:p-8 bg-surface-light/30">
                         <h3 className="text-2xl font-black text-accent-white flex items-center gap-3 italic tracking-tight">
                             <span className="w-2 h-8 bg-primary rounded-full shadow-primary-glow"></span>
                             My Assigned Batches
                         </h3>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {batches.length > 0 ? batches.map((batch: any) => (
-                            <div key={batch.id} className="group bg-surface p-10 rounded-[2.5rem] shadow-premium hover:shadow-premium-hover hover:border-primary/30 transition-all border border-surface-border relative overflow-hidden">
+                            <div key={batch.id} className="group bg-surface p-6 lg:p-10 rounded-[2.5rem] shadow-premium hover:shadow-premium-hover hover:border-primary/30 transition-all border border-surface-border relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors"></div>
                                 <h4 className="font-black text-2xl text-accent-white mb-2 relative z-10 italic tracking-tight">{batch.name}</h4>
                                 <p className="text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-6 relative z-10 italic">{batch.subject_name}</p>
@@ -120,7 +120,7 @@ const InstructorDashboard: React.FC = () => {
 
                 {/* Quick Actions & Live */}
                 <div className="space-y-6">
-                    <div className="bg-primary/10 backdrop-blur-3xl p-10 rounded-[2.5rem] border border-primary/20 shadow-premium relative overflow-hidden group">
+                    <div className="bg-primary/10 backdrop-blur-3xl p-6 lg:p-10 rounded-[2.5rem] border border-primary/20 shadow-premium relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform -rotate-12 translate-x-4 -translate-y-4">
                             <FaVideo size={180} />
                         </div>
@@ -134,7 +134,7 @@ const InstructorDashboard: React.FC = () => {
                         </button>
                     </div>
 
-                    <div className="premium-card p-10">
+                    <div className="premium-card p-6 lg:p-10">
                         <h3 className="text-xl font-black text-accent-white mb-8 flex items-center gap-3 italic tracking-tight">
                             <span className="w-1.5 h-6 bg-accent-white/20 rounded-full"></span>
                             Quick Actions

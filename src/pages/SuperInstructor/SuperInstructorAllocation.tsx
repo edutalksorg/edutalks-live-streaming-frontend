@@ -197,20 +197,12 @@ const SuperInstructorAllocation: React.FC = () => {
             </div>
 
             {/* Filters & Actions */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-surface p-4 rounded-[2rem] border border-white/5 shadow-2xl animate-fadeIn">
-
-
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-surface p-6 md:p-4 rounded-[2rem] border border-white/5 shadow-2xl animate-fadeIn">
                 {/* Actions */}
-                <div className="flex gap-4 ml-auto">
-                    {/* <button
-                        onClick={handleCleanupStrays}
-                        className="flex items-center gap-2 px-6 py-3 bg-emerald-500/10 text-emerald-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20 shadow-lg hover:shadow-emerald-500/20 active:scale-95"
-                    >
-                        Cleanup System
-                    </button> */}
+                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto md:ml-auto">
                     <button
                         onClick={handleReset}
-                        className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all border border-red-500/20 shadow-lg hover:shadow-red-500/20 active:scale-95"
+                        className="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-red-500/10 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all border border-red-500/20 shadow-lg hover:shadow-red-500/20 active:scale-95"
                     >
                         <FaTrash size={12} /> Reset System
                     </button>

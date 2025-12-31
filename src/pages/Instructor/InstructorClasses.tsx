@@ -59,8 +59,8 @@ const InstructorClasses: React.FC = () => {
         <div className="space-y-12 animate-in fade-in duration-700">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h2 className="text-4xl font-black text-accent-white italic tracking-tighter uppercase">MISSION <span className="text-gradient-red">SCHEDULER</span></h2>
-                    <p className="text-accent-gray italic font-medium mt-2 opacity-80">CONFIGURE AND EXECUTE LIVE EDUCATIONAL SORTIES</p>
+                    <h2 className="text-2xl md:text-4xl font-black text-accent-white italic tracking-tighter uppercase">MISSION <span className="text-gradient-red">SCHEDULER</span></h2>
+                    <p className="text-accent-gray italic font-medium mt-1 md:mt-2 opacity-80 text-[10px] md:text-base">CONFIGURE AND EXECUTE LIVE EDUCATIONAL SORTIES</p>
                 </div>
                 <button
                     onClick={() => setShowModal(true)}
@@ -71,9 +71,9 @@ const InstructorClasses: React.FC = () => {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6 md:gap-8">
                 {classes.map(cls => (
-                    <div key={cls.id} className="premium-card group hover:scale-[1.02] transition-all duration-500 border-surface-border p-8">
+                    <div key={cls.id} className="premium-card group hover:scale-[1.02] transition-all duration-500 border-surface-border p-6 lg:p-8">
                         <div className="flex justify-between items-start mb-6">
                             <h3 className="text-xl font-black text-accent-white italic tracking-tighter uppercase group-hover:text-primary transition-colors">{cls.title}</h3>
                             <div className="flex flex-col items-end">
@@ -113,8 +113,8 @@ const InstructorClasses: React.FC = () => {
 
             {/* Modal */}
             {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-surface-dark/95 backdrop-blur-xl animate-in fade-in zoom-in duration-300">
-                    <div className="premium-card p-10 max-w-lg w-full border-surface-border shadow-[0_0_100px_rgba(238,29,35,0.1)] relative overflow-hidden">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 lg:p-6 bg-surface-dark/95 backdrop-blur-xl animate-in fade-in zoom-in duration-300">
+                    <div className="premium-card p-6 lg:p-10 max-w-lg w-full border-surface-border shadow-[0_0_100px_rgba(238,29,35,0.1)] relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-hover"></div>
 
                         <h3 className="text-2xl font-black text-accent-white italic tracking-tighter uppercase mb-8">CONFIGURE <span className="text-primary">MISSION</span></h3>
@@ -151,7 +151,7 @@ const InstructorClasses: React.FC = () => {
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] opacity-70">DEPLOYMENT TIME</label>
                                     <input

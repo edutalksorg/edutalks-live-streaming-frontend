@@ -164,8 +164,8 @@ const InstructorExams: React.FC = () => {
         <div className="animate-in fade-in duration-700">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
                 <div>
-                    <h2 className="text-4xl font-black text-accent-white italic mb-2 tracking-tighter uppercase">EXAM <span className="text-primary">ENGINE</span></h2>
-                    <p className="text-accent-gray uppercase tracking-[0.3em] text-[10px] font-black opacity-90">Architecture & Assessment Management</p>
+                    <h2 className="text-2xl md:text-4xl font-black text-accent-white italic mb-1 md:mb-2 tracking-tighter uppercase">EXAM <span className="text-primary">ENGINE</span></h2>
+                    <p className="text-accent-gray uppercase tracking-[0.3em] text-[9px] md:text-[10px] font-black opacity-90">Architecture & Assessment Management</p>
                 </div>
                 <button
                     onClick={() => { resetForm(); setEditingExam(null); setShowModal(true); }}
@@ -175,9 +175,9 @@ const InstructorExams: React.FC = () => {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6 md:gap-8">
                 {exams.map(exam => (
-                    <div key={exam.id} className="premium-card p-8 flex flex-col justify-between group">
+                    <div key={exam.id} className="premium-card p-6 lg:p-8 flex flex-col justify-between group">
                         <div>
                             <div className="flex justify-between items-start mb-6">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-3 py-1.5 rounded-full">{exam.type}</span>
@@ -217,7 +217,7 @@ const InstructorExams: React.FC = () => {
             {/* Create/Edit Exam Modal */}
             {showModal && (
                 <div className="fixed inset-0 z-50 bg-surface flex flex-col animate-in zoom-in duration-300">
-                    <div className="p-8 border-b border-surface-border flex justify-between items-center bg-surface-light/30">
+                    <div className="p-6 md:p-8 border-b border-surface-border flex justify-between items-center bg-surface-light/30">
                         <div>
                             <h3 className="text-2xl font-black text-accent-white italic tracking-tighter uppercase">{editingExam ? 'MODIFY' : 'INITIALIZE'} <span className="text-primary">EXAMINATION</span></h3>
                             <p className="text-[10px] text-accent-gray font-black uppercase tracking-[0.2em] opacity-90">Configuration Dashboard</p>
@@ -226,7 +226,7 @@ const InstructorExams: React.FC = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar bg-surface-dark/50">
-                        <div className="max-w-5xl mx-auto p-10 space-y-12">
+                        <div className="max-w-5xl mx-auto p-6 lg:p-10 space-y-12">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1 opacity-70">Examination Title</label>
@@ -285,7 +285,7 @@ const InstructorExams: React.FC = () => {
 
                                 <div className="space-y-6">
                                     {questions.map((q, qIdx) => (
-                                        <div key={qIdx} className="premium-card p-10 relative group bg-surface">
+                                        <div key={qIdx} className="premium-card p-6 lg:p-10 relative group bg-surface">
                                             <div className="flex justify-between items-center mb-8">
                                                 <div className="flex items-center gap-4">
                                                     <span className="w-12 h-12 flex items-center justify-center bg-primary text-white font-black italic rounded-xl text-xl shadow-lg shadow-primary/20">
@@ -391,7 +391,7 @@ const InstructorExams: React.FC = () => {
                         </div>
 
                         <div className="sticky bottom-0 bg-surface/90 backdrop-blur-xl border-t border-surface-border">
-                            <div className="max-w-5xl mx-auto px-10 py-6 flex flex-col md:flex-row justify-between items-center gap-6">
+                            <div className="max-w-5xl mx-auto px-6 lg:px-10 py-6 flex flex-col md:flex-row justify-between items-center gap-6">
                                 <div className="text-[10px] font-black text-accent-gray uppercase tracking-widest hidden md:block">
                                     Total Nodes: <span className="text-accent-white text-base ml-2">{questions.length}</span>
                                 </div>

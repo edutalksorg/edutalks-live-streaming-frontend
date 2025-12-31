@@ -127,7 +127,58 @@ const AdminDashboard: React.FC = () => {
 
             {/* Recent Activity / Tables */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-3 premium-card overflow-hidden">
+                {/* Mobile View - Cards */}
+                <div className="lg:col-span-3 md:hidden space-y-4">
+                    <div className="flex justify-between items-center mb-2 px-1">
+                        <h3 className="text-lg font-black text-accent-white italic">
+                            {filterRole ? `${filterRole.replace('_', ' ').charAt(0).toUpperCase() + filterRole.replace('_', ' ').slice(1)} List` : 'All Users'}
+                        </h3>
+                        <button onClick={() => { fetchUsers(); setFilterRole(null); }} className="text-primary text-[10px] font-black hover:underline tracking-widest uppercase italic">Reset</button>
+                    </div>
+
+                    {filteredUsers.map((user) => (
+                        <div key={user.id} className="premium-card p-5 bg-surface dark:bg-surface border border-surface-border rounded-xl shadow-lg">
+                            <div className="flex justify-between items-start mb-3">
+                                <div>
+                                    <h4 className="font-black text-accent-white text-lg italic">{user.name}</h4>
+                                    <p className="text-sm font-medium text-accent-gray/70 break-all italic">{user.email}</p>
+                                </div>
+                                <span className="px-2 py-1 rounded-full bg-surface-dark border border-surface-border text-[8px] uppercase font-black tracking-widest text-accent-gray">
+                                    {user.role_name.replace('_', ' ')}
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 mb-4 text-xs text-accent-gray">
+                                <div>
+                                    <span className="block font-black uppercase tracking-widest opacity-50 mb-1">Grade</span>
+                                    <span className="font-bold text-accent-white">{user.grade || '-'}</span>
+                                </div>
+                                <div>
+                                    <span className="block font-black uppercase tracking-widest opacity-50 mb-1">Joined</span>
+                                    <span className="font-bold text-accent-white">{new Date(user.created_at).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center pt-3 border-t border-surface-border">
+                                {user.is_active ? (
+                                    <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest border border-emerald-500/20">Active</span>
+                                ) : (
+                                    <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-widest border border-amber-500/20 animate-pulse">Pending</span>
+                                )}
+
+                                <button
+                                    onClick={() => toggleStatus(user.id, user.is_active)}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl shadow-lg text-[9px] font-black uppercase tracking-widest transition transform active:scale-95 ${user.is_active ? 'bg-surface-dark border border-surface-border text-accent-gray opacity-50' : 'bg-primary text-white shadow-primary/30'}`}
+                                >
+                                    {user.is_active ? <><FaTimes size={10} /> Deactivate</> : <><FaCheck size={10} /> Approve</>}
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Desktop View - Table */}
+                <div className="hidden md:block lg:col-span-3 premium-card overflow-hidden">
                     <div className="p-8 border-b border-surface-border flex justify-between items-center bg-surface-light/30">
                         <h3 className="text-xl font-black text-accent-white italic">
                             {filterRole ? `${filterRole.replace('_', ' ').charAt(0).toUpperCase() + filterRole.replace('_', ' ').slice(1)} List` : 'All Users'}

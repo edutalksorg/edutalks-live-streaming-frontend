@@ -38,7 +38,6 @@ const LiveClassRoom: React.FC = () => {
 
     // Agora State
     const [client, setClient] = useState<IAgoraRTCClient | null>(null);
-    const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
     const [localVideoTrack, setLocalVideoTrack] = useState<ICameraVideoTrack | null>(null);
     const [micOn, setMicOn] = useState(false);
     const [cameraOn, setCameraOn] = useState(false);
@@ -60,8 +59,23 @@ const LiveClassRoom: React.FC = () => {
     // Control Locks (Unlocked by default for collaboration)
     const [chatLocked, setChatLocked] = useState(false);
     const [audioLocked, setAudioLocked] = useState(false);
+    const audioLockedRef = useRef(audioLocked);
+    useEffect(() => { audioLockedRef.current = audioLocked; }, [audioLocked]);
     const [videoLocked, setVideoLocked] = useState(false);
     const [screenLocked, setScreenLocked] = useState(false);
+
+    // Track which students have permission to unmute (instructor-controlled)
+    const [studentsWithUnmutePermission, setStudentsWithUnmutePermission] = useState<Set<string>>(new Set());
+    const studentsWithUnmutePermissionRef = useRef(studentsWithUnmutePermission);
+    useEffect(() => { studentsWithUnmutePermissionRef.current = studentsWithUnmutePermission; }, [studentsWithUnmutePermission]);
+
+    // Track students who are explicitly blocked from unmuting
+    const [blockedStudents, setBlockedStudents] = useState<Set<string>>(new Set());
+    const blockedStudentsRef = useRef(blockedStudents);
+    useEffect(() => { blockedStudentsRef.current = blockedStudents; }, [blockedStudents]);
+
+    const micOnRef = useRef(micOn);
+    useEffect(() => { micOnRef.current = micOn; }, [micOn]);
 
 
     const [remoteUsers, setRemoteUsers] = useState<any[]>([]);
@@ -110,9 +124,9 @@ const LiveClassRoom: React.FC = () => {
         socket.on('chat_status', (data) => setChatLocked(data.locked));
         socket.on('audio_status', (data) => {
             setAudioLocked(data.locked);
-            if (data.locked && !isInstructor) {
+            if (data.locked && !isInstructor && !studentsWithUnmutePermissionRef.current.has(String(user?.id))) {
                 setMicOn(false);
-                localAudioTrack?.setEnabled(false);
+                localAudioTrackRef.current?.setEnabled(false);
             }
         });
         socket.on('video_status', (data) => {
@@ -156,13 +170,14 @@ const LiveClassRoom: React.FC = () => {
             setHandsRaised(prev => prev.filter(h => h.id !== data.studentId));
 
             if (String(user?.id) === String(data.studentId)) {
+                setIsHandRaised(false);
                 setAudioLocked(false);
                 setVideoLocked(false);
                 setScreenLocked(false);
 
                 // Auto-enable media as specified
                 try {
-                    if (!micOn) await toggleMic();
+                    if (!micOnRef.current) await toggleMic(true);
                     await toggleCamera(true); // Force camera ON (won't toggle if already on)
                 } catch (e) { console.error(e); }
 
@@ -216,10 +231,18 @@ const LiveClassRoom: React.FC = () => {
         });
 
         socket.on('grant_unmute_permission', (data) => {
-            // Remove from raised hands list for everyone just in case
+            // Grant permission in local state for everyone so UI updates
+            const sid = String(data.studentId);
+            setStudentsWithUnmutePermission(prev => new Set(prev).add(sid));
+            setBlockedStudents(prev => {
+                const next = new Set(prev);
+                next.delete(sid);
+                return next;
+            });
             setHandsRaised(prev => prev.filter(h => h.id !== data.studentId));
 
-            if (String(user?.id) === String(data.studentId)) {
+            if (String(user?.id) === sid) {
+                setIsHandRaised(false);
                 setAudioLocked(false);
                 setVideoLocked(false);
                 setScreenLocked(false);
@@ -227,8 +250,8 @@ const LiveClassRoom: React.FC = () => {
                 // Auto-enable media as specified (mimicking hand raise approval)
                 (async () => {
                     try {
-                        if (!micOn) await toggleMic(true);
-                        if (!cameraOn) await toggleCamera(true); // Force camera ON (won't toggle if already on)
+                        if (!micOnRef.current) await toggleMic(true);
+                        await toggleCamera(true); // Force camera ON (won't toggle if already on)
                     } catch (e) { console.error(e); }
                 })();
 
@@ -237,10 +260,15 @@ const LiveClassRoom: React.FC = () => {
         });
 
         socket.on('force_mute_student', async (data) => {
-            if (String(user?.id) === String(data.studentId)) {
-                // Lock audio to prevent immediate unmute
-                setAudioLocked(true);
+            const sid = String(data.studentId);
+            setStudentsWithUnmutePermission(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(sid);
+                return newSet;
+            });
+            setBlockedStudents(prev => new Set(prev).add(sid));
 
+            if (String(user?.id) === sid) {
                 if (localAudioTrackRef.current) {
                     await localAudioTrackRef.current.setEnabled(false);
                     if (clientRef.current) await clientRef.current.unpublish(localAudioTrackRef.current);
@@ -251,13 +279,24 @@ const LiveClassRoom: React.FC = () => {
         });
 
         socket.on('force_mute_all', async () => {
+            setStudentsWithUnmutePermission(new Set());
             if (!isInstructor) {
+                setAudioLocked(true);
+                setBlockedStudents(prev => new Set(prev).add(String(user?.id)));
                 if (localAudioTrackRef.current) {
                     await localAudioTrackRef.current.setEnabled(false);
                     if (clientRef.current) await clientRef.current.unpublish(localAudioTrackRef.current);
                     setMicOn(false);
                     showAlert("Instructor muted everyone.", "warning");
                 }
+            }
+        });
+
+        socket.on('unlock_all_mics', () => {
+            setBlockedStudents(new Set()); // Clear all blocks
+            setAudioLocked(false);
+            if (!isInstructor) {
+                showAlert("Instructor has unlocked all microphones.", "success");
             }
         });
 
@@ -430,12 +469,11 @@ const LiveClassRoom: React.FC = () => {
                 // Auto-enable media logic
                 try {
                     const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
-                    setLocalAudioTrack(audioTrack);
+                    localAudioTrackRef.current = audioTrack; // Sync ref
                     setLocalVideoTrack(videoTrack);
                     setMicOn(true);
                     setCameraOn(true);
                     await agoraClient.publish([audioTrack, videoTrack]);
-                    // videoTrack.play('local-player'); // Rely on ref in JSX
                 } catch (e) {
                     console.warn("Failed to auto-enable media:", e);
                 }
@@ -452,30 +490,39 @@ const LiveClassRoom: React.FC = () => {
         initAgora();
 
         return () => {
-            localAudioTrack?.close();
-            localVideoTrack?.close();
-            localScreenTrack?.close();
-            client?.leave();
+            const trackA = localAudioTrackRef.current;
+            const trackV = localVideoTrack;
+            const trackS = localScreenTrack;
+            const c = clientRef.current;
+
+            if (trackA) { trackA.stop(); trackA.close(); }
+            if (trackV) { trackV.stop(); trackV.close(); }
+            if (trackS) { trackS.stop(); trackS.close(); }
+            if (c) { c.leave(); }
         };
     }, [isLive]);
 
     const toggleMic = async (bypassLock = false) => {
-        if (!isInstructor && audioLocked && !bypassLock) {
+        const isLocked = audioLockedRef.current;
+        const isBlocked = blockedStudentsRef.current.has(String(user?.id));
+        const hasPermission = studentsWithUnmutePermissionRef.current.has(String(user?.id));
+
+        if (!isInstructor && !bypassLock && (isBlocked || (isLocked && !hasPermission))) {
             showAlert("You don't have permission to unmute. Please raise your hand or wait for the instructor to grant permission.", "warning", "MIC LOCKED");
             return;
         }
 
         try {
-            if (localAudioTrack) {
-                const newMicState = !micOn;
-                await localAudioTrack.setEnabled(newMicState);
-                localAudioTrackRef.current = localAudioTrack; // Sync Ref
+            const currentMicOn = micOnRef.current;
+            if (localAudioTrackRef.current) {
+                const newMicState = !currentMicOn;
+                await localAudioTrackRef.current.setEnabled(newMicState);
                 setMicOn(newMicState);
 
                 // Ensure published if turning on, Unpublish if turning off
                 if (newMicState && client) {
                     try {
-                        await client.publish(localAudioTrack);
+                        await client.publish(localAudioTrackRef.current);
                     } catch (err: any) {
                         if (err.code !== 'TRACK_IS_ALREADY_PUBLISHED' && err.message !== 'track is already published') {
                             console.warn("Microphone republish warning:", err);
@@ -483,14 +530,13 @@ const LiveClassRoom: React.FC = () => {
                     }
                 } else if (!newMicState && client) {
                     try {
-                        await client.unpublish(localAudioTrack);
+                        await client.unpublish(localAudioTrackRef.current);
                     } catch (err) {
                         console.warn("Microphone unpublish warning:", err);
                     }
                 }
-            } else {
+            } else if (!currentMicOn) {
                 const track = await AgoraRTC.createMicrophoneAudioTrack();
-                setLocalAudioTrack(track);
                 localAudioTrackRef.current = track; // Sync Ref
                 await client?.publish(track);
                 setMicOn(true);
@@ -1141,7 +1187,13 @@ const LiveClassRoom: React.FC = () => {
                                                             </div>
                                                         </div>
                                                         <div className="flex gap-2">
-                                                            {rUser?.hasAudio ? <FaMicrophone size={14} className="text-emerald-500" /> : <FaMicrophoneSlash size={14} className="text-slate-300" />}
+                                                            {rUser?.hasAudio ? (
+                                                                <FaMicrophone size={14} className="text-emerald-500" />
+                                                            ) : (!audioLocked || studentsWithUnmutePermission.has(String(u.userId))) ? (
+                                                                <FaMicrophone size={14} className="text-slate-400 opacity-50" />
+                                                            ) : (
+                                                                <FaMicrophoneSlash size={14} className="text-rose-400/50" />
+                                                            )}
                                                             {rUser?.hasVideo ? <FaVideo size={14} className="text-emerald-500" /> : <FaVideoSlash size={14} className="text-slate-300" />}
                                                         </div>
                                                     </div>

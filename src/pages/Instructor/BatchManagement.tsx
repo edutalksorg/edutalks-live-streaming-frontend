@@ -70,7 +70,73 @@ const BatchManagement: React.FC = () => {
         <div className="animate-fadeIn">
             <h2 className="text-3xl font-black text-accent-white tracking-tighter italic mb-10">Batch <span className="text-gradient-red">Management</span></h2>
 
-            <div className="premium-card overflow-hidden">
+            {/* Mobile View - Cards */}
+            <div className="md:hidden space-y-4">
+                {batches.map((batch) => (
+                    <div key={batch.id} className="premium-card p-6 bg-surface dark:bg-surface border border-surface-border rounded-2xl shadow-lg">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <span className="text-[10px] font-black text-primary uppercase tracking-widest">{batch.class_name} • {batch.subject_name}</span>
+                                <h4 className="font-black text-accent-white text-xl italic mt-1">{batch.name}</h4>
+                            </div>
+                            <button
+                                onClick={() => { setEditingBatch(batch); setSelectedInstructor(batch.instructor_id?.toString() || ''); }}
+                                className="p-3 bg-surface-dark border border-white/5 text-primary rounded-xl shadow-lg active:scale-95 transition-all"
+                            >
+                                <FaEdit size={16} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 mb-6">
+                            <div className="flex flex-col gap-2">
+                                <span className="text-[10px] font-black text-accent-gray uppercase tracking-widest opacity-50">Students Capacity</span>
+                                <div className="flex items-center gap-2">
+                                    <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg border shadow-sm ${batch.student_count >= (batch.max_students || 30) ? 'bg-primary/20 text-primary border-primary/20' : 'bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20'}`}>
+                                        {batch.student_count} / {batch.max_students || 30} Filled
+                                    </span>
+                                </div>
+                                {batch.students && batch.students.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {batch.students.map(student => (
+                                            <div key={student.id} className="flex items-center gap-2 text-[10px] bg-surface-dark/50 px-2.5 py-1.5 rounded-lg border border-white/5">
+                                                <span className="text-accent-white font-bold italic">{student.name}</span>
+                                                <span className={`text-[8px] px-1.5 py-0.5 rounded-md uppercase font-black tracking-wider ${student.plan_name === 'Free' ? 'bg-gray-500/20 text-gray-400' :
+                                                    student.plan_name === 'Pro' ? 'bg-amber-500/20 text-amber-500' :
+                                                        'bg-emerald-500/20 text-emerald-400'
+                                                    }`}>
+                                                    {student.plan_name}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="pt-4 border-t border-surface-border/50">
+                                <span className="text-[10px] font-black text-accent-gray uppercase tracking-widest opacity-50 block mb-2">Assigned Instructor</span>
+                                {batch.instructor_name ? (
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center font-black text-primary border border-primary/20">
+                                            {batch.instructor_name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <div className="font-black text-accent-white text-sm italic">{batch.instructor_name}</div>
+                                            <div className="text-[10px] text-accent-gray italic opacity-50">{batch.instructor_email}</div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <span className="text-primary text-[10px] font-black uppercase tracking-widest animate-pulse flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div> Unassigned
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Desktop View - Table */}
+            <div className="hidden md:block premium-card overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-surface-border">
                         <thead className="bg-surface-dark/50">
