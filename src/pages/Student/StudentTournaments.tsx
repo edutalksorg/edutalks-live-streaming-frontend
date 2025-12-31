@@ -252,15 +252,15 @@ const StudentTournaments: React.FC = () => {
                     {tournament.status === 'UPCOMING' && (
                         <div className="mb-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
                             <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                                {now < regEnd ? 'Registration closes in:' : 'Exam starts in:'}
+                                {currentTime < regEnd ? 'Registration closes in:' : 'Exam starts in:'}
                             </p>
                             <p className="text-lg font-mono font-bold text-blue-600 dark:text-blue-400">
-                                {now < regEnd ? getTimeRemaining(tournament.registration_end) : getTimeRemaining(tournament.exam_start)}
+                                {currentTime < regEnd ? getTimeRemaining(tournament.registration_end) : getTimeRemaining(tournament.exam_start)}
                             </p>
                         </div>
                     )}
 
-                    {(tournament.status === 'LIVE' || (tournament.status === 'UPCOMING' && now >= examStart)) && tournament.is_registered && (
+                    {(tournament.status === 'LIVE' || (tournament.status === 'UPCOMING' && currentTime >= examStart)) && tournament.is_registered && (
                         <div className="mb-4 bg-green-50 dark:bg-green-900/20 p-3 rounded animate-pulse">
                             <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Exam ends in:</p>
                             <p className="text-lg font-mono font-bold text-green-600 dark:text-green-400">
@@ -290,14 +290,14 @@ const StudentTournaments: React.FC = () => {
                         )}
 
                         {/* 2. Registered & Waiting (Between registration end and exam start) */}
-                        {tournament.is_registered && now < examStart && (
+                        {tournament.is_registered && currentTime < examStart && (
                             <div className="flex-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 px-4 py-2 rounded-lg font-bold text-center text-xs uppercase tracking-widest flex flex-col justify-center">
                                 <span>Exam Starts In</span>
                                 <span className="font-black">{getTimeRemaining(tournament.exam_start)}</span>
                             </div>
                         )}
 
-                        {!tournament.is_registered && now > regEnd && now < examStart && (
+                        {!tournament.is_registered && currentTime > regEnd && currentTime < examStart && (
                             <div className="flex-1 bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg font-bold text-center text-xs uppercase tracking-widest flex flex-col justify-center">
                                 <span>Registration Closed</span>
                                 <span className="text-[10px] opacity-60">You missed the window</span>
@@ -326,7 +326,7 @@ const StudentTournaments: React.FC = () => {
 
                         {/* 5. Leaderboard (After exam ends or results published) */}
                         {/* View Leaderboard results - Visible for LIVE, COMPLETED, or RESULT_PUBLISHED */}
-                        {(now >= examEnd || tournament.status === 'RESULT_PUBLISHED' || tournament.status === 'LIVE') && (
+                        {(currentTime >= examEnd || tournament.status === 'RESULT_PUBLISHED' || tournament.status === 'LIVE') && (
                             <button
                                 onClick={() => handleViewLeaderboard(tournament.id)}
                                 className="flex-1 border-2 border-primary text-primary px-4 py-2 rounded-lg font-bold hover:bg-primary hover:text-white transition-all uppercase italic text-sm tracking-tight flex items-center justify-center gap-2"
