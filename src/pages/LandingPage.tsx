@@ -1,14 +1,13 @@
 import Logo from '../components/Logo';
 import { Link } from 'react-router-dom';
 import { FaVideo, FaChalkboardTeacher, FaChartLine } from 'react-icons/fa';
-import { useTheme } from '../context/ThemeContext';
-import ThemeToggle from '../components/ThemeToggle';
+
 
 const LandingPage: React.FC = () => {
-    const { theme } = useTheme();
+
 
     return (
-        <div className={`font-sans ${theme === 'dark' ? 'dark text-accent-white bg-surface-dark' : 'text-foreground bg-background'} min-h-screen relative overflow-x-hidden transition-colors duration-500`}>
+        <div className="font-sans dark text-accent-white bg-surface-dark min-h-screen relative overflow-x-hidden transition-colors duration-500">
             {/* Background Pattern Layer */}
             <div className="fixed inset-0 bg-pattern-dark pointer-events-none -z-10"></div>
 
@@ -26,10 +25,6 @@ const LandingPage: React.FC = () => {
                             <a href="#plans" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">Plans</a>
                             <a href="#about" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">About</a>
 
-                            <div className="hidden md:block">
-                                <ThemeToggle />
-                            </div>
-
                             <Link to="/login" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">Login</Link>
                             <Link to="/register" className="btn-primary shadow-lg shadow-primary/30 scale-105 px-8">
                                 Join Now
@@ -37,7 +32,6 @@ const LandingPage: React.FC = () => {
                         </div>
                         {/* Mobile Menu Button - Placeholder if needed, or just keep simple for now */}
                         <div className="md:hidden flex items-center gap-4">
-                            <ThemeToggle />
                             <Link to="/login" className="text-accent-gray font-black text-[10px] uppercase tracking-widest">Login</Link>
                         </div>
                     </div>

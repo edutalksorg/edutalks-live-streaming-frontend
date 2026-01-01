@@ -4,15 +4,12 @@ import { FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import Logo from '../components/Logo';
-import { useTheme } from '../context/ThemeContext';
-import ThemeToggle from '../components/ThemeToggle';
 
 const Login: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const { login } = useContext(AuthContext)!;
-    const { theme } = useTheme();
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
@@ -42,11 +39,8 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-surface-dark flex items-center justify-center relative overflow-hidden transition-colors duration-500`}>
-            {/* Theme Toggle Position */}
-            <div className="absolute top-8 right-8">
-                <ThemeToggle />
-            </div>
+        <div className="min-h-screen bg-surface-dark flex items-center justify-center relative overflow-hidden transition-colors duration-500">
+            {/* Theme Toggle Position removed */}
 
             {/* Background Pattern */}
             <div className="fixed inset-0 bg-pattern-dark pointer-events-none -z-10"></div>
@@ -58,7 +52,7 @@ const Login: React.FC = () => {
                     </Link>
                 </div>
                 <div className="text-center mb-10">
-                    <Logo size="lg" className={`justify-center mb-6 ${theme === 'dark' ? 'drop-shadow-[0_0_8px_rgba(238,29,35,0.2)]' : 'hover:scale-105 transition-transform'}`} />
+                    <Logo size="lg" className="justify-center mb-6 drop-shadow-[0_0_8px_rgba(238,29,35,0.2)]" />
                     <h2 className="text-3xl font-black text-accent-white italic mb-2">Welcome Back</h2>
                     <p className="text-accent-gray uppercase tracking-[0.2em] text-[10px] font-black">Sign in to your account</p>
                 </div>

@@ -3,12 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { FaEye, FaEyeSlash, FaArrowLeft, FaCheckCircle } from 'react-icons/fa';
 import Logo from '../components/Logo';
-import { useTheme } from '../context/ThemeContext';
-import ThemeToggle from '../components/ThemeToggle';
 
 const Register: React.FC = () => {
     const navigate = useNavigate();
-    const { theme } = useTheme();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -38,11 +35,8 @@ const Register: React.FC = () => {
     };
 
     return (
-        <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-surface-dark flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500`}>
-            {/* Theme Toggle Position */}
-            <div className="absolute top-8 right-8">
-                <ThemeToggle />
-            </div>
+        <div className="min-h-screen bg-surface-dark flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
+            {/* Theme Toggle Position removed */}
 
             {/* Background Pattern */}
             <div className="fixed inset-0 bg-pattern-dark pointer-events-none -z-10"></div>

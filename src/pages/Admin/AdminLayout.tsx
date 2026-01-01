@@ -3,12 +3,9 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { FaSignOutAlt, FaEye, FaBars, FaTimes } from 'react-icons/fa';
 import Logo from '../../components/Logo';
-import { useTheme } from '../../context/ThemeContext';
-import ThemeToggle from '../../components/ThemeToggle';
 
 const AdminLayout: React.FC = () => {
     const { logout, user } = useContext(AuthContext)!;
-    const { theme } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -25,14 +22,13 @@ const AdminLayout: React.FC = () => {
     };
 
     return (
-        <div className={`flex flex-col lg:flex-row h-screen ${theme === 'dark' ? 'dark' : ''} bg-surface-dark transition-colors duration-500 overflow-hidden`}>
+        <div className="flex flex-col lg:flex-row h-screen bg-surface-dark transition-colors duration-500 overflow-hidden">
             {/* Mobile Header */}
             <div className="lg:hidden flex items-center justify-between px-6 h-16 bg-surface border-b border-surface-border z-50">
                 <Link to="/admin" onClick={() => setIsSidebarOpen(false)}>
                     <Logo />
                 </Link>
                 <div className="flex items-center gap-4">
-                    <ThemeToggle className="scale-75" />
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                         className="p-2 text-accent-white hover:text-primary transition-colors"
@@ -72,7 +68,6 @@ const AdminLayout: React.FC = () => {
                                 <p className="text-[10px] text-primary mt-1 uppercase tracking-widest font-black">Admin</p>
                             </div>
                         </div>
-                        <ThemeToggle className="scale-75 origin-right hidden lg:block" />
                     </div>
                 </div>
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

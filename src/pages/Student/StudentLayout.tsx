@@ -3,7 +3,6 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { FaSignOutAlt, FaBookOpen, FaVideo, FaClipboardCheck, FaTrophy, FaThLarge, FaUserGraduate, FaCrown } from 'react-icons/fa';
 import Logo from '../../components/Logo';
-import ThemeToggle from '../../components/ThemeToggle';
 
 const StudentLayout: React.FC = () => {
     const { logout, user } = useContext(AuthContext)!;
@@ -63,7 +62,6 @@ const StudentLayout: React.FC = () => {
 
                         {/* Right Actions */}
                         <div className="flex items-center gap-3 md:gap-6 w-auto md:w-64 justify-end">
-                            <ThemeToggle className="scale-75 md:scale-100" />
                             <Link to="/student/profile" className="flex items-center gap-2 md:gap-3 group p-1 md:p-1.5 md:pr-5 rounded-full border border-surface-border hover:border-primary hover:bg-primary/10 transition-all duration-300 bg-surface/50 backdrop-blur-sm">
                                 <div className="w-8 h-8 md:w-10 md:h-10 bg-surface-dark rounded-full flex items-center justify-center text-white text-[10px] md:text-xs font-black border-2 border-surface-border shadow-md group-hover:scale-110 group-hover:bg-primary transition-all">
                                     {user?.name?.charAt(0).toUpperCase()}

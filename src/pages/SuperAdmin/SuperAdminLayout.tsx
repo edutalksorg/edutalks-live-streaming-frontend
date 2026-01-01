@@ -3,12 +3,9 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { FaUsers, FaMoneyBillWave, FaSignOutAlt, FaChartPie } from 'react-icons/fa';
 import Logo from '../../components/Logo';
-import { useTheme } from '../../context/ThemeContext';
-import ThemeToggle from '../../components/ThemeToggle';
 
 const SuperAdminLayout: React.FC = () => {
     const { logout, user } = useContext(AuthContext)!;
-    const { theme } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
@@ -29,7 +26,7 @@ const SuperAdminLayout: React.FC = () => {
     };
 
     return (
-        <div className={`flex flex-col lg:flex-row h-screen ${theme === 'dark' ? 'dark' : ''} bg-surface-dark antialiased transition-colors duration-500 overflow-hidden`}>
+        <div className="flex flex-col lg:flex-row h-screen bg-surface-dark antialiased transition-colors duration-500 overflow-hidden">
 
             {/* Mobile Header */}
             <div className="lg:hidden flex items-center justify-between p-4 bg-surface border-b border-surface-border z-50">
@@ -37,7 +34,6 @@ const SuperAdminLayout: React.FC = () => {
                     <Logo />
                 </div>
                 <div className="flex items-center gap-4">
-                    <ThemeToggle />
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                         className="p-2 text-accent-white hover:bg-surface-light rounded-lg transition-colors"
@@ -78,9 +74,6 @@ const SuperAdminLayout: React.FC = () => {
                                 <p className="text-xs font-bold text-accent-white leading-none">{user?.name}</p>
                                 <p className="text-[10px] text-primary mt-1 uppercase tracking-widest font-black">Super Admin</p>
                             </div>
-                        </div>
-                        <div className="hidden lg:block">
-                            <ThemeToggle className="scale-75 origin-right" />
                         </div>
                     </div>
                 </div>

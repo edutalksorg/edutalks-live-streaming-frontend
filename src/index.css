@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@variant dark (&:where(.dark, .dark *));
 
 :root {
   --color-primary: #EE1D23;
@@ -12,29 +11,6 @@
   --color-warning: #F59E0B;
   --color-error: #EF4444;
 
-  --accent-blue: #2563EB;
-  --accent-purple: #7C3AED;
-  --accent-indigo: #4F46E5;
-  --accent-emerald: #059669;
-
-  --background: #0F0F0F;
-  --foreground: #F8FAFC;
-  --background-dark: #0A0A10;
-  --surface: #FFFFFF;
-  --surface-light: #F8FAFC;
-  --surface-border: #E2E8F0;
-
-  --text-main: #0F172A;
-  --text-muted: #334155;
-
-  --shadow-main: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-  --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-glow: 0 0 15px rgba(238, 29, 35, 0.08);
-  --shadow-glow-hover: 0 0 25px rgba(238, 29, 35, 0.15);
-  --pattern-opacity: 0.12;
-}
-
-.dark {
   --accent-blue: #60A5FA;
   --accent-purple: #A78BFA;
   --accent-indigo: #818CF8;
@@ -118,7 +94,7 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: color 500ms, background-color 500ms;
+    transition: color 500ms;
     font-size: 14px;
   }
 
