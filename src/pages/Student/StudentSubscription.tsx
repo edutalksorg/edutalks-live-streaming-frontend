@@ -91,7 +91,7 @@ const StudentSubscription: React.FC = () => {
     return (
         <div className="min-h-screen pt-24 px-4 pb-20 max-w-7xl mx-auto">
             <div className="text-center mb-16 space-y-4">
-                <h1 className="text-4xl md:text-6xl font-black text-accent-white tracking-tighter">
+                <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter">
                     Unlock <span className="text-yellow-500 italic">Excellence</span>
                 </h1>
                 <p className="text-xl text-accent-gray max-w-2xl mx-auto">
@@ -101,9 +101,9 @@ const StudentSubscription: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
                 {/* Free Plan */}
-                <div className={`bg-white dark:bg-surface-dark rounded-[2.5rem] p-8 border ${(!user?.plan_name || user.plan_name === 'Free') ? 'border-primary ring-4 ring-primary/10' : 'border-gray-200 dark:border-gray-800'} relative group hover:border-gray-400 transition-all`}>
-                    <h3 className="text-xl font-black text-accent-white mb-2">Basic</h3>
-                    <div className="text-4xl font-black text-accent-white mb-6">Free</div>
+                <div className={`bg-surface rounded-[2.5rem] p-8 border ${(!user?.plan_name || user.plan_name === 'Free') ? 'border-primary ring-4 ring-primary/10' : 'border-surface-border'} relative group hover:border-primary/40 transition-all shadow-premium`}>
+                    <h3 className="text-xl font-black text-foreground mb-2">Basic</h3>
+                    <div className="text-4xl font-black text-foreground mb-6">Free</div>
                     <p className="text-sm text-accent-gray mb-8 font-medium">Get a taste of excellence with limited access.</p>
                     <ul className="space-y-4 mb-10 text-gray-600 dark:text-gray-400 font-bold text-sm">
                         <li className="flex items-center gap-3"><FaCheck className="text-green-500" /> Dashboard Access</li>
@@ -120,11 +120,11 @@ const StudentSubscription: React.FC = () => {
                 </div>
 
                 {/* Monthly Plan */}
-                <div className={`bg-white dark:bg-surface-dark rounded-[2.5rem] p-8 border-2 ${user?.plan_name === 'Monthly' ? 'border-primary ring-4 ring-primary/20' : 'border-primary'} relative shadow-2xl shadow-primary/20 transform hover:-translate-y-2 transition-transform overflow-hidden`}>
+                <div className={`bg-surface rounded-[2.5rem] p-8 border-2 ${user?.plan_name === 'Monthly' ? 'border-primary ring-4 ring-primary/20' : 'border-primary'} relative shadow-2xl shadow-primary/20 transform hover:-translate-y-2 transition-transform overflow-hidden`}>
                     <div className="absolute top-0 right-0 bg-primary text-white font-bold px-4 py-1 rounded-bl-xl text-[10px] uppercase tracking-widest">Most Popular</div>
-                    <h3 className="text-xl font-black text-accent-white mb-2">Pro Monthly</h3>
+                    <h3 className="text-xl font-black text-foreground mb-2">Pro Monthly</h3>
                     <div className="flex items-baseline gap-1 mb-6">
-                        <span className="text-4xl font-black text-accent-white">₹1</span>
+                        <span className="text-4xl font-black text-foreground">₹1</span>
                         <span className="text-accent-gray font-bold text-sm">/month</span>
                     </div>
                     <p className="text-sm text-gray-500 mb-8 font-medium">Perfect for short-term learning goals.</p>
@@ -145,16 +145,16 @@ const StudentSubscription: React.FC = () => {
                 </div>
 
                 {/* Yearly Plan */}
-                <div className={`bg-white dark:bg-surface-dark rounded-[2.5rem] p-8 border-2 ${user?.plan_name === 'Yearly' ? 'border-yellow-500 ring-4 ring-yellow-500/20' : 'border-yellow-500'} relative shadow-2xl shadow-yellow-500/20 transform hover:-translate-y-2 transition-transform overflow-hidden`}>
+                <div className={`bg-surface rounded-[2.5rem] p-8 border-2 ${user?.plan_name === 'Yearly' ? 'border-yellow-500 ring-4 ring-yellow-500/20' : 'border-yellow-500'} relative shadow-2xl shadow-yellow-500/20 transform hover:-translate-y-2 transition-transform overflow-hidden`}>
                     <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-2xl -z-10"></div>
                     <div className="absolute top-0 right-0 bg-yellow-500 text-white font-bold px-4 py-1 rounded-bl-xl text-[10px] uppercase tracking-widest">Best Value</div>
 
                     <div className="flex items-center gap-2 mb-2">
                         <FaCrown className="text-yellow-500" />
-                        <h3 className="text-xl font-black text-accent-white">Pro Yearly</h3>
+                        <h3 className="text-xl font-black text-foreground">Pro Yearly</h3>
                     </div>
                     <div className="flex items-baseline gap-1 mb-6">
-                        <span className="text-4xl font-black text-accent-white">₹4,999</span>
+                        <span className="text-4xl font-black text-foreground">₹4,999</span>
                         <span className="text-accent-gray font-bold text-sm">/year</span>
                     </div>
                     <p className="text-sm text-gray-500 mb-8 font-medium">Save money with annual commitment.</p>

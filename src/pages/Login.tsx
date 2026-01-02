@@ -39,7 +39,7 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-surface-dark flex items-center justify-center relative overflow-hidden transition-colors duration-500">
+        <div className="min-h-screen bg-background-dark flex items-center justify-center relative overflow-hidden transition-colors duration-500">
             {/* Theme Toggle Position removed */}
 
             {/* Background Pattern */}

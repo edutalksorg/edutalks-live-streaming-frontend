@@ -15,7 +15,7 @@ const SubscriptionPopup: React.FC<SubscriptionPopupProps> = ({ isOpen, onClose, 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border border-yellow-500/30 relative overflow-hidden text-center transform scale-100 transition-all">
+            <div className="bg-surface rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border border-yellow-500/30 relative overflow-hidden text-center transform scale-100 transition-all">
                 {/* Background Effects */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-2xl -z-10"></div>
 

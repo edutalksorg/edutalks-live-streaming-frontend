@@ -66,7 +66,7 @@ const StudentSuperInstructorClasses: React.FC = () => {
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-primary">Super Instructor Classes</h1>
-                    <p className="text-text-secondary mt-1">
+                    <p className="text-accent-gray mt-1">
                         Grade-wide live sessions from your Super Instructor
                     </p>
                 </div>
@@ -78,7 +78,7 @@ const StudentSuperInstructorClasses: React.FC = () => {
                             onClick={() => setSelectedSubject('all')}
                             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${selectedSubject === 'all'
                                 ? 'bg-primary text-white'
-                                : 'bg-white text-primary border border-primary hover:bg-primary/10'
+                                : 'bg-surface text-accent-white border border-surface-border hover:bg-primary/10'
                                 }`}
                         >
                             All Subjects
@@ -89,7 +89,7 @@ const StudentSuperInstructorClasses: React.FC = () => {
                                 onClick={() => setSelectedSubject(subject!)}
                                 className={`px-4 py-2 rounded-lg font-semibold transition-colors ${selectedSubject === subject
                                     ? 'bg-primary text-white'
-                                    : 'bg-white text-primary border border-primary hover:bg-primary/10'
+                                    : 'bg-surface text-accent-white border border-surface-border hover:bg-primary/10'
                                     }`}
                             >
                                 {subject}
@@ -159,10 +159,10 @@ const StudentSuperInstructorClasses: React.FC = () => {
                             {(!user?.plan_name || user.plan_name === 'Free') ? (
                                 <div className="premium-card p-12 text-center border-l-4 border-yellow-500 relative overflow-hidden group hover:scale-[1.01] transition-transform duration-500 col-span-full">
                                     <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
-                                    <h3 className="text-3xl font-black text-gray-900 dark:text-white italic uppercase tracking-tight mb-4 mt-4">
+                                    <h3 className="text-3xl font-black text-accent-white italic uppercase tracking-tight mb-4 mt-4">
                                         Super Instructor <span className="text-yellow-500">Access</span>
                                     </h3>
-                                    <p className="text-gray-600 dark:text-gray-400 text-lg font-medium max-w-2xl mx-auto mb-8 leading-relaxed">
+                                    <p className="text-accent-gray text-lg font-medium max-w-2xl mx-auto mb-8 leading-relaxed">
                                         Unlock exclusive grade-wide classes from Super Instructors. Upgrade to Pro for full access.
                                     </p>
                                     <div className="flex justify-center gap-4">
@@ -201,7 +201,7 @@ const StudentSuperInstructorClasses: React.FC = () => {
                                             Instructor: {cls.instructor_name}
                                         </p>
                                     </div>
-                                    <div className="bg-blue-50 text-blue-700 text-center py-2 rounded-lg text-sm font-semibold">
+                                    <div className="bg-surface-light text-accent-white border border-surface-border text-center py-2 rounded-lg text-sm font-semibold">
                                         Scheduled
                                     </div>
                                 </div>

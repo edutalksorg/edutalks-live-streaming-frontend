@@ -138,7 +138,7 @@ const InstructorTournaments: React.FC = () => {
             <div className="bg-white dark:bg-surface-dark rounded-lg shadow-md hover:shadow-xl transition-all duration-300 border-l-4 border-yellow-500 overflow-hidden">
                 <div className="p-6">
                     <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{tournament.name}</h3>
+                        <h3 className="text-xl font-bold text-accent-white">{tournament.name}</h3>
                         {getStatusBadge(tournament.status)}
                     </div>
 
@@ -147,23 +147,23 @@ const InstructorTournaments: React.FC = () => {
                     <div className="grid grid-cols-2 gap-3 mb-4">
                         <div className="flex items-center gap-2 text-sm">
                             <FaTrophy className="text-yellow-500" />
-                            <span className="text-gray-700 dark:text-gray-300">{tournament.level_name}</span>
+                            <span className="text-accent-gray">{tournament.level_name}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                             <FaClock className="text-blue-500" />
-                            <span className="text-gray-700 dark:text-gray-300">{tournament.duration} mins</span>
+                            <span className="text-accent-gray">{tournament.duration} mins</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                             <FaUsers className="text-green-500" />
-                            <span className="text-gray-700 dark:text-gray-300">{tournament.registered_count} students</span>
+                            <span className="text-accent-gray">{tournament.registered_count} students</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                             <FaChartBar className="text-purple-500" />
-                            <span className="text-gray-700 dark:text-gray-300">{tournament.subject_name || 'All Subjects'}</span>
+                            <span className="text-accent-gray">{tournament.subject_name || 'All Subjects'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                             <FaUserGraduate className="text-indigo-500" />
-                            <span className="text-gray-700 dark:text-gray-300 font-bold">{tournament.grade} Class</span>
+                            <span className="text-accent-gray font-bold">{tournament.grade} Class</span>
                         </div>
                     </div>
 
@@ -274,11 +274,11 @@ const InstructorTournaments: React.FC = () => {
         <div className="p-4 md:p-6">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3 text-gray-900 dark:text-white mb-2">
+                    <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3 text-accent-white mb-2">
                         <FaTrophy className="text-yellow-500" />
                         My Tournaments
                     </h2>
-                    <p className="text-gray-600 dark:text-gray-400">Create and manage your tournament competitions</p>
+                    <p className="text-accent-gray">Create and manage your tournament competitions</p>
                 </div>
                 <button
                     onClick={handleCreate}
@@ -296,10 +296,10 @@ const InstructorTournaments: React.FC = () => {
             )}
 
             {!loading && tournaments.length === 0 && (
-                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                    <FaTrophy className="text-6xl text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No Tournaments Yet</h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6">Create your first tournament to start engaging your students!</p>
+                <div className="text-center py-12 bg-surface-dark/50 rounded-lg border border-surface-border">
+                    <FaTrophy className="text-6xl text-accent-gray/20 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-accent-white mb-2">No Tournaments Yet</h3>
+                    <p className="text-accent-gray mb-6">Create your first tournament to start engaging your students!</p>
                     <button
                         onClick={handleCreate}
                         className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-lg font-bold hover:from-yellow-600 hover:to-orange-600 transition"

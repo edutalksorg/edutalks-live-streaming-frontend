@@ -23,7 +23,7 @@ const InstructorLayout: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col xl:flex-row h-screen bg-surface-dark antialiased font-sans transition-colors duration-500 overflow-hidden">
+        <div className="dark flex flex-col xl:flex-row h-screen bg-background-dark antialiased font-sans transition-colors duration-500 overflow-hidden">
             {/* Mobile Header */}
             <div className="xl:hidden flex items-center justify-between p-4 bg-surface border-b border-surface-border z-50">
                 <Link to="/instructor" onClick={() => setIsSidebarOpen(false)}>
@@ -101,7 +101,7 @@ const InstructorLayout: React.FC = () => {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-auto bg-surface-dark transition-colors duration-500">
+            <div className="flex-1 overflow-auto bg-background-dark transition-colors duration-500">
                 <div className="p-4 md:p-6 xl:p-10 max-w-7xl mx-auto">
                     <Outlet />
                 </div>

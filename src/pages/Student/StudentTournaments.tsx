@@ -173,22 +173,25 @@ const StudentTournaments: React.FC = () => {
         const examStart = new Date(tournament.exam_start);
         const examEnd = new Date(tournament.exam_end);
 
+        if (tournament.status === 'DRAFT') {
+            return <span className="px-3 py-1 rounded-full text-xs font-bold bg-surface-light text-accent-gray border border-surface-border">Draft</span>;
+        }
         if (tournament.status === 'RESULT_PUBLISHED') {
-            return <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">Results Out</span>;
+            return <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">Results Out</span>;
         }
         if (tournament.status === 'COMPLETED') {
-            return <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Completed</span>;
+            return <span className="px-3 py-1 rounded-full text-xs font-bold bg-surface-light text-accent-gray border border-surface-border">Completed</span>;
         }
         if ((tournament.status === 'LIVE' || (tournament.status === 'UPCOMING' && currentTime >= examStart)) && currentTime <= examEnd) {
-            return <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 animate-pulse">🔴 LIVE NOW</span>;
+            return <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse">🔴 LIVE NOW</span>;
         }
         if (tournament.status === 'UPCOMING' && currentTime < regEnd) {
-            return <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Open for Registration</span>;
+            return <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">Open for Registration</span>;
         }
         if (tournament.status === 'UPCOMING' && currentTime >= regEnd && currentTime < examStart) {
-            return <span className="px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700">Registration Closed</span>;
+            return <span className="px-3 py-1 rounded-full text-xs font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">Registration Closed</span>;
         }
-        return <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">{tournament.status}</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-bold bg-surface-light text-accent-gray border border-surface-border">{tournament.status}</span>;
     };
 
     const TournamentCard = ({ tournament }: { tournament: Tournament }) => {
@@ -206,7 +209,7 @@ const StudentTournaments: React.FC = () => {
                 {/* Header */}
                 <div className="p-6">
                     <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{tournament.name}</h3>
+                        <h3 className="text-xl font-bold text-accent-white">{tournament.name}</h3>
                         {getStatusBadge(tournament)}
                     </div>
 
@@ -344,11 +347,11 @@ const StudentTournaments: React.FC = () => {
         <div className="p-4 md:p-6">
             {/* Header */}
             <div className="mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3 text-gray-900 dark:text-white mb-2">
+                <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3 text-accent-white mb-2">
                     <FaTrophy className="text-yellow-500" />
                     Tournaments
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400">Compete, learn, and win amazing prizes!</p>
+                <p className="text-accent-gray">Compete, learn, and win amazing prizes!</p>
             </div>
 
             {/* Tabs */}
@@ -356,8 +359,8 @@ const StudentTournaments: React.FC = () => {
                 <button
                     onClick={() => setActiveTab('available')}
                     className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition ${activeTab === 'available'
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                        ? 'bg-primary text-white shadow-lg'
+                        : 'bg-surface-light text-accent-gray hover:bg-surface-light/80 border border-surface-border'
                         }`}
                 >
                     Available
@@ -365,8 +368,8 @@ const StudentTournaments: React.FC = () => {
                 <button
                     onClick={() => setActiveTab('registered')}
                     className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition ${activeTab === 'registered'
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                        ? 'bg-primary text-white shadow-lg'
+                        : 'bg-surface-light text-accent-gray hover:bg-surface-light/80 border border-surface-border'
                         }`}
                 >
                     My Registrations
@@ -374,8 +377,8 @@ const StudentTournaments: React.FC = () => {
                 <button
                     onClick={() => setActiveTab('completed')}
                     className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition ${activeTab === 'completed'
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                        ? 'bg-primary text-white shadow-lg'
+                        : 'bg-surface-light text-accent-gray hover:bg-surface-light/80 border border-surface-border'
                         }`}
                 >
                     Completed
@@ -392,15 +395,16 @@ const StudentTournaments: React.FC = () => {
 
             {/* Empty State with Upgrade Prompt for Free Users */}
             {!loading && filteredTournaments.length === 0 && (!user?.plan_name || user.plan_name === 'Free') && (
-                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 p-8 rounded-lg shadow-md text-center border border-yellow-200 dark:border-yellow-700">
-                    <FaTrophy className="text-6xl text-yellow-500 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Unlock Tournaments & Compete!</h3>
-                    <p className="text-gray-700 dark:text-gray-300 mb-6">
+                <div className="bg-surface p-8 rounded-lg shadow-premium text-center border border-surface-border relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/5 to-orange-500/5 pointer-events-none"></div>
+                    <FaTrophy className="text-6xl text-yellow-500 mx-auto mb-4 relative z-10" />
+                    <h3 className="text-2xl font-bold text-accent-white mb-2 relative z-10">Unlock Tournaments & Compete!</h3>
+                    <p className="text-accent-gray mb-6 relative z-10">
                         Join exciting tournaments, compete with students nationwide, and win amazing prizes with EduTalks Pro.
                     </p>
                     <button
                         onClick={() => navigate('/student/subscription')}
-                        className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-8 py-3 rounded-lg font-bold uppercase tracking-wider hover:from-yellow-600 hover:to-orange-600 transition shadow-lg"
+                        className="btn-primary px-8 py-3 mx-auto relative z-10"
                     >
                         Upgrade to Pro
                     </button>
@@ -420,8 +424,8 @@ const StudentTournaments: React.FC = () => {
             {!loading && filteredTournaments.length === 0 && (
                 <div className="text-center py-12">
                     <FaTrophy className="text-6xl text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No Tournaments Found</h3>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <h3 className="text-xl font-semibold text-accent-white mb-2">No Tournaments Found</h3>
+                    <p className="text-accent-gray">
                         {!user?.plan_name || user.plan_name === 'Free'
                             ? "Tournaments are exclusive to our Pro members. Upgrade to participate!"
                             : (activeTab === 'available' ? 'No tournaments available at the moment. Check back later!' : "You haven't participated in any tournaments yet.")}

@@ -30,7 +30,7 @@ const StudentLayout: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-surface-dark font-sans text-accent-white antialiased transition-colors duration-500">
+        <div className="dark min-h-screen bg-background-dark font-sans text-foreground antialiased transition-colors duration-500">
             {/* Top Navigation */}
             {/* Top Navigation */}
             <nav className="glass-morphism border-b border-surface-border fixed w-full z-50 shadow-2xl">

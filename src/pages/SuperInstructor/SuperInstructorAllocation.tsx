@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
-import { FaBook, FaUserTie, FaUsers, FaTimes, FaEye, FaEnvelope, FaPhone, FaUserGraduate, FaTrash } from 'react-icons/fa';
+import { FaBook, FaUserTie, FaUsers, FaTimes, FaEye, FaEnvelope, FaPhone, FaUserGraduate, FaTrash, FaArrowLeft } from 'react-icons/fa';
 import { useToast } from '../../context/ToastContext';
 
 interface User {
@@ -336,15 +336,26 @@ const SuperInstructorAllocation: React.FC = () => {
                         <div className="absolute inset-0 flex">
                             <div className="h-full w-full bg-surface border-l border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)] flex flex-col animate-slideInRight duration-500">
                                 {/* Drawer Header */}
-                                <div className="p-10 bg-gradient-to-br from-primary/30 to-surface border-b border-white/5 flex justify-between items-start">
-                                    <div>
-                                        <h3 className="text-3xl font-black text-accent-white flex items-center gap-4 italic tracking-tighter">
-                                            <FaBook size={32} className="text-primary shadow-glow" />
-                                            {drawerLoading ? 'Loading...' : selectedBatchDetails?.subject_name}
-                                        </h3>
-                                        <p className="text-accent-gray font-black uppercase tracking-[0.4em] text-[10px] mt-4 opacity-70">Batch Details & Allocation</p>
+                                <div className="p-10 bg-gradient-to-br from-primary/30 to-surface border-b border-surface-border flex justify-between items-start relative">
+                                    <div className="flex items-start gap-6">
+                                        <button
+                                            onClick={() => setIsDrawerOpen(false)}
+                                            className="mt-1 group flex items-center gap-2 text-accent-gray hover:text-primary transition-all font-black uppercase tracking-widest text-[10px]"
+                                            title="Back to Dashboard"
+                                        >
+                                            <div className="w-10 h-10 bg-surface-dark rounded-xl flex items-center justify-center border border-white/5 group-hover:border-primary/30 group-hover:bg-primary/5 transition-all">
+                                                <FaArrowLeft size={16} />
+                                            </div>
+                                        </button>
+                                        <div>
+                                            <h3 className="text-3xl font-black text-accent-white flex items-center gap-4 italic tracking-tighter">
+                                                <FaBook size={32} className="text-primary shadow-glow" />
+                                                {drawerLoading ? 'Loading...' : selectedBatchDetails?.subject_name}
+                                            </h3>
+                                            <p className="text-accent-gray font-black uppercase tracking-[0.4em] text-[10px] mt-4 opacity-70">Batch Details & Allocation</p>
+                                        </div>
                                     </div>
-                                    <button onClick={() => setIsDrawerOpen(false)} className="bg-surface-dark p-3 rounded-2xl text-accent-gray hover:text-primary transition-all hover:rotate-90">
+                                    <button onClick={() => setIsDrawerOpen(false)} className="bg-surface-dark p-3 rounded-2xl text-accent-gray hover:text-primary transition-all hover:rotate-90 border border-white/5">
                                         <FaTimes size={24} />
                                     </button>
                                 </div>

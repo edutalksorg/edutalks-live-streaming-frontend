@@ -35,7 +35,7 @@ const Register: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-surface-dark flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
+        <div className="min-h-screen bg-background-dark flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
             {/* Theme Toggle Position removed */}
 
             {/* Background Pattern */}
@@ -171,16 +171,15 @@ const Register: React.FC = () => {
                 </div>
             </div>
 
-            {/* Success Modal */}
             {showSuccess && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-surface p-8 rounded-[2rem] max-w-sm w-full text-center shadow-[0_0_50px_rgba(238,29,35,0.15)] border border-white/10 relative overflow-hidden animate-in zoom-in-95 duration-300">
+                    <div className="bg-surface p-8 rounded-[2rem] max-w-sm w-full text-center shadow-[0_0_50px_rgba(238,29,35,0.15)] border border-surface-border relative overflow-hidden animate-in zoom-in-95 duration-300">
                         <div className="absolute inset-0 bg-primary/5 pointer-events-none"></div>
                         <div className="relative z-10">
                             <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-1 ring-green-500/20">
                                 <FaCheckCircle className="text-green-500 text-4xl" />
                             </div>
-                            <h3 className="text-2xl font-black text-accent-white mb-2 italic tracking-tighter">SUCCESS!</h3>
+                            <h3 className="text-2xl font-black text-foreground mb-2 italic tracking-tighter">SUCCESS!</h3>
                             <p className="text-accent-gray text-xs font-bold uppercase tracking-widest mb-8 leading-relaxed">
                                 {formData.role === 'student'
                                     ? 'Your account has been created successfully.'

@@ -79,7 +79,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             {children}
             {isOpen && options && (
                 <div className="fixed inset-0 z-[10000] flex items-start justify-center p-4 bg-black/40 backdrop-blur-xl animate-in fade-in duration-300 pt-20">
-                    <div className="bg-white dark:bg-surface-dark rounded-[2.5rem] p-10 max-w-sm w-full shadow-[0_40px_100px_rgba(0,0,0,0.3)] border border-surface-border animate-in slide-in-from-top-12 duration-500 ease-out">
+                    <div className="bg-surface rounded-[2.5rem] p-10 max-w-sm w-full shadow-[0_40px_100px_rgba(0,0,0,0.3)] border border-surface-border animate-in slide-in-from-top-12 duration-500 ease-out">
 
                         <div className="flex flex-col items-center text-center">
                             {options.type === 'confirm' && options.severity === 'warning' ?
@@ -98,8 +98,8 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                                 <button
                                     onClick={handleConfirm}
                                     className={`w-full py-5 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white shadow-xl transition-all transform active:scale-95 ${options.severity === 'error' ? 'bg-red-500 shadow-red-500/20' :
-                                            options.severity === 'warning' ? 'bg-amber-500 shadow-amber-500/20' :
-                                                'bg-primary shadow-primary/20'
+                                        options.severity === 'warning' ? 'bg-amber-500 shadow-amber-500/20' :
+                                            'bg-primary shadow-primary/20'
                                         }`}
                                 >
                                     {options.confirmText || 'OK'}

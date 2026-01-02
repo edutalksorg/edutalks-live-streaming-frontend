@@ -26,7 +26,7 @@ const SuperAdminLayout: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col lg:flex-row h-screen bg-surface-dark antialiased transition-colors duration-500 overflow-hidden">
+        <div className="dark flex flex-col lg:flex-row h-screen bg-background-dark antialiased transition-colors duration-500 overflow-hidden">
 
             {/* Mobile Header */}
             <div className="lg:hidden flex items-center justify-between p-4 bg-surface border-b border-surface-border z-50">
@@ -64,7 +64,7 @@ const SuperAdminLayout: React.FC = () => {
                 <div className="hidden lg:flex p-6 text-2xl font-black items-center gap-2 border-b border-surface-border">
                     <Logo />
                 </div>
-                <div className="p-6 border-b border-surface-border bg-surface-dark/50 flex flex-col gap-4">
+                <div className="p-6 border-b border-surface-border bg-background-dark/50 flex flex-col gap-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-white shadow-lg">
@@ -101,7 +101,7 @@ const SuperAdminLayout: React.FC = () => {
                     </Link>
                 </nav>
                 <div className="p-4 border-t border-surface-border">
-                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-surface-dark hover:bg-primary transition-all duration-300 font-black text-sm shadow-lg text-accent-white group">
+                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-background-dark hover:bg-primary transition-all duration-300 font-black text-sm shadow-lg text-accent-white group">
                         <FaSignOutAlt className="group-hover:rotate-12 transition-transform" /> Logout
                     </button>
                     <p className="text-[10px] text-center text-accent-gray mt-4 uppercase tracking-[0.2em] font-black"> EduTalks © 2025</p>
@@ -109,7 +109,7 @@ const SuperAdminLayout: React.FC = () => {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-auto bg-surface-dark transition-colors duration-500">
+            <div className="flex-1 overflow-auto bg-background-dark transition-colors duration-500">
                 <div className="p-4 md:p-10">
                     <Outlet />
                 </div>

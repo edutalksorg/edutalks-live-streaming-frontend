@@ -145,10 +145,10 @@ const StudentNotes: React.FC = () => {
                         <div className="premium-card p-12 text-center border-l-4 border-yellow-500 relative overflow-hidden group hover:scale-[1.01] transition-transform duration-500">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
                             <FaCrown className="mx-auto text-yellow-500 text-6xl mb-6 animate-pulse drop-shadow-lg" />
-                            <h3 className="text-3xl font-black text-gray-900 dark:text-white italic uppercase tracking-tight mb-4">
+                            <h3 className="text-3xl font-black text-accent-white italic uppercase tracking-tight mb-4">
                                 Unlock <span className="text-yellow-500">Premium Notes</span>
                             </h3>
-                            <p className="text-gray-600 dark:text-gray-400 text-lg font-medium max-w-2xl mx-auto mb-8 leading-relaxed">
+                            <p className="text-accent-gray text-lg font-medium max-w-2xl mx-auto mb-8 leading-relaxed">
                                 Get access to exclusive study materials, detailed guides, and premium resources with EduTalks Pro.
                             </p>
                             <div className="flex justify-center gap-4">

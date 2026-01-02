@@ -7,7 +7,7 @@ const LandingPage: React.FC = () => {
 
 
     return (
-        <div className="font-sans dark text-accent-white bg-surface-dark min-h-screen relative overflow-x-hidden transition-colors duration-500">
+        <div className="font-sans text-accent-white bg-surface-dark min-h-screen relative overflow-x-hidden transition-colors duration-500">
             {/* Background Pattern Layer */}
             <div className="fixed inset-0 bg-pattern-dark pointer-events-none -z-10"></div>
 
@@ -139,7 +139,7 @@ const LandingPage: React.FC = () => {
                                 <li className="flex items-center gap-4 text-accent-gray font-black text-[10px] uppercase tracking-widest italic opacity-70 group-hover:opacity-100 transition-opacity"><div className="w-1.5 h-1.5 bg-primary rounded-full"></div> Recorded Backup</li>
                                 <li className="flex items-center gap-4 text-accent-gray font-black text-[10px] uppercase tracking-widest italic opacity-70 group-hover:opacity-100 transition-opacity"><div className="w-1.5 h-1.5 bg-primary rounded-full"></div> Weekly Quizzes</li>
                             </ul>
-                            <button className="w-full py-5 bg-surface-dark border border-white/5 text-accent-white font-black rounded-2xl hover:bg-primary transition-all uppercase tracking-[0.2em] text-[10px] italic">Get Monthly</button>
+                            <Link to="/register" className="w-full py-5 bg-background-dark border border-surface-border text-accent-white font-black rounded-2xl hover:bg-primary transition-all uppercase tracking-[0.2em] text-[10px] italic text-center block">Get Monthly</Link>
                         </div>
 
                         {/* Yearly Card */}
@@ -158,7 +158,7 @@ const LandingPage: React.FC = () => {
                                 <li className="flex items-center gap-4 text-accent-white font-black text-[10px) uppercase tracking-widest italic"><div className="w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_#ee1d23]"></div> 1-on-1 Mentorship</li>
                                 <li className="flex items-center gap-4 text-accent-white font-black text-[10px] uppercase tracking-widest italic"><div className="w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_#ee1d23]"></div> Books & Study Material</li>
                             </ul>
-                            <button className="w-full btn-primary py-6 scale-100 hover:scale-105 transition-all text-[11px] italic relative z-10 uppercase tracking-widest">Enroll Yearly</button>
+                            <Link to="/register" className="w-full btn-primary py-6 scale-100 hover:scale-105 transition-all text-[11px] italic relative z-10 uppercase tracking-widest text-center block">Enroll Yearly</Link>
                         </div>
                     </div>
                 </div>

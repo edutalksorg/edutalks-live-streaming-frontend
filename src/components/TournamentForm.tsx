@@ -231,7 +231,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                                 }`}>
                                 {step > index + 1 ? '✓' : index + 1}
                             </div>
-                            <span className={`ml-2 text-sm font-semibold ${step >= index + 1 ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                            <span className={`ml-2 text-sm font-semibold ${step >= index + 1 ? 'text-accent-white' : 'text-gray-400'}`}>
                                 {label}
                             </span>
                             {index < 3 && <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 mx-2"></div>}
@@ -245,7 +245,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                     {step === 1 && (
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                     Tournament Name *
                                 </label>
                                 <input
@@ -258,7 +258,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                     Description *
                                 </label>
                                 <textarea
@@ -272,7 +272,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Tournament Level *
                                     </label>
                                     <select
@@ -290,7 +290,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Class / Grade *
                                     </label>
                                     <select
@@ -310,7 +310,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Subject (Optional)
                                     </label>
                                     <select
@@ -330,7 +330,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Prize (Optional)
                                     </label>
                                     <input
@@ -362,7 +362,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Registration Start *
                                     </label>
                                     <input
@@ -374,7 +374,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Registration End *
                                     </label>
                                     <input
@@ -386,7 +386,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Exam Start *
                                     </label>
                                     <input
@@ -398,7 +398,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Exam End *
                                     </label>
                                     <input
@@ -412,7 +412,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Duration (minutes) *
                                     </label>
                                     <input
@@ -426,7 +426,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Total Questions *
                                     </label>
                                     <input
@@ -439,7 +439,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Total Marks *
                                     </label>
                                     <input
@@ -454,7 +454,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Max Participants
                                     </label>
                                     <input
@@ -467,7 +467,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Tab Switch Limit
                                     </label>
                                     <input
@@ -485,13 +485,13 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                     {/* Step 3: Questions - Simplified for length */}
                     {step === 3 && (
                         <div className="space-y-4">
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            <p className="text-sm text-accent-gray mb-4">
                                 Add {formData.total_questions} questions. Current: {formData.questions.length}
                             </p>
 
                             {/* Question Builder */}
                             <div className="border dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
-                                <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Add Question</h3>
+                                <h3 className="font-semibold mb-3 text-accent-white">Add Question</h3>
                                 <input
                                     type="text"
                                     value={currentQuestion.question}
@@ -534,7 +534,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                             <div className="space-y-2">
                                 {formData.questions.map((q: any, index: number) => (
                                     <div key={index} className="flex justify-between items-center border dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-surface-dark">
-                                        <span className="text-sm text-gray-700 dark:text-gray-300">{index + 1}. {q.question}</span>
+                                        <span className="text-sm text-accent-gray">{index + 1}. {q.question}</span>
                                         <button
                                             onClick={() => removeQuestion(index)}
                                             className="text-red-600 hover:text-red-700"
@@ -559,8 +559,8 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
 
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <p className="text-gray-600 dark:text-gray-400">Tournament Name</p>
-                                    <p className="font-semibold text-gray-900 dark:text-white">{formData.name}</p>
+                                    <p className="text-accent-gray">Tournament Name</p>
+                                    <p className="font-semibold text-accent-white">{formData.name}</p>
                                 </div>
                                 <div>
                                     <p className="text-gray-600 dark:text-gray-400">Level</p>
@@ -585,7 +585,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                 <div className="sticky bottom-0 bg-gray-100 dark:bg-gray-800 p-6 rounded-b-lg flex justify-between">
                     <button
                         onClick={step > 1 ? handleBack : onClose}
-                        className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                        className="px-6 py-2 border border-surface-border rounded-lg font-semibold text-accent-gray hover:bg-surface-light transition"
                     >
                         {step > 1 ? 'Back' : 'Cancel'}
                     </button>
