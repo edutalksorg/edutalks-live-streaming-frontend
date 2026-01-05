@@ -1,6 +1,6 @@
 import Logo from '../components/Logo';
 import { Link } from 'react-router-dom';
-import { FaVideo, FaChalkboardTeacher, FaChartLine } from 'react-icons/fa';
+import { FaVideo, FaChalkboardTeacher, FaChartLine, FaUserShield, FaCheckCircle, FaCode } from 'react-icons/fa';
 
 
 const LandingPage: React.FC = () => {
@@ -159,6 +159,87 @@ const LandingPage: React.FC = () => {
                                 <li className="flex items-center gap-4 text-accent-white font-black text-[10px] uppercase tracking-widest italic"><div className="w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_#ee1d23]"></div> Books & Study Material</li>
                             </ul>
                             <Link to="/register" className="w-full btn-primary py-6 scale-100 hover:scale-105 transition-all text-[11px] italic relative z-10 uppercase tracking-widest text-center block">Enroll Yearly</Link>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* About Section */}
+            <section id="about" className="py-32 relative bg-surface-dark/50 overflow-hidden border-t border-white/5">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div className="text-center max-w-4xl mx-auto mb-20 animate-in fade-in slide-in-from-bottom duration-1000">
+                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-6 block">Our Story</span>
+                        <h2 className="text-4xl md:text-7xl font-black text-accent-white tracking-tighter mb-8">
+                            The <span className="text-gradient-red italic">EduTalks</span> Ecosystem
+                        </h2>
+                        <p className="text-lg md:text-xl text-accent-gray leading-relaxed font-medium opacity-80">
+                            EduTalks is a robust, role-based platform designed to facilitate real-time virtual learning, content management, and academic administration. We bridge the gap between students, instructors, and administrators through a premium, high-performance web application.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+                        {[
+                            { title: "Super Admin", desc: "The 'God Mode' of the application. Total control over revenue analytics, user management, and system-wide settings.", icon: FaUserShield },
+                            { title: "Super Instructor", desc: "High-level academic managers who oversee specific grade ecosystems, subject allocation, and batch efficiency.", icon: FaChalkboardTeacher },
+                            { title: "Active Instructor", desc: "Content creators who conduct live classes, design competitive exams, and manage premium study materials.", icon: FaVideo },
+                            { title: "Ambitious Student", desc: "The future leaders who attend live sessions, compete in tournaments, and climb the global leaderboards.", icon: FaChartLine },
+                        ].map((role, idx) => (
+                            <div key={idx} className="bg-surface p-8 rounded-[2rem] border border-white/5 hover:border-primary/30 transition-all hover:-translate-y-2 group shadow-xl">
+                                <div className="w-14 h-14 bg-surface-dark text-primary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform border border-white/5 shadow-inner">
+                                    <role.icon size={24} />
+                                </div>
+                                <h4 className="text-lg font-black text-accent-white uppercase tracking-wider mb-4 italic">{role.title}</h4>
+                                <p className="text-xs text-accent-gray leading-relaxed font-bold opacity-60">{role.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="bg-surface p-12 rounded-[3rem] border border-white/5 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-pattern-dark opacity-20"></div>
+                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+                            <div>
+                                <h3 className="text-3xl font-black text-accent-white mb-8 italic tracking-tight">Core <span className="text-primary">Objectives</span></h3>
+                                <ul className="space-y-6">
+                                    {[
+                                        { title: "Live Interactive Learning", desc: "Real-time classrooms with HD streaming and hand-raising interaction." },
+                                        { title: "Gamified Assessment", desc: "Engaging students through tournaments, leaderboards, and instant results." },
+                                        { title: "Hierarchical Management", desc: "Efficient multi-tier administration from Admins to Students." },
+                                        { title: "Secure & Private", desc: "Advanced protection for intellectual property and user data." }
+                                    ].map((item, i) => (
+                                        <li key={i} className="flex gap-4 group">
+                                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                                                <FaCheckCircle size={12} />
+                                            </div>
+                                            <div>
+                                                <strong className="block text-accent-white font-black text-xs uppercase tracking-widest mb-1">{item.title}</strong>
+                                                <p className="text-accent-gray text-xs font-medium opacity-70">{item.desc}</p>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-[2rem] filter blur-3xl"></div>
+                                <div className="bg-surface-dark p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative transform rotate-3 hover:rotate-0 transition-all duration-500">
+                                    <div className="flex items-center gap-4 mb-8 pb-8 border-b border-white/5">
+                                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-white shadow-lg">
+                                            <FaCode size={24} />
+                                        </div>
+                                        <div>
+                                            <div className="text-xs font-black text-accent-gray uppercase tracking-widest">Built With</div>
+                                            <div className="text-xl font-black text-accent-white italic tracking-tighter">Modern Tech Stack</div>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {['React.js v18', 'TypeScript', 'Tailwind CSS', 'WebRTC', 'Node.js', 'Razorpay'].map((tech, t) => (
+                                            <div key={t} className="bg-surface p-4 rounded-xl text-center border border-white/5">
+                                                <div className="text-[10px] font-black text-accent-gray uppercase tracking-widest">{tech}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -13,7 +13,11 @@ interface User {
     created_at: string;
 }
 
-const SuperInstructorUsers: React.FC = () => {
+interface SuperInstructorUsersProps {
+    onRefresh?: () => void;
+}
+
+const SuperInstructorUsers: React.FC<SuperInstructorUsersProps> = ({ onRefresh }) => {
     const { theme } = useTheme();
     const { showAlert, showConfirm } = useModal();
     const [activeTab, setActiveTab] = useState<'instructors' | 'students'>('instructors');
@@ -48,6 +52,7 @@ const SuperInstructorUsers: React.FC = () => {
             await api.post('/api/super-instructor/approve-instructor', { instructorId: id });
             showAlert("Instructor Approved!", "success");
             fetchData();
+            if (onRefresh) onRefresh();
         } catch (err) {
             showAlert("Failed to approve", "error");
         }

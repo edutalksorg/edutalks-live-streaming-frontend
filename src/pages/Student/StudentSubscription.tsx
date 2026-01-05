@@ -8,7 +8,7 @@ import { useModal } from '../../context/ModalContext';
 const StudentSubscription: React.FC = () => {
     const { user, login } = useContext(AuthContext)!;
     const { showAlert } = useModal();
-    const [loading, setLoading] = useState(false);
+    const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const navigate = useNavigate();
 
     // Load Razorpay Script
@@ -23,7 +23,7 @@ const StudentSubscription: React.FC = () => {
     }, []);
 
     const handleBuy = async (amount: number, planName: string) => {
-        setLoading(true);
+        setLoadingPlan(planName);
         try {
             // 1. Create Order
             const orderRes = await api.post('/api/payments/create-order', {
@@ -79,11 +79,11 @@ const StudentSubscription: React.FC = () => {
                 showAlert(response.error.description, 'error');
             });
             rzp1.open();
-            setLoading(false);
+            setLoadingPlan(null);
 
         } catch (err) {
             console.error(err);
-            setLoading(false);
+            setLoadingPlan(null);
             showAlert('Failed to initiate payment.', 'error');
         }
     };
@@ -137,10 +137,10 @@ const StudentSubscription: React.FC = () => {
                     </ul>
                     <button
                         onClick={() => handleBuy(1, 'Monthly')}
-                        disabled={loading || user?.plan_name === 'Monthly'}
+                        disabled={loadingPlan === 'Monthly' || user?.plan_name === 'Monthly'}
                         className={`w-full py-3 rounded-xl font-bold transition-all disabled:opacity-70 ${user?.plan_name === 'Monthly' ? 'bg-green-500 text-white cursor-default' : 'bg-primary text-white hover:bg-primary-hover'}`}
                     >
-                        {loading ? 'Processing...' : (user?.plan_name === 'Monthly' ? 'Current Plan' : 'Choose Monthly')}
+                        {loadingPlan === 'Monthly' ? 'Processing...' : (user?.plan_name === 'Monthly' ? 'Current Plan' : 'Choose Monthly')}
                     </button>
                 </div>
 
@@ -168,10 +168,10 @@ const StudentSubscription: React.FC = () => {
 
                     <button
                         onClick={() => handleBuy(4999, 'Yearly')}
-                        disabled={loading || user?.plan_name === 'Yearly'}
+                        disabled={loadingPlan === 'Yearly' || user?.plan_name === 'Yearly'}
                         className={`w-full py-3 rounded-xl font-bold transition-all disabled:opacity-70 ${user?.plan_name === 'Yearly' ? 'bg-green-500 text-white cursor-default' : 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white hover:shadow-lg hover:shadow-yellow-500/30'}`}
                     >
-                        {loading ? 'Processing...' : (user?.plan_name === 'Yearly' ? 'Current Plan' : 'Choose Yearly')}
+                        {loadingPlan === 'Yearly' ? 'Processing...' : (user?.plan_name === 'Yearly' ? 'Current Plan' : 'Choose Yearly')}
                     </button>
                 </div>
             </div>

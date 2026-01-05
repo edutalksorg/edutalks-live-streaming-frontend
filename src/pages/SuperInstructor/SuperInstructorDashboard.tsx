@@ -65,7 +65,7 @@ const SuperInstructorDashboard: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [activeTab]);
 
     const handleApprove = async (id: number) => {
         const confirmed = await showConfirm("Approve this instructor?", 'warning');
@@ -199,7 +199,7 @@ const SuperInstructorDashboard: React.FC = () => {
                     </div>
                 );
             case 'users':
-                return <SuperInstructorUsers />;
+                return <SuperInstructorUsers onRefresh={fetchData} />;
             case 'allocation':
                 return <SuperInstructorAllocation />;
             case 'batches':

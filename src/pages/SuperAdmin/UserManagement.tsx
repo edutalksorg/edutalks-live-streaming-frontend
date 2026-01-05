@@ -11,6 +11,7 @@ interface User {
     role_name: string;
     is_active: number;
     created_at: string;
+    grade?: string;
 }
 
 const UserManagement: React.FC = () => {
@@ -61,8 +62,9 @@ const UserManagement: React.FC = () => {
         try {
             await api.put(`/api/users/${id}/status`, { is_active: !currentStatus });
             fetchUsers();
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
+            showAlert(err.response?.data?.message || "Failed to update status", 'error');
         }
     };
 
@@ -73,9 +75,9 @@ const UserManagement: React.FC = () => {
             await api.delete(`/api/users/${id}`);
             showAlert('User deleted successfully', 'success');
             fetchUsers();
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            showAlert('Failed to delete user', 'error');
+            showAlert(err.response?.data?.message || 'Failed to delete user', 'error');
         }
     };
 
@@ -126,6 +128,11 @@ const UserManagement: React.FC = () => {
                             <span className={`px-2 py-1 text-[8px] font-black uppercase tracking-wider rounded-lg border shadow-sm ${user.role_name === 'instructor' ? 'bg-purple-900/20 text-purple-400 border-purple-500/20' : user.role_name === 'super_instructor' ? 'bg-indigo-900/20 text-indigo-400 border-indigo-500/20' : 'bg-surface-dark text-accent-gray border-white/5'}`}>
                                 {user.role_name.replace('_', ' ')}
                             </span>
+                            {user.grade && (
+                                <span className="ml-2 px-2 py-1 text-[8px] font-black uppercase tracking-wider rounded-lg border border-white/5 bg-surface-dark text-accent-gray shadow-sm">
+                                    {user.grade}
+                                </span>
+                            )}
                         </div>
 
                         <div className="flex justify-between items-center mb-4 pt-3 border-t border-surface-border">
@@ -153,6 +160,7 @@ const UserManagement: React.FC = () => {
                                 <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Name</th>
                                 <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Email</th>
                                 <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Role</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Class</th>
                                 <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Status</th>
                                 <th className="px-6 py-5 text-left text-[10px] font-black text-accent-white uppercase tracking-[0.2em]">Actions</th>
                             </tr>
@@ -166,6 +174,9 @@ const UserManagement: React.FC = () => {
                                         <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg border shadow-sm ${user.role_name === 'instructor' ? 'bg-purple-900/20 text-purple-400 border-purple-500/20' : user.role_name === 'super_instructor' ? 'bg-indigo-900/20 text-indigo-400 border-indigo-500/20' : 'bg-surface-dark text-accent-gray border-white/5'}`}>
                                             {user.role_name.replace('_', ' ')}
                                         </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-accent-gray text-xs font-black uppercase tracking-wider">
+                                        {user.grade || '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         {user.is_active ? (
