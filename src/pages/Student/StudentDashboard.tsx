@@ -30,6 +30,7 @@ interface Subject {
 
 interface DashboardData {
     grade: string;
+    course_name?: string;
     stats: {
         liveNow: number;
         upcomingExams: number;
@@ -182,8 +183,8 @@ const StudentDashboard: React.FC = () => {
                 <div className="relative z-10">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12">
                         <div className="max-w-2xl space-y-6 md:space-y-8">
-                            <span className="inline-block px-4 md:px-6 py-2 rounded-full bg-primary text-white text-[8px] md:text-[10px] font-black tracking-[0.3em] uppercase shadow-lg shadow-primary/40 border border-white/10">
-                                {dashboardData?.grade || 'Student'} HUB
+                            <span className="inline-block px-4 md:px-6 py-2 rounded-full bg-primary text-white text-[8px] md:text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/40 border border-white/10 max-w-full truncate">
+                                {dashboardData?.course_name || dashboardData?.grade || 'Student'} HUB
                             </span>
                             <h1 className="text-4xl md:text-6xl lg:text-8xl font-black leading-[0.9] tracking-tighter">
                                 <span className="text-gradient-red italic">Hello,</span> <br />
@@ -294,8 +295,13 @@ const StudentDashboard: React.FC = () => {
                 <div className="lg:col-span-8 space-y-8 md:space-y-12">
                     <div className="flex flex-col gap-2">
                         <h2 className="text-3xl md:text-5xl font-black text-accent-white tracking-tighter">
-                            <span className="text-gradient-red italic">Subject</span> Hub
+                            <span className="text-gradient-red italic">{dashboardData?.course_name ? 'Course' : 'Subject'}</span> Hub
                         </h2>
+                        {dashboardData?.course_name && (
+                            <p className="text-[10px] md:text-xs font-black text-accent-gray uppercase tracking-[0.3em] pl-1">
+                                {dashboardData.grade} • Professional Program
+                            </p>
+                        )}
                         <div className="w-16 md:w-20 h-1.5 md:h-2 bg-primary rounded-full shadow-primary-glow"></div>
                     </div>
 
@@ -382,9 +388,9 @@ const StudentDashboard: React.FC = () => {
                                                                             checkAccess(e, () => navigate(isAttemptNow ? `/student/exam/${exam.id}` : (exam.attempts_done > 0 ? `/student/exam-result/${exam.id}` : '#')));
                                                                         }}
                                                                         className={`text-center py-3 md:py-4 rounded-xl md:rounded-2xl text-[9px] md:text-[11px] font-black tracking-[0.2em] transition-all transform hover:scale-[1.02] cursor-pointer shadow-lg active:scale-95 ${(exam.status === 'Attempt Now' || (exam.date && currentTime >= new Date(exam.date) && exam.status === 'Upcoming'))
-                                                                                ? 'bg-primary text-white hover:bg-primary-hover shadow-primary/30 uppercase'
-                                                                                : (exam.status === 'Upcoming' || (exam.date && currentTime < new Date(exam.date))) ? 'bg-surface-light border border-surface-border text-accent-gray/40 cursor-not-allowed uppercase'
-                                                                                    : 'bg-surface border border-surface-border text-accent-gray cursor-default uppercase'
+                                                                            ? 'bg-primary text-white hover:bg-primary-hover shadow-primary/30 uppercase'
+                                                                            : (exam.status === 'Upcoming' || (exam.date && currentTime < new Date(exam.date))) ? 'bg-surface-light border border-surface-border text-accent-gray/40 cursor-not-allowed uppercase'
+                                                                                : 'bg-surface border border-surface-border text-accent-gray cursor-default uppercase'
                                                                             }`}>
                                                                         {(exam.status === 'Attempt Now' || (exam.date && currentTime >= new Date(exam.date) && exam.status === 'Upcoming'))
                                                                             ? 'START MISSION'

@@ -25,15 +25,29 @@ const UserManagement: React.FC = () => {
     // New User State
     const [newUser, setNewUser] = useState<{ name: string, email: string, password: string, role: string, grade?: string, phone?: string }>({ name: '', email: '', password: '', role: 'admin', grade: '', phone: '' });
 
+    // Categories State for dynamic dropdown
+    const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+    const [educationLevel, setEducationLevel] = useState('');
+
     const location = useLocation();
 
     useEffect(() => {
         fetchUsers();
+        fetchCategories();
         if (location.state?.openCreateModal) {
             setShowModal(true);
             // Clear state to prevent reopening on refresh (optional, but good practice requires history manipulation which we might skip for simplicity or do: window.history.replaceState({}, document.title) if critical)
         }
     }, [location]);
+
+    const fetchCategories = async () => {
+        try {
+            const res = await api.get('/api/classes/categories');
+            setCategories(res.data);
+        } catch (err) {
+            console.error("Failed to fetch categories");
+        }
+    };
 
     const fetchUsers = async () => {
         try {
@@ -262,23 +276,44 @@ const UserManagement: React.FC = () => {
                             </div>
 
                             {(newUser.role === 'instructor' || newUser.role === 'super_instructor' || newUser.role === 'student') && (
-                                <div className="space-y-2 animate-fadeIn">
-                                    <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-2">{newUser.role === 'student' ? 'Grade / Class' : 'Teaching Grade'}</label>
-                                    <select
-                                        className="w-full bg-surface-dark border border-white/10 rounded-2xl p-4 text-accent-white focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer shadow-lg shadow-primary/5"
-                                        value={newUser.grade || ''}
-                                        onChange={e => setNewUser({ ...newUser, grade: e.target.value })}
-                                    >
-                                        <option value="">Select Option...</option>
-                                        <option value="6th">6th Grade</option>
-                                        <option value="7th">7th Grade</option>
-                                        <option value="8th">8th Grade</option>
-                                        <option value="9th">9th Grade</option>
-                                        <option value="10th">10th Grade</option>
-                                        <option value="11th">11th Grade</option>
-                                        <option value="12th">12th Grade</option>
-                                    </select>
-                                </div>
+                                <>
+                                    <div className="space-y-2 animate-fadeIn">
+                                        <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-2">Education Level</label>
+                                        <select
+                                            className="w-full bg-surface-dark border border-white/5 rounded-2xl p-4 text-accent-white focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer"
+                                            value={educationLevel}
+                                            onChange={(e) => {
+                                                setEducationLevel(e.target.value);
+                                                setNewUser({ ...newUser, grade: '' }); // Reset grade on level change
+                                            }}
+                                        >
+                                            <option value="">Select Level...</option>
+                                            <option value="school">School Education (6th-12th)</option>
+                                            <option value="ug">Undergraduate (UG)</option>
+                                            <option value="pg">Postgraduate (PG)</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-2 animate-fadeIn">
+                                        <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-2">
+                                            {newUser.role === 'student' ? (educationLevel === 'school' ? 'Grade / Class' : 'Course / Stream') : (educationLevel === 'school' ? 'Teaching Grade' : 'Teaching Stream')}
+                                        </label>
+                                        <select
+                                            className="w-full bg-surface-dark border border-white/10 rounded-2xl p-4 text-accent-white focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer shadow-lg shadow-primary/5"
+                                            value={newUser.grade || ''}
+                                            onChange={e => setNewUser({ ...newUser, grade: e.target.value })}
+                                            disabled={!educationLevel}
+                                        >
+                                            <option value="">Select Option...</option>
+                                            {categories
+                                                .filter(c => educationLevel === 'school' ? c.name.includes('Class') : !c.name.includes('Class'))
+                                                .map((cat) => (
+                                                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                                ))
+                                            }
+                                        </select>
+                                    </div>
+                                </>
                             )}
                             <div className="flex gap-4 pt-4">
                                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-4 text-[10px] font-black uppercase tracking-widest text-accent-gray hover:text-white transition-colors border border-white/5 rounded-2xl hover:bg-white/5">Cancel</button>

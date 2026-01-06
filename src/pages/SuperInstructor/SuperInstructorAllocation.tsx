@@ -183,7 +183,11 @@ const SuperInstructorAllocation: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-center gap-6 premium-card p-8">
                 <div>
                     <h2 className="text-3xl font-black text-accent-white italic tracking-tighter">Subject <span className="text-primary">Allocation</span></h2>
-                    <p className="text-accent-gray mt-1 font-black uppercase tracking-[0.3em] text-[10px] opacity-70">Manage instructor batches for <span className="text-primary">Grade {className}</span></p>
+                    <p className="text-accent-gray mt-1 font-black uppercase tracking-[0.3em] text-[10px] opacity-70">
+                        Manage instructor batches for <span className="text-primary">
+                            {(className.includes('Grade') || className.includes('Class')) ? 'Grade' : 'Course'} {className}
+                        </span>
+                    </p>
                 </div>
                 <div className="bg-gradient-to-br from-primary/10 to-primary/5 px-8 py-4 rounded-[2rem] shadow-2xl border border-primary/20 flex items-center gap-4 group">
                     <div className="bg-primary/10 p-3 rounded-2xl border border-primary/20 group-hover:rotate-12 transition-transform shadow-[0_0_20px_rgba(238,29,35,0.1)]">

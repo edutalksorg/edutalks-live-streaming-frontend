@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { FaEye, FaEyeSlash, FaArrowLeft, FaCheckCircle } from 'react-icons/fa';
@@ -12,15 +12,61 @@ const Register: React.FC = () => {
         password: '',
         phone: '',
         grade: '10th',
-        role: 'student'
+        role: 'student',
+        selected_course_id: ''
     });
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+    const [subjects, setSubjects] = useState<{ id: number; name: string }[]>([]);
 
     const [showSuccess, setShowSuccess] = useState(false);
 
+    const [educationLevel, setEducationLevel] = useState('');
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await api.get('/api/classes/categories');
+                setCategories(res.data);
+            } catch (err) {
+                console.error("Failed to fetch categories");
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    useEffect(() => {
+        const fetchSubjects = async () => {
+            if (formData.grade && !['6th Class', '7th Class', '8th Class', '9th Class', '10th Class', '11th Class', '12th Class'].includes(formData.grade)) {
+                try {
+                    // Encode to handle characters like '&'
+                    const encodedGrade = encodeURIComponent(formData.grade);
+                    const res = await api.get(`/api/classes/categories/${encodedGrade}/subjects`);
+                    setSubjects(res.data);
+                } catch (err) {
+                    console.error("Failed to fetch subjects");
+                    setSubjects([]);
+                }
+            } else {
+                setSubjects([]);
+            }
+        };
+        fetchSubjects();
+    }, [formData.grade]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const getFilteredCategories = () => {
+        if (!educationLevel) return [];
+        if (educationLevel === 'school') {
+            return categories.filter(c => c.name.includes('Class'));
+        } else {
+            // UG or PG - Show Tech Categories
+            return categories.filter(c => !c.name.includes('Class'));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -112,22 +158,68 @@ const Register: React.FC = () => {
                         </div>
 
                         {(formData.role === 'student' || formData.role === 'instructor' || formData.role === 'super_instructor') && (
-                            <div className="space-y-3">
+                            <>
+                                {/* Education Level Selection - NEW */}
+                                <div className="space-y-3 animate-slideIn">
+                                    <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">
+                                        Education Level
+                                    </label>
+                                    <select
+                                        name="educationLevel"
+                                        className="w-full"
+                                        value={educationLevel}
+                                        onChange={(e) => {
+                                            setEducationLevel(e.target.value);
+                                            setFormData({ ...formData, grade: '', selected_course_id: '' }); // Reset selections
+                                        }}
+                                        required={formData.role === 'student'}
+                                    >
+                                        <option value="">Select Level...</option>
+                                        <option value="school">School Education (6th-12th)</option>
+                                        <option value="ug">Undergraduate (UG)</option>
+                                        <option value="pg">Postgraduate (PG)</option>
+                                    </select>
+                                </div>
+
+                                {/* Filtered Category Selection */}
+                                <div className="space-y-3">
+                                    <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">
+                                        {educationLevel === 'school' ? 'Grade / Class' : 'Course / Stream'}
+                                    </label>
+                                    <select
+                                        name="grade"
+                                        className="w-full"
+                                        value={formData.grade}
+                                        onChange={handleChange}
+                                        disabled={!educationLevel}
+                                    >
+                                        <option value="">Select Option...</option>
+                                        {getFilteredCategories().map((cat) => (
+                                            <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </>
+                        )}
+
+
+                        {/* Specific Course Selection - ONLY for School (Classes might have sub-subjects if needed, but for now we hide for UG/PG as Stream=Course) */}
+                        {subjects.length > 0 && formData.role === 'student' && educationLevel === 'school' && (
+                            <div className="space-y-3 animate-slideIn">
                                 <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">
-                                    {formData.role === 'student' ? 'Current Grade' : 'Teaching Level'}
+                                    Select Specific Course
                                 </label>
                                 <select
-                                    name="grade"
+                                    name="selected_course_id"
                                     className="w-full"
-                                    value={formData.grade} onChange={handleChange}
+                                    value={formData.selected_course_id}
+                                    onChange={handleChange}
+                                    required
                                 >
-                                    <option value="6th">6th Grade</option>
-                                    <option value="7th">7th Grade</option>
-                                    <option value="8th">8th Grade</option>
-                                    <option value="9th">9th Grade</option>
-                                    <option value="10th">10th Grade</option>
-                                    <option value="11th">11th Grade</option>
-                                    <option value="12th">12th Grade</option>
+                                    <option value="">Select a Course...</option>
+                                    {subjects.map((sub) => (
+                                        <option key={sub.id} value={sub.id}>{sub.name}</option>
+                                    ))}
                                 </select>
                             </div>
                         )}
@@ -161,7 +253,7 @@ const Register: React.FC = () => {
                     >
                         {formData.role === 'student' ? 'Access Learning Hub' : 'Initialize Registration'}
                     </button>
-                </form>
+                </form >
 
                 <div className="text-center mt-10 pt-6 border-t border-surface-border">
                     <p className="text-[10px] font-black text-accent-gray uppercase tracking-widest">
@@ -169,7 +261,7 @@ const Register: React.FC = () => {
                         <Link to="/login" className="text-primary hover:text-primary-hover ml-2 underline transition-all">Log in</Link>
                     </p>
                 </div>
-            </div>
+            </div >
 
             {showSuccess && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
@@ -195,7 +287,7 @@ const Register: React.FC = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </div >
     );
 };
 

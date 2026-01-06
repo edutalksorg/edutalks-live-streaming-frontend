@@ -9,6 +9,7 @@ interface ProfileData {
         email: string;
         phone: string;
         grade: string;
+        course_name?: string;
         plan_name: string;
         subscription_expires_at: string;
         created_at: string;
@@ -103,7 +104,9 @@ const StudentProfile: React.FC = () => {
                             <div className="flex flex-col md:flex-row justify-between items-start mb-12 gap-6">
                                 <div>
                                     <h3 className="text-3xl font-black text-accent-white italic tracking-tighter uppercase">{user?.name}</h3>
-                                    <p className="text-accent-gray italic font-medium mt-2 opacity-60">TACTICAL STUDENT • ACTIVE SINCE {new Date(user?.created_at || '').toLocaleDateString()}</p>
+                                    <p className="text-accent-gray italic font-medium mt-2 opacity-60">
+                                        {user?.course_name ? 'PROFESSIONAL COURSE' : (user?.grade?.toLowerCase().includes('class') ? 'SCHOOL STUDENT' : 'STUDENT')} • ACTIVE SINCE {new Date(user?.created_at || '').toLocaleDateString()}
+                                    </p>
                                 </div>
                                 <div className="bg-primary/10 text-primary px-6 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] border border-primary/20 flex items-center gap-2 shadow-lg shadow-primary/5">
                                     <FaCrown className="text-primary animate-pulse" /> {user?.plan_name} ACCESS
@@ -127,7 +130,7 @@ const StudentProfile: React.FC = () => {
                                     <p className="text-[10px] font-black text-accent-gray uppercase tracking-[0.3em] flex items-center gap-3 opacity-40">
                                         <FaSchool className="text-primary" /> OPERATIONAL SECTOR
                                     </p>
-                                    <p className="text-primary font-black italic text-2xl tracking-tighter uppercase">{user?.grade}</p>
+                                    <p className="text-primary font-black italic text-xl md:text-2xl tracking-tighter uppercase break-words">{user?.course_name || user?.grade}</p>
                                     <div className="absolute right-0 top-0 text-[8px] font-black text-accent-gray uppercase tracking-widest bg-surface-dark px-3 py-1 rounded-full border border-surface-border flex items-center gap-2 opacity-60">
                                         <FaLock /> SYSTEM LOCKED
                                     </div>
