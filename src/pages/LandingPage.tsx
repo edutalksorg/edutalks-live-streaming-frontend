@@ -164,79 +164,182 @@ const LandingPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* About Section */}
+            {/* About Section - Technical Mastery */}
             <section id="about" className="py-32 relative bg-surface-dark/50 overflow-hidden border-t border-white/5">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="text-center max-w-4xl mx-auto mb-20 animate-in fade-in slide-in-from-bottom duration-1000">
-                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-6 block">Our Story</span>
+                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-6 block">Our Expertise</span>
                         <h2 className="text-4xl md:text-7xl font-black text-accent-white tracking-tighter mb-8">
-                            The <span className="text-gradient-red italic">EduTalks</span> Ecosystem
+                            Elite <span className="text-gradient-red italic">Learning Paths</span>
                         </h2>
                         <p className="text-lg md:text-xl text-accent-gray leading-relaxed font-medium opacity-80">
-                            EduTalks is a robust, role-based platform designed to facilitate real-time virtual learning, content management, and academic administration. We bridge the gap between students, instructors, and administrators through a premium, high-performance web application.
+                            We specialize in high-demand technical domains designed to transform beginners into industry-ready professionals. Master the code, lead the innovation.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
-                        {[
-                            { title: "Super Admin", desc: "The 'God Mode' of the application. Total control over revenue analytics, user management, and system-wide settings.", icon: FaUserShield },
-                            { title: "Super Instructor", desc: "High-level academic managers who oversee specific grade ecosystems, subject allocation, and batch efficiency.", icon: FaChalkboardTeacher },
-                            { title: "Active Instructor", desc: "Content creators who conduct live classes, design competitive exams, and manage premium study materials.", icon: FaVideo },
-                            { title: "Ambitious Student", desc: "The future leaders who attend live sessions, compete in tournaments, and climb the global leaderboards.", icon: FaChartLine },
-                        ].map((role, idx) => (
-                            <div key={idx} className="bg-surface p-8 rounded-[2rem] border border-white/5 hover:border-primary/30 transition-all hover:-translate-y-2 group shadow-xl">
-                                <div className="w-14 h-14 bg-surface-dark text-primary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform border border-white/5 shadow-inner">
-                                    <role.icon size={24} />
+                    {/* School Academics Section */}
+                    <div className="mb-24">
+                        <div className="flex items-center gap-4 mb-12">
+                            <div className="h-px flex-grow bg-white/5"></div>
+                            <span className="text-[10px] font-black text-accent-gray uppercase tracking-[0.4em] italic">Foundation Academics (K-12)</span>
+                            <div className="h-px flex-grow bg-white/5"></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {[
+                                { title: "6th - 8th Grade", subjects: "Foundation Mathematics, Science, & English", level: "Middle School" },
+                                { title: "9th - 10th Grade", subjects: "CBSE/ICSE Board Prep, Physics, Chemistry, Math", level: "Secondary" },
+                                { title: "11th - 12th (Science)", subjects: "JEE/NEET Integrated, Advanced PCB/PCM", level: "Senior Secondary" },
+                                { title: "11th - 12th (Commerce)", subjects: "Accountancy, Economics, & Business Studies", level: "Senior Secondary" }
+                            ].map((grade, gIdx) => (
+                                <div key={gIdx} className="bg-surface-light/30 p-8 rounded-[2rem] border border-white/5 hover:border-primary/20 transition-all hover:-translate-y-1 group">
+                                    <div className="text-primary font-black uppercase text-[10px] tracking-widest mb-4 opacity-60 group-hover:opacity-100">{grade.level}</div>
+                                    <h4 className="text-xl font-black text-accent-white mb-3 italic">{grade.title}</h4>
+                                    <p className="text-xs text-accent-gray font-medium leading-relaxed">{grade.subjects}</p>
                                 </div>
-                                <h4 className="text-lg font-black text-accent-white uppercase tracking-wider mb-4 italic">{role.title}</h4>
-                                <p className="text-xs text-accent-gray leading-relaxed font-bold opacity-60">{role.desc}</p>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Higher Education Section */}
+                    <div className="mb-24">
+                        <div className="flex items-center gap-4 mb-12">
+                            <div className="h-px flex-grow bg-white/5"></div>
+                            <span className="text-[10px] font-black text-accent-gray uppercase tracking-[0.4em] italic">Higher Education (UG & PG)</span>
+                            <div className="h-px flex-grow bg-white/5"></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {[
+                                {
+                                    title: "Undergraduate (UG)",
+                                    subjects: "B.Tech, B.Sc, BCA, & B.Com Specialized Coaching. Semester-wise academic support and technical skill building.",
+                                    level: "Degree Programs"
+                                },
+                                {
+                                    title: "Postgraduate (PG)",
+                                    subjects: "M.Tech, MCA, MBA & M.Sc Advanced Research & specialization modules. Competitive exam prep like GATE & UGC NET.",
+                                    level: "Masters & Research"
+                                }
+                            ].map((edu, eIdx) => (
+                                <div key={eIdx} className="bg-surface-light/40 p-10 rounded-[2.5rem] border border-white/5 hover:border-primary/30 transition-all hover:-translate-y-2 group relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12 group-hover:bg-primary/20 transition-all"></div>
+                                    <div className="text-primary font-black uppercase text-[10px] tracking-widest mb-6 italic">{edu.level}</div>
+                                    <h4 className="text-3xl font-black text-accent-white mb-4 italic tracking-tight">{edu.title}</h4>
+                                    <p className="text-sm text-accent-gray font-medium leading-relaxed opacity-80">{edu.subjects}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 mb-12">
+                        <div className="h-px flex-grow bg-white/5"></div>
+                        <span className="text-[10px] font-black text-accent-gray uppercase tracking-[0.4em] italic">Professional Technical Tracks</span>
+                        <div className="h-px flex-grow bg-white/5"></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
+                        {[
+                            {
+                                title: "AI & Machine Learning",
+                                desc: "Neural networks, deep learning, and predictive modeling using industry-standard frameworks like TensorFlow and PyTorch.",
+                                stats: "Advanced NLP & Computer Vision"
+                            },
+                            {
+                                title: "Data Science & Analytics",
+                                desc: "Extract insights from raw data using statistical analysis, Big Data tools, and advanced visualization techniques.",
+                                stats: "Big Data & Python Integration"
+                            },
+                            {
+                                title: "Python Full Stack",
+                                desc: "End-to-end development using Django, Fast API, and modern frontend frameworks for scalable enterprise apps.",
+                                stats: "Web + Mobile Mastery"
+                            },
+                            {
+                                title: "Java Full Stack",
+                                desc: "Enterprise-grade development with Spring Boot, Microservices, and robust backend architectures used by Fortune 500s.",
+                                stats: "Enterprise Architectures"
+                            },
+                            {
+                                title: "Web Development",
+                                desc: "Mastering the modern web with React, Next.js, and high-performance server-side rendering for stunning user experiences.",
+                                stats: "Full Component Lifecycle"
+                            },
+                            {
+                                title: "Cloud & DevOps",
+                                desc: "Infrastructure as code, CI/CD pipelines, and cloud orchestration with AWS, Docker, and Kubernetes.",
+                                stats: "Zero-Downtime Deployment"
+                            },
+                            {
+                                title: "Cyber Security",
+                                desc: "Ethical hacking, network defense, and advanced cryptography to protect digital assets in a global landscape.",
+                                stats: "Threat Mitigation & Defense"
+                            },
+                            {
+                                title: "C & C++ Programming",
+                                desc: "Low-level optimization, memory management, and high-performance systems programming for hardware and gaming.",
+                                stats: "System-Level Mastery"
+                            },
+                            {
+                                title: "Data Structures & DSA",
+                                desc: "The foundation of computer science. Master algorithms and logic to crack top-tier technical interviews.",
+                                stats: "Problem Solving Excellence"
+                            },
+                        ].map((path, idx) => (
+                            <div key={idx} className="bg-surface p-10 rounded-[2.5rem] border border-white/5 hover:border-primary/30 transition-all hover:-translate-y-2 group shadow-xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
+                                <h4 className="text-2xl font-black text-accent-white mb-4 italic tracking-tight">{path.title}</h4>
+                                <p className="text-sm text-accent-gray leading-relaxed font-medium mb-8 opacity-70">{path.desc}</p>
+                                <div className="pt-6 border-t border-white/5 flex items-center justify-between text-[10px] font-black text-primary uppercase tracking-widest italic">
+                                    <span>{path.stats}</span>
+                                    <FaCheckCircle />
+                                </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="bg-surface p-12 rounded-[3rem] border border-white/5 relative overflow-hidden">
+                    {/* Featured Track: Professional Development */}
+                    <div className="bg-surface p-12 rounded-[3rem] border border-white/5 relative overflow-hidden group">
                         <div className="absolute inset-0 bg-pattern-dark opacity-20"></div>
                         <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
                             <div>
-                                <h3 className="text-3xl font-black text-accent-white mb-8 italic tracking-tight">Core <span className="text-primary">Objectives</span></h3>
-                                <ul className="space-y-6">
+                                <h3 className="text-4xl font-black text-accent-white mb-8 italic tracking-tight">Future <span className="text-primary">Skills</span> Hub</h3>
+                                <p className="text-accent-gray font-medium leading-relaxed mb-10">
+                                    Our curriculum is meticulously crafted by engineers from top tech giants, ensuring you learn not just the syntax, but the architectural thinking required for elite roles.
+                                </p>
+                                <div className="grid grid-cols-2 gap-6">
                                     {[
-                                        { title: "Live Interactive Learning", desc: "Real-time classrooms with HD streaming and hand-raising interaction." },
-                                        { title: "Gamified Assessment", desc: "Engaging students through tournaments, leaderboards, and instant results." },
-                                        { title: "Hierarchical Management", desc: "Efficient multi-tier administration from Admins to Students." },
-                                        { title: "Secure & Private", desc: "Advanced protection for intellectual property and user data." }
-                                    ].map((item, i) => (
-                                        <li key={i} className="flex gap-4 group">
-                                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
-                                                <FaCheckCircle size={12} />
-                                            </div>
-                                            <div>
-                                                <strong className="block text-accent-white font-black text-xs uppercase tracking-widest mb-1">{item.title}</strong>
-                                                <p className="text-accent-gray text-xs font-medium opacity-70">{item.desc}</p>
-                                            </div>
-                                        </li>
+                                        { label: "Placement Support", val: "100%" },
+                                        { label: "Live Project Access", val: "Unlimited" },
+                                        { label: "Expert Mentorship", val: "24/7" },
+                                        { label: "Certification", val: "Industry Grade" }
+                                    ].map((stat, i) => (
+                                        <div key={i} className="bg-surface-dark/50 p-6 rounded-2xl border border-white/5">
+                                            <div className="text-2xl font-black text-primary italic mb-1">{stat.val}</div>
+                                            <div className="text-[10px] font-black text-accent-gray uppercase tracking-widest opacity-60">{stat.label}</div>
+                                        </div>
                                     ))}
-                                </ul>
+                                </div>
                             </div>
                             <div className="relative">
                                 <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-[2rem] filter blur-3xl"></div>
-                                <div className="bg-surface-dark p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative transform rotate-3 hover:rotate-0 transition-all duration-500">
-                                    <div className="flex items-center gap-4 mb-8 pb-8 border-b border-white/5">
-                                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-white shadow-lg">
-                                            <FaCode size={24} />
-                                        </div>
-                                        <div>
-                                            <div className="text-xs font-black text-accent-gray uppercase tracking-widest">Built With</div>
-                                            <div className="text-xl font-black text-accent-white italic tracking-tighter">Modern Tech Stack</div>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {['React.js v18', 'TypeScript', 'Tailwind CSS', 'WebRTC', 'Node.js', 'Razorpay'].map((tech, t) => (
-                                            <div key={t} className="bg-surface p-4 rounded-xl text-center border border-white/5">
-                                                <div className="text-[10px] font-black text-accent-gray uppercase tracking-widest">{tech}</div>
+                                <div className="premium-card p-1 items-center justify-center overflow-hidden h-[400px]">
+                                    <div className="bg-surface-dark h-full w-full rounded-[1.5rem] p-10 flex flex-col justify-center">
+                                        <div className="space-y-6">
+                                            <div className="flex items-center gap-4 animate-glow p-4 rounded-xl bg-primary/5 border border-primary/20">
+                                                <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center text-white shadow-lg">
+                                                    <FaCode size={24} />
+                                                </div>
+                                                <div className="text-accent-white font-black italic">Live Coding Sandbox</div>
                                             </div>
-                                        ))}
+                                            <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 opacity-60">
+                                                <FaChalkboardTeacher className="text-accent-gray" size={24} />
+                                                <div className="text-accent-gray font-black">Architecture Reviews</div>
+                                            </div>
+                                            <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 opacity-60">
+                                                <FaUserShield className="text-accent-gray" size={24} />
+                                                <div className="text-accent-gray font-black">Project Defense</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
