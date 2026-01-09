@@ -289,6 +289,7 @@ const SuperInstructorAllocation: React.FC = () => {
                         {/* Footer / Actions */}
                         <div className="p-6 border-t border-surface-border bg-white/5 space-y-4">
                             {/* Distribution Button */}
+                            {/* Distribution Button */}
                             {(sub.unassignedCount || 0) > 0 && sub.batches && sub.batches.length > 0 && (
                                 <button
                                     onClick={() => handleDistribute(sub.id)}

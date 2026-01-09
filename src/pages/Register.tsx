@@ -67,8 +67,13 @@ const Register: React.FC = () => {
         if (educationLevel === 'school') {
             // Filter: Name starts with any of the school prefixes
             filtered = categories.filter(c => schoolGradePrefixes.some(prefix => c.name.startsWith(prefix)));
+            filtered = categories.filter(c => schoolGradePrefixes.some(prefix => c.name.startsWith(prefix)));
+        } else if (educationLevel === 'ug') {
+            filtered = categories.filter(c => c.name === 'UG');
+        } else if (educationLevel === 'pg') {
+            filtered = categories.filter(c => c.name === 'PG');
         } else {
-            // UG or PG: Name does NOT start with any school prefixes
+            // Default Fallback
             filtered = categories.filter(c => !schoolGradePrefixes.some(prefix => c.name.startsWith(prefix)));
         }
 
@@ -211,7 +216,7 @@ const Register: React.FC = () => {
                                 {/* Filtered Category Selection */}
                                 <div className="space-y-3">
                                     <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">
-                                        {educationLevel === 'school' ? 'Grade / Class' : 'Course / Stream'}
+                                        {educationLevel === 'school' ? 'Grade / Class' : 'Stream Category'}
                                     </label>
                                     <select
                                         name="grade"
@@ -230,8 +235,8 @@ const Register: React.FC = () => {
                         )}
 
 
-                        {/* Specific Course Selection - ONLY for School (Classes might have sub-subjects if needed, but for now we hide for UG/PG as Stream=Course) */}
-                        {subjects.length > 0 && formData.role === 'student' && educationLevel === 'school' && (
+                        {/* Specific Course Selection - for School and UG/PG */}
+                        {subjects.length > 0 && formData.role === 'student' && (educationLevel === 'school' || educationLevel === 'ug' || educationLevel === 'pg') && (
                             <div className="space-y-3 animate-slideIn">
                                 <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">
                                     Select Specific Course
