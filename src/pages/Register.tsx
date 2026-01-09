@@ -75,6 +75,23 @@ const Register: React.FC = () => {
         // Additional Filter: Remove "Select Option..." or empty names if they exist in DB
         filtered = filtered.filter(c => c.name && c.name.trim() !== '' && !c.name.toLowerCase().includes('select option'));
 
+        // Deduplication Logic
+        // 1. Remove strict duplicates (same name)
+        filtered = filtered.filter((c, index, self) =>
+            index === self.findIndex(t => t.name === c.name)
+        );
+
+        // 2. Remove "X" if "X Class" exists
+        const names = new Set(filtered.map(c => c.name));
+        filtered = filtered.filter(c => {
+            const nameWithClass = `${c.name} Class`;
+            // If "X Class" exists in the list, and current item is "X", remove "X"
+            if (names.has(nameWithClass) && c.name !== nameWithClass) {
+                return false;
+            }
+            return true;
+        });
+
         // Sort Alphabetically
         return filtered.sort((a, b) => a.name.localeCompare(b.name));
     };
