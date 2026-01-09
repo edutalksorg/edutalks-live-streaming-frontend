@@ -147,6 +147,11 @@ const Whiteboard = forwardRef<any, WhiteboardProps>(({ className, onDraw, onClea
                             type="color"
                             value={color}
                             onChange={(e) => setColor(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            onFocus={(e) => {
+                                // Prevent false positive blur trigger
+                                e.stopPropagation();
+                            }}
                             className="w-6 h-6 rounded border-none bg-transparent cursor-pointer"
                         />
                     </div>

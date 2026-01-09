@@ -11,6 +11,7 @@ const InstructorDashboard: React.FC = () => {
     const { theme } = useTheme();
     const [stats, setStats] = useState({ totalStudents: 0, classesCount: 0, activeExams: 0, pendingReviews: 0 });
     const [batches, setBatches] = useState<any[]>([]);
+    const [displayClassName, setDisplayClassName] = useState('');
     const [loading, setLoading] = useState(true);
 
     const [showLiveModal, setShowLiveModal] = useState(false);
@@ -28,6 +29,7 @@ const InstructorDashboard: React.FC = () => {
             const res = await api.get('/api/instructor/dashboard');
             setStats(res.data.stats);
             setBatches(res.data.batches);
+            setDisplayClassName(res.data.displayClassName || '');
         } catch (error) {
             console.error(error);
         } finally {
@@ -57,7 +59,14 @@ const InstructorDashboard: React.FC = () => {
                 <h2 className="text-4xl font-extrabold text-gradient-red mb-2 italic tracking-tight">
                     Welcome back, {user?.name}
                 </h2>
-                <p className="text-accent-gray font-black uppercase tracking-[0.2em] text-[10px] opacity-90 italic">Manage your batches, conduct live classes, and review students.</p>
+                <div className="flex items-center gap-4">
+                    {displayClassName && (
+                        <span className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-md text-[10px] font-black uppercase tracking-widest">
+                            {displayClassName}
+                        </span>
+                    )}
+                    <p className="text-accent-gray font-black uppercase tracking-[0.2em] text-[10px] opacity-90 italic">Manage your batches, conduct live classes, and review students.</p>
+                </div>
             </header>
 
             {/* Stats Grid */}

@@ -42,7 +42,13 @@ const InstructorClasses: React.FC = () => {
     const handleCreateClass = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post('/api/classes', { ...newClass, instructor_id: user?.id });
+            // Convert local datetime-local string to text ISO (UTC)
+            const submissionData = {
+                ...newClass,
+                start_time: new Date(newClass.start_time).toISOString(),
+                instructor_id: user?.id
+            };
+            await api.post('/api/classes', submissionData);
             setShowModal(false);
             fetchClasses();
         } catch (err) {

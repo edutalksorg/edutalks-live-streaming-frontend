@@ -9,12 +9,6 @@ interface TournamentFormProps {
     onSuccess: () => void;
 }
 
-interface Level {
-    id: number;
-    name: string;
-    category: string;
-}
-
 interface Subject {
     id: number;
     name: string;
@@ -42,14 +36,13 @@ const formatForDateTimeLocal = (dateStr: string) => {
 const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, onSuccess }) => {
     const { showAlert } = useModal();
     const [step, setStep] = useState(1);
-    const [levels, setLevels] = useState<Level[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [assignedGrades, setAssignedGrades] = useState<string[]>([]);
 
     // Form state
     const [formData, setFormData] = useState({
         name: tournament?.name || '',
         description: tournament?.description || '',
-        level_id: tournament?.level_id || '',
         subject_id: tournament?.subject_id || '',
         registration_start: formatForDateTimeLocal(tournament?.registration_start),
         registration_end: formatForDateTimeLocal(tournament?.registration_end),
@@ -75,25 +68,30 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
     });
 
     useEffect(() => {
-        fetchLevels();
-        fetchSubjects();
+        fetchInstructorAssignments();
     }, []);
 
-    const fetchLevels = async () => {
+    const fetchInstructorAssignments = async () => {
         try {
-            const res = await api.get('/api/tournaments/levels/all');
-            setLevels(res.data);
-        } catch (err) {
-            console.error('Error fetching levels:', err);
-        }
-    };
+            // Fetch instructor's assigned batches to determine allowed grades and subjects
+            const batchesRes = await api.get('/api/instructor/batches');
+            const batches = batchesRes.data;
 
-    const fetchSubjects = async () => {
-        try {
-            const res = await api.get('/api/subjects');
-            setSubjects(res.data);
+            // Extract unique grades from batches
+            const grades = [...new Set(batches.map((b: any) => b.grade))] as string[];
+            setAssignedGrades(grades);
+
+            // Extract unique subjects from batches
+            const subjectMap = new Map();
+            batches.forEach((b: any) => {
+                if (!subjectMap.has(b.subject_id)) {
+                    subjectMap.set(b.subject_id, { id: b.subject_id, name: b.subject_name });
+                }
+            });
+            setSubjects(Array.from(subjectMap.values()));
         } catch (err) {
-            console.error('Error fetching subjects:', err);
+            console.error('Error fetching instructor assignments:', err);
+            showAlert('Failed to load instructor assignments', 'error');
         }
     };
 
@@ -137,7 +135,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
     const validateForm = (): boolean => {
         // Step 1 validation
         if (step === 1) {
-            if (!formData.name || !formData.description || !formData.level_id || !formData.grade) {
+            if (!formData.name || !formData.description || !formData.grade) {
                 showAlert('Please fill all required fields in Step 1', 'warning');
                 return false;
             }
@@ -270,25 +268,7 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                                 />
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-sm font-semibold mb-2 text-accent-gray">
-                                        Tournament Level *
-                                    </label>
-                                    <select
-                                        value={formData.level_id}
-                                        onChange={(e) => handleInputChange('level_id', e.target.value)}
-                                        className="w-full border dark:border-gray-600 rounded-lg p-3 dark:bg-gray-700 dark:text-white"
-                                    >
-                                        <option value="">Select Level</option>
-                                        {levels.map(level => (
-                                            <option key={level.id} value={level.id}>
-                                                {level.name} ({level.category})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-semibold mb-2 text-accent-gray">
                                         Class / Grade *
@@ -299,13 +279,11 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                                         className="w-full border dark:border-gray-600 rounded-lg p-3 dark:bg-gray-700 dark:text-white"
                                     >
                                         <option value="">Select Class</option>
-                                        <option value="6th">6th Class</option>
-                                        <option value="7th">7th Class</option>
-                                        <option value="8th">8th Class</option>
-                                        <option value="9th">9th Class</option>
-                                        <option value="10th">10th Class</option>
-                                        <option value="11th">11th Class</option>
-                                        <option value="12th">12th Class</option>
+                                        {assignedGrades.map(grade => (
+                                            <option key={grade} value={grade}>
+                                                {grade} Class
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
 
@@ -563,9 +541,9 @@ const TournamentForm: React.FC<TournamentFormProps> = ({ tournament, onClose, on
                                     <p className="font-semibold text-accent-white">{formData.name}</p>
                                 </div>
                                 <div>
-                                    <p className="text-gray-600 dark:text-gray-400">Level</p>
+                                    <p className="text-gray-600 dark:text-gray-400">Class / Grade</p>
                                     <p className="font-semibold text-gray-900 dark:text-white">
-                                        {levels.find(l => l.id === parseInt(formData.level_id))?.name}
+                                        {formData.grade} Class
                                     </p>
                                 </div>
                                 <div>

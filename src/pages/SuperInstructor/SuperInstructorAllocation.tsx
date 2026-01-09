@@ -185,7 +185,7 @@ const SuperInstructorAllocation: React.FC = () => {
                     <h2 className="text-3xl font-black text-accent-white italic tracking-tighter">Subject <span className="text-primary">Allocation</span></h2>
                     <p className="text-accent-gray mt-1 font-black uppercase tracking-[0.3em] text-[10px] opacity-70">
                         Manage instructor batches for <span className="text-primary">
-                            {(className.includes('Grade') || className.includes('Class')) ? 'Grade' : 'Course'} {className}
+                            {(className.includes('Grade') || className.includes('Class') || className.includes('Course')) ? className : `Course ${className}`}
                         </span>
                     </p>
                 </div>

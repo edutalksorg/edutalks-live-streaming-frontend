@@ -18,7 +18,7 @@ import {
 const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID;
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
-const LiveClassRoom: React.FC = () => {
+const StudentSuperInstructorClassRoom: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { user } = useContext(AuthContext)!;
     const navigate = useNavigate();
@@ -88,13 +88,19 @@ const LiveClassRoom: React.FC = () => {
     const showTrayRef = useRef(showTray);
     const mainStageRef = useRef<HTMLDivElement>(null);
 
-    const isInstructor = user?.role === 'instructor' || user?.role === 'super_instructor';
+    const isInstructor = user?.role === 'instructor' || user?.role === 'super_instructor' || user?.role === 'admin' || user?.role === 'super_admin';
+    const isInstructorRef = useRef(isInstructor);
+    useEffect(() => { isInstructorRef.current = isInstructor; }, [isInstructor]);
 
     // --- Effects ---
 
-    useEffect(() => {
-        showTrayRef.current = showTray;
-    }, [showTray]);
+    useEffect(() => { showTrayRef.current = showTray; }, [showTray]);
+
+    // Ref to ignore blur events immediately after screen sharing stops (browser UI interaction causes false positive)
+    const isLocalSharingEndingRef = useRef(false);
+    const [isViolationLocked, setIsViolationLocked] = useState(false);
+    const isViolationLockedRef = useRef(false);
+    useEffect(() => { isViolationLockedRef.current = isViolationLocked; }, [isViolationLocked]);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -150,11 +156,13 @@ const LiveClassRoom: React.FC = () => {
 
         socket.on('recording_protection_status', (data) => {
             setRecordingProtected(data.active);
-            if (data.active) {
-                showAlert("Instructor has enabled 'Screen Recording Protection'. Content will be blurred if you leave the tab, and a security watermark is active.", "info", "SECURITY ENABLED");
-            } else {
-                showAlert("Screen Recording Protection has been disabled.", "info", "SECURITY DISABLED");
-                setIsWindowBlurred(false);
+            if (!isInstructorRef.current) {
+                if (data.active) {
+                    showAlert("Instructor has enabled 'Screen Recording Protection'. Content will be blurred if you leave the tab, and a security watermark is active.", "info", "SECURITY ENABLED");
+                } else {
+                    showAlert("Screen Recording Protection has been disabled.", "info", "SECURITY DISABLED");
+                    setIsWindowBlurred(false);
+                }
             }
         });
 
@@ -332,20 +340,48 @@ const LiveClassRoom: React.FC = () => {
 
         const interval = setInterval(moveWatermark, 5000);
 
-        const handleBlur = () => setIsWindowBlurred(true);
-        const handleFocus = () => setIsWindowBlurred(false);
+
+        const handleBlur = () => {
+            // Ignore if we just stopped screen sharing (prevent false positive)
+            if (isLocalSharingEndingRef.current) return;
+
+            if (!isInstructorRef.current) {
+                setIsWindowBlurred(true);
+                // Permanent Lockout for Violation
+                setIsViolationLocked(true);
+            }
+        };
+
+        // If screen sharing is active while protected (e.g. enabled mid-stream), force blur to protect content
+        if (isScreenSharing && !isInstructorRef.current) {
+            setIsWindowBlurred(true);
+        }
+        const handleFocus = () => {
+            // Strict enforcement: if locked or sharing, refuse to clear blur
+            if (isViolationLockedRef.current || (isScreenSharing && !isInstructorRef.current && recordingProtected)) {
+                return;
+            }
+            setIsWindowBlurred(false);
+        };
         const handleVisibilityChange = () => {
             if (document.visibilityState !== 'visible') {
-                setIsWindowBlurred(true);
-                // Report violation if recording protection is on and they switch away
-                socketRef.current?.emit('violation_report', {
-                    classId: id,
-                    studentId: user?.id,
-                    studentName: user?.name,
-                    type: 'TAB_SWITCH',
-                    timestamp: new Date()
-                });
+                if (!isInstructorRef.current) {
+                    setIsWindowBlurred(true);
+                    setIsViolationLocked(true); // Permanent Lockout
+                    // Report violation if recording protection is on and they switch away
+                    socketRef.current?.emit('violation_report', {
+                        classId: id,
+                        studentId: user?.id,
+                        studentName: user?.name,
+                        type: 'TAB_SWITCH',
+                        timestamp: new Date()
+                    });
+                }
             } else {
+                // If locked or sharing, refuse to clear blur
+                if (isViolationLockedRef.current || (isScreenSharing && !isInstructorRef.current && recordingProtected)) {
+                    return;
+                }
                 setIsWindowBlurred(false);
             }
         };
@@ -360,7 +396,7 @@ const LiveClassRoom: React.FC = () => {
             window.removeEventListener('focus', handleFocus);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [recordingProtected, id, user?.id, user?.name]);
+    }, [recordingProtected, id, user?.id, user?.name, isScreenSharing]);
 
     // Main Stage Track Playback Effect
     useEffect(() => {
@@ -640,7 +676,13 @@ const LiveClassRoom: React.FC = () => {
     };
 
     const toggleScreenShare = async () => {
-        if (!isInstructor && screenLocked) return;
+        if (!isInstructor) {
+            if (recordingProtected) {
+                showAlert("Screen Sharing is restricted during Protected Sessions.", "error", "RESTRICTED ACCESS");
+                return;
+            }
+            if (screenLocked) return;
+        }
         if (isScreenSharing) {
             // Stopping Screen Share
             try {
@@ -653,6 +695,10 @@ const LiveClassRoom: React.FC = () => {
                 setIsScreenSharing(false);
                 setScreenSharerUid(null);
 
+                // Set grace period flag
+                isLocalSharingEndingRef.current = true;
+                setTimeout(() => { isLocalSharingEndingRef.current = false; }, 2000);
+
                 if (localVideoTrack && cameraOn) {
                     await client?.publish(localVideoTrack);
                 }
@@ -664,6 +710,10 @@ const LiveClassRoom: React.FC = () => {
         } else {
             // Starting Screen Share
             try {
+                // Set grace period for picker dialog
+                isLocalSharingEndingRef.current = true;
+                setTimeout(() => { isLocalSharingEndingRef.current = false; }, 3000); // 3s for picker interaction
+
                 const screenTrack = await AgoraRTC.createScreenVideoTrack({}, "auto");
                 const track = Array.isArray(screenTrack) ? screenTrack[0] : screenTrack;
 
@@ -683,6 +733,10 @@ const LiveClassRoom: React.FC = () => {
                 socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: true });
 
                 track.on("track-ended", async () => {
+                    // Set grace period flag FIRST
+                    isLocalSharingEndingRef.current = true;
+                    setTimeout(() => { isLocalSharingEndingRef.current = false; }, 2000);
+
                     setIsScreenSharing(false);
                     setScreenSharerUid(null);
                     setLocalScreenTrack(null);
@@ -802,33 +856,43 @@ const LiveClassRoom: React.FC = () => {
     return (
         <div ref={containerRef} className="h-screen w-screen bg-[#0A0A10] text-[#F8FAFC] font-sans flex overflow-hidden selection:bg-primary/20 relative">
             {/* Recording Protection: Blur Overlay */}
-            {recordingProtected && isWindowBlurred && (
+            {!isInstructor && recordingProtected && isWindowBlurred && (
                 <div className="absolute inset-0 z-[9999] bg-slate-900/80 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-8 pointer-events-auto">
                     <div className="w-24 h-24 mb-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 animate-pulse">
                         <FaShieldAlt size={48} />
                     </div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">Content Protected</h2>
-                    <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">Live stream is blurred because protection is active and you have left the focal area.</p>
-                    <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em] animate-bounce">Return to focal tab to resume</p>
+                    <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">
+                        {isViolationLocked ? "SECURITY LOCKOUT" : "Content Protected"}
+                    </h2>
+                    <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">
+                        {isViolationLocked
+                            ? "Suspicious activity detected. Access has been locked."
+                            : "Live stream is blurred because protection is active and you have left the focal area."}
+                    </p>
+                    <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em] animate-bounce">
+                        {isViolationLocked ? "Please Refresh Page to Re-verify" : "Return to focal tab to resume"}
+                    </p>
                 </div>
             )}
 
             {/* Recording Protection: Watermark */}
-            {recordingProtected && (
-                <div
-                    className="absolute z-[9998] pointer-events-none transition-all duration-[3000ms] opacity-20 select-none whitespace-nowrap"
-                    style={{
-                        top: watermarkPos.top,
-                        left: watermarkPos.left,
-                        transform: 'rotate(-25deg)'
-                    }}
-                >
-                    <div className="flex flex-col items-center">
-                        <span className="text-2xl font-black text-slate-400 uppercase tracking-[0.3em] leading-none mb-1 italic">{user?.name}</span>
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest opacity-50 italic">{user?.id} • {new Date().toLocaleDateString()}</span>
+            {
+                !isInstructor && recordingProtected && (
+                    <div
+                        className="absolute z-[9998] pointer-events-none transition-all duration-[3000ms] opacity-20 select-none whitespace-nowrap"
+                        style={{
+                            top: watermarkPos.top,
+                            left: watermarkPos.left,
+                            transform: 'rotate(-25deg)'
+                        }}
+                    >
+                        <div className="flex flex-col items-center">
+                            <span className="text-2xl font-black text-slate-400 uppercase tracking-[0.3em] leading-none mb-1 italic">{user?.name}</span>
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest opacity-50 italic">{user?.id} • {new Date().toLocaleDateString()}</span>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
             {/* Main Stage */}
             <div className="flex-1 flex flex-col relative overflow-hidden h-full">
                 {/* Minimal Tactical Header */}
@@ -1347,8 +1411,8 @@ const LiveClassRoom: React.FC = () => {
                     background: rgba(255, 255, 255, 0.1);
                 }
             `}</style>
-        </div>
+        </div >
     );
 };
 
-export default LiveClassRoom;
+export default StudentSuperInstructorClassRoom;

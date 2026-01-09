@@ -31,6 +31,7 @@ interface Subject {
 interface DashboardData {
     grade: string;
     course_name?: string;
+    displayClassName?: string;
     stats: {
         liveNow: number;
         upcomingExams: number;
@@ -184,7 +185,7 @@ const StudentDashboard: React.FC = () => {
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12">
                         <div className="max-w-2xl space-y-6 md:space-y-8">
                             <span className="inline-block px-4 md:px-6 py-2 rounded-full bg-primary text-white text-[8px] md:text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/40 border border-white/10 max-w-full truncate">
-                                {dashboardData?.course_name || dashboardData?.grade || 'Student'} HUB
+                                {dashboardData?.displayClassName || dashboardData?.course_name || dashboardData?.grade || 'Student'} HUB
                             </span>
                             <h1 className="text-4xl md:text-6xl lg:text-8xl font-black leading-[0.9] tracking-tighter">
                                 <span className="text-gradient-red italic">Hello,</span> <br />
@@ -300,6 +301,11 @@ const StudentDashboard: React.FC = () => {
                         {dashboardData?.course_name && (
                             <p className="text-[10px] md:text-xs font-black text-accent-gray uppercase tracking-[0.3em] pl-1">
                                 {dashboardData.grade} • Professional Program
+                            </p>
+                        )}
+                        {!dashboardData?.course_name && (
+                            <p className="text-[10px] md:text-xs font-black text-accent-gray uppercase tracking-[0.3em] pl-1">
+                                {dashboardData.grade ? `Class ${dashboardData.grade}` : 'Academic Program'}
                             </p>
                         )}
                         <div className="w-16 md:w-20 h-1.5 md:h-2 bg-primary rounded-full shadow-primary-glow"></div>

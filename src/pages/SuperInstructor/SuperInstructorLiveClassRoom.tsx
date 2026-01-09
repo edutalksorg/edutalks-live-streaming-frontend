@@ -19,7 +19,7 @@ import {
 const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID;
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
-const LiveClassRoom: React.FC = () => {
+const SuperInstructorLiveClassRoom: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { user } = useContext(AuthContext)!;
     const navigate = useNavigate();
@@ -112,15 +112,18 @@ const LiveClassRoom: React.FC = () => {
     const showTrayRef = useRef(showTray);
     const mainStageRef = useRef<HTMLDivElement>(null);
 
-    const isInstructor = user?.role === 'instructor' || user?.role === 'super_instructor';
+    const isInstructor = user?.role === 'instructor' || user?.role === 'super_instructor' || user?.role === 'admin' || user?.role === 'super_admin';
     const isInstructorRef = useRef(isInstructor);
     useEffect(() => { isInstructorRef.current = isInstructor; }, [isInstructor]);
 
     // --- Effects ---
 
-    useEffect(() => {
-        showTrayRef.current = showTray;
-    }, [showTray]);
+    useEffect(() => { showTrayRef.current = showTray; }, [showTray]);
+
+    const isLocalSharingEndingRef = useRef(false);
+    const [isViolationLocked, setIsViolationLocked] = useState(false);
+    const isViolationLockedRef = useRef(false);
+    useEffect(() => { isViolationLockedRef.current = isViolationLocked; }, [isViolationLocked]);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -183,9 +186,9 @@ const LiveClassRoom: React.FC = () => {
             setRecordingProtected(data.active);
             if (!isInstructorRef.current) {
                 if (data.active) {
-                    showToast("Security Enabled: Moving watermark and focus-loss blur active.", "warning");
+                    showToast("Screen Recording Protection Enabled: Content will be blurred if you leave the tab.", "warning");
                 } else {
-                    showToast("Security Disabled.", "info");
+                    showToast("Screen Recording Protection Disabled.", "info");
                     setIsWindowBlurred(false);
                 }
             }
@@ -459,6 +462,12 @@ const LiveClassRoom: React.FC = () => {
                     api.get(`/api/super-instructor/classes/${id}`).then(res => {
                         if (res.data.status === 'live') setIsLive(true);
                     });
+                } else {
+                    // Super Instructors: Auto-activate if it's time
+                    api.post(`/api/super-instructor/classes/${id}/start`).then(() => {
+                        setIsLive(true);
+                        showToast("Class sessions automatically activated.", "success");
+                    }).catch(err => console.error("Auto-start failed:", err));
                 }
             } else {
                 const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -479,14 +488,23 @@ const LiveClassRoom: React.FC = () => {
             const left = Math.floor(Math.random() * 80) + 10 + '%';
             setWatermarkPos({ top, left });
         };
-
         const interval = setInterval(moveWatermark, 5000);
 
-        const handleBlur = () => setIsWindowBlurred(true);
-        const handleFocus = () => setIsWindowBlurred(false);
+        const handleBlur = () => {
+            if (isLocalSharingEndingRef.current) return; // Ignore blur event if screen sharing is intentionally ending
+            setIsWindowBlurred(true);
+            setIsViolationLocked(true); // Permanent Lockout
+        };
+        const handleFocus = () => {
+            // Strict enforcement: if locked or violating, refuse to clear blur
+            if (isViolationLockedRef.current || (isScreenSharing && !isInstructorRef.current && recordingProtected)) return;
+            setIsWindowBlurred(false);
+        };
         const handleVisibilityChange = () => {
             if (document.visibilityState !== 'visible') {
+                if (isLocalSharingEndingRef.current) return; // Ignore if screen sharing is intentionally ending
                 setIsWindowBlurred(true);
+                setIsViolationLocked(true); // Permanent Lockout
                 // Report violation if recording protection is on and they switch away
                 socketRef.current?.emit('violation_report', {
                     classId: id,
@@ -496,6 +514,7 @@ const LiveClassRoom: React.FC = () => {
                     timestamp: new Date()
                 });
             } else {
+                if (isViolationLockedRef.current || (isScreenSharing && !isInstructorRef.current && recordingProtected)) return;
                 setIsWindowBlurred(false);
             }
         };
@@ -510,7 +529,7 @@ const LiveClassRoom: React.FC = () => {
             window.removeEventListener('focus', handleFocus);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [recordingProtected, isInstructor, id, user?.id, user?.name]);
+    }, [recordingProtected, isInstructor, id, user?.id, user?.name, isScreenSharing]);
 
     useEffect(() => {
         if (!isLive) return;
@@ -710,12 +729,21 @@ const LiveClassRoom: React.FC = () => {
         if (isScreenSharingRef.current) {
             // Stopping Screen Share
             try {
+                if (localScreenTrackRef.current) {
+                    await clientRef.current?.unpublish(localScreenTrackRef.current);
+                    localScreenTrackRef.current.stop();
+                    localScreenTrackRef.current.close();
+                }
                 setLocalScreenTrack(null);
                 setIsScreenSharing(false);
                 setScreenSharerUid(null);
 
-                if (localVideoTrack && cameraOn) {
-                    await client?.publish(localVideoTrack);
+                // Set grace period flag
+                isLocalSharingEndingRef.current = true;
+                setTimeout(() => { isLocalSharingEndingRef.current = false; }, 2000);
+
+                if (localVideoTrackRef.current && cameraOnRef.current) {
+                    await client?.publish(localVideoTrackRef.current);
                 }
 
                 socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
@@ -725,13 +753,17 @@ const LiveClassRoom: React.FC = () => {
         } else {
             // Starting Screen Share
             try {
+                // Grace period for picker
+                isLocalSharingEndingRef.current = true;
+                setTimeout(() => { isLocalSharingEndingRef.current = false; }, 3000);
+
                 const screenTrack = await AgoraRTC.createScreenVideoTrack({}, "auto");
                 const track = Array.isArray(screenTrack) ? screenTrack[0] : screenTrack;
 
                 // 1. Unpublish Camera if it's currently on
-                if (localVideoTrack && cameraOn) {
-                    await client?.unpublish(localVideoTrack);
-                    localVideoTrack.stop(); // Stop local preview
+                if (localVideoTrackRef.current && cameraOnRef.current) {
+                    await client?.unpublish(localVideoTrackRef.current);
+                    localVideoTrackRef.current.stop(); // Stop local preview
                 }
 
                 // Publish Screen
@@ -744,14 +776,17 @@ const LiveClassRoom: React.FC = () => {
                 socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: true });
 
                 track.on("track-ended", async () => {
+                    isLocalSharingEndingRef.current = true;
+                    setTimeout(() => { isLocalSharingEndingRef.current = false; }, 2000);
+
                     setIsScreenSharing(false);
                     setScreenSharerUid(null);
                     setLocalScreenTrack(null);
                     await client?.unpublish(track);
                     socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
                     track.close();
-                    if (localVideoTrack && cameraOn) {
-                        await client?.publish(localVideoTrack);
+                    if (localVideoTrackRef.current && cameraOnRef.current) {
+                        await client?.publish(localVideoTrackRef.current);
                     }
                 });
 
@@ -889,12 +924,20 @@ const LiveClassRoom: React.FC = () => {
             {/* Recording Protection: Blur Overlay */}
             {!isInstructor && recordingProtected && isWindowBlurred && (
                 <div className="absolute inset-0 z-[9999] bg-slate-900/80 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-8 pointer-events-auto">
-                    <div className="w-24 h-24 mb-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 animate-pulse">
+                    <div className="flex flex-col items-center">
                         <FaShieldAlt size={48} />
                     </div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">Content Protected</h2>
-                    <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">Live stream is blurred because protection is active and you have left the focal area.</p>
-                    <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em] animate-bounce">Return to focal tab to resume</p>
+                    <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">
+                        {isViolationLocked ? "SECURITY LOCKOUT" : "Content Protected"}
+                    </h2>
+                    <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">
+                        {isViolationLocked
+                            ? "Suspicious activity detected. Access has been locked."
+                            : "Live stream is blurred because protection is active and you have left the focal area."}
+                    </p>
+                    <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em] animate-bounce">
+                        {isViolationLocked ? "Please Refresh Page to Re-verify" : "Return to focal tab to resume"}
+                    </p>
                 </div>
             )}
 
@@ -1198,7 +1241,7 @@ const LiveClassRoom: React.FC = () => {
                                         showToast(next ? "Screen Recording Protection ENABLED" : "Screen Recording Protection DISABLED", next ? "warning" : "info");
                                     }}
                                     className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${recordingProtected ? 'bg-orange-600 border-orange-700 text-white animate-pulse' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
-                                    title={recordingProtected ? "Disable Anti-Recording" : "Enable Anti-Recording"}
+                                    title={recordingProtected ? "Disable Screen Recording Protection" : "Enable Screen Recording Protection"}
                                 >
                                     <FaShieldAlt size={18} />
                                 </button>
@@ -1283,201 +1326,203 @@ const LiveClassRoom: React.FC = () => {
                 </footer>
 
                 {/* Pop-up Tray Overlay */}
-                {showTray && (
-                    <div className="absolute inset-0 z-[60] flex items-end justify-end p-8 pointer-events-none">
-                        <div className="w-full max-w-sm h-3/4 bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden pointer-events-auto animate-in slide-in-from-right duration-500">
-                            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">{showTray} Panel</h3>
-                                <button onClick={() => setShowTray(null)} className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-300">×</button>
-                            </div>
+                {
+                    showTray && (
+                        <div className="absolute inset-0 z-[60] flex items-end justify-end p-8 pointer-events-none">
+                            <div className="w-full max-w-sm h-3/4 bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden pointer-events-auto animate-in slide-in-from-right duration-500">
+                                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">{showTray} Panel</h3>
+                                    <button onClick={() => setShowTray(null)} className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-300">×</button>
+                                </div>
 
-                            <div className="flex-1 overflow-y-auto">
-                                {showTray === 'chat' && (
-                                    <div className="flex flex-col h-full">
-                                        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                                            {messages.length === 0 ? (
-                                                <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                                                    <FaComments size={32} className="mb-3 opacity-20" />
-                                                    <p className="text-xs font-bold">No messages yet</p>
-                                                    <p className="text-[10px] mt-1">Start the conversation!</p>
+                                <div className="flex-1 overflow-y-auto">
+                                    {showTray === 'chat' && (
+                                        <div className="flex flex-col h-full">
+                                            <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                                                {messages.length === 0 ? (
+                                                    <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                                        <FaComments size={32} className="mb-3 opacity-20" />
+                                                        <p className="text-xs font-bold">No messages yet</p>
+                                                        <p className="text-[10px] mt-1">Start the conversation!</p>
+                                                    </div>
+                                                ) : (
+                                                    messages.map((m, i) => (
+                                                        <div key={i} className={`flex flex-col ${m.senderName === user?.name ? 'items-end' : 'items-start'}`}>
+                                                            <span className="text-[8px] font-bold text-slate-500 uppercase mb-1 px-1">{m.senderName}</span>
+                                                            <div className={`p-3 rounded-2xl text-sm font-medium max-w-[80%] shadow-sm ${m.senderName === user?.name ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-900 rounded-tl-none border border-slate-200'}`}>
+                                                                {m.message}
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                            <form onSubmit={sendMessage} className="p-4 border-t border-slate-100 flex gap-2 bg-slate-50">
+                                                <input
+                                                    value={chatMsg}
+                                                    onChange={(e) => setChatMsg(e.target.value)}
+                                                    placeholder="Type message..."
+                                                    disabled={chatLocked && !isInstructor}
+                                                    className="flex-1 bg-white border border-slate-200 px-4 py-3 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:ring-2 ring-blue-500 outline-none disabled:opacity-50"
+                                                />
+                                                <button
+                                                    type="submit"
+                                                    disabled={chatLocked && !isInstructor}
+                                                    className="bg-blue-600 text-white p-3 px-5 rounded-xl text-xs font-bold uppercase hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Send
+                                                </button>
+                                            </form>
+                                        </div>
+                                    )}
+
+                                    {showTray === 'participants' && (
+                                        <div className="p-4 space-y-3">
+                                            <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
+                                                <p className="text-xs font-bold text-blue-900">Total: {onlineUsers.length} participant{onlineUsers.length !== 1 ? 's' : ''}</p>
+                                                {/* Instructor Controls */}
+                                                {isInstructor && (
+                                                    <div className="flex gap-2 pb-2 border-b border-slate-100">
+                                                        <button
+                                                            onClick={handleMuteAll}
+                                                            className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
+                                                        >
+                                                            Mute All
+                                                        </button>
+                                                        <button
+                                                            onClick={handleUnlockAll}
+                                                            className="flex-1 bg-emerald-100 text-emerald-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-emerald-200 transition-colors"
+                                                        >
+                                                            Unlock All
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl border-2 border-blue-200 shadow-sm">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xs font-black uppercase shadow-md">
+                                                        {user?.name?.slice(0, 2)}
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm font-bold text-slate-900 block">{user?.name}</span>
+                                                        <span className="text-[10px] font-bold text-blue-600 uppercase">(You)</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2 text-slate-400">
+                                                    {micOn ? <FaMicrophone size={14} className="text-emerald-500" /> : <FaMicrophoneSlash size={14} className="text-rose-500" />}
+                                                    {cameraOn ? <FaVideo size={14} className="text-emerald-500" /> : <FaVideoSlash size={14} className="text-rose-500" />}
+                                                </div>
+                                            </div>
+                                            {onlineUsers.filter(u => String(u.userId) !== String(user?.id)).length === 0 ? (
+                                                <div className="h-32 flex flex-col items-center justify-center text-slate-400">
+                                                    <FaUsers size={28} className="mb-2 opacity-20" />
+                                                    <p className="text-xs font-bold">Waiting for others...</p>
                                                 </div>
                                             ) : (
-                                                messages.map((m, i) => (
-                                                    <div key={i} className={`flex flex-col ${m.senderName === user?.name ? 'items-end' : 'items-start'}`}>
-                                                        <span className="text-[8px] font-bold text-slate-500 uppercase mb-1 px-1">{m.senderName}</span>
-                                                        <div className={`p-3 rounded-2xl text-sm font-medium max-w-[80%] shadow-sm ${m.senderName === user?.name ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-900 rounded-tl-none border border-slate-200'}`}>
-                                                            {m.message}
+                                                <div className="space-y-3">
+                                                    {onlineUsers.filter(u => String(u.userId) !== String(user?.id)).map(u => {
+                                                        const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId) || Number(ru.uid) === Number(u.userId));
+                                                        const isBlocked = blockedStudents.has(String(u.userId));
+                                                        const hasPermission = !isBlocked && (!audioLocked || studentsWithUnmutePermission.has(String(u.userId)));
+                                                        const isHandRaisedByU = handsRaised.some(h => String(h.id) === String(u.userId));
+
+                                                        return (
+                                                            <div key={u.userId} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="relative">
+                                                                        <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase">{u.userName?.charAt(0)}</div>
+                                                                        {isHandRaisedByU && (
+                                                                            <div className="absolute -top-1 -right-1 bg-amber-500 text-white p-0.5 rounded-full animate-bounce">
+                                                                                <FaHandPaper size={8} />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="text-xs font-bold text-slate-600">{u.userName}</span>
+                                                                </div>
+                                                                <div className="flex gap-2 items-center">
+                                                                    {rUser?.hasAudio ? (
+                                                                        <FaMicrophone size={12} className="text-emerald-500" title="Speaking" />
+                                                                    ) : hasPermission ? (
+                                                                        <FaMicrophone size={12} className="text-slate-400 opacity-50" title="Allowed but muted" />
+                                                                    ) : (
+                                                                        <FaMicrophoneSlash size={12} className="text-rose-400/50" title="Muted by instructor" />
+                                                                    )}
+
+                                                                    {isInstructor && (
+                                                                        <div className="flex gap-1 ml-2">
+                                                                            {rUser?.hasAudio || hasPermission ? (
+                                                                                <button
+                                                                                    onClick={() => handleMuteStudent(u.userId)}
+                                                                                    className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase hover:bg-red-200"
+                                                                                    title="Force Mute & Revoke Permission"
+                                                                                >
+                                                                                    Mute
+                                                                                </button>
+                                                                            ) : (
+                                                                                <button
+                                                                                    onClick={() => handleGrantUnmutePermission(u.userId)}
+                                                                                    className="text-[8px] bg-blue-100 text-blue-600 px-2 py-1 rounded font-black uppercase hover:bg-blue-200"
+                                                                                    title="Allow to Speak"
+                                                                                >
+                                                                                    Allow
+                                                                                </button>
+                                                                            )}
+                                                                            {isHandRaisedByU && (
+                                                                                <button
+                                                                                    onClick={() => approveStudent(u.userId)}
+                                                                                    className="text-[8px] bg-amber-100 text-amber-600 px-2 py-1 rounded font-black uppercase hover:bg-amber-200"
+                                                                                >
+                                                                                    Approve
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                    {rUser?.hasVideo ? <FaVideo size={12} className="text-emerald-500" /> : <FaVideoSlash size={12} className="text-slate-300" />}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {showTray === 'hands' && (
+                                        <div className="p-4 space-y-3">
+                                            {handsRaised.length === 0 ? (
+                                                <div className="h-40 flex flex-col items-center justify-center text-slate-300">
+                                                    <FaHandPaper size={24} className="mb-2 opacity-20" />
+                                                    <p className="text-[10px] font-bold uppercase tracking-widest italic">No active requests</p>
+                                                </div>
+                                            ) : (
+                                                handsRaised.map(student => (
+                                                    <div key={student.id} className="p-4 bg-amber-50 rounded-2xl border border-amber-200 flex items-center justify-between">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-bold text-amber-900">{student.name}</span>
+                                                            <span className="text-[8px] font-bold text-amber-600 uppercase tracking-widest">Question Pending</span>
                                                         </div>
+                                                        {isInstructor && (
+                                                            <button
+                                                                onClick={() => approveStudent(student.id)}
+                                                                className="bg-amber-600 text-white px-4 py-2 rounded-xl text-[8px] font-bold uppercase hover:bg-amber-700 transition-all"
+                                                            >
+                                                                Grant Access
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 ))
                                             )}
                                         </div>
-                                        <form onSubmit={sendMessage} className="p-4 border-t border-slate-100 flex gap-2 bg-slate-50">
-                                            <input
-                                                value={chatMsg}
-                                                onChange={(e) => setChatMsg(e.target.value)}
-                                                placeholder="Type message..."
-                                                disabled={chatLocked && !isInstructor}
-                                                className="flex-1 bg-white border border-slate-200 px-4 py-3 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:ring-2 ring-blue-500 outline-none disabled:opacity-50"
-                                            />
-                                            <button
-                                                type="submit"
-                                                disabled={chatLocked && !isInstructor}
-                                                className="bg-blue-600 text-white p-3 px-5 rounded-xl text-xs font-bold uppercase hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                Send
-                                            </button>
-                                        </form>
-                                    </div>
-                                )}
-
-                                {showTray === 'participants' && (
-                                    <div className="p-4 space-y-3">
-                                        <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
-                                            <p className="text-xs font-bold text-blue-900">Total: {onlineUsers.length} participant{onlineUsers.length !== 1 ? 's' : ''}</p>
-                                            {/* Instructor Controls */}
-                                            {isInstructor && (
-                                                <div className="flex gap-2 pb-2 border-b border-slate-100">
-                                                    <button
-                                                        onClick={handleMuteAll}
-                                                        className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
-                                                    >
-                                                        Mute All
-                                                    </button>
-                                                    <button
-                                                        onClick={handleUnlockAll}
-                                                        className="flex-1 bg-emerald-100 text-emerald-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-emerald-200 transition-colors"
-                                                    >
-                                                        Unlock All
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl border-2 border-blue-200 shadow-sm">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xs font-black uppercase shadow-md">
-                                                    {user?.name?.slice(0, 2)}
-                                                </div>
-                                                <div>
-                                                    <span className="text-sm font-bold text-slate-900 block">{user?.name}</span>
-                                                    <span className="text-[10px] font-bold text-blue-600 uppercase">(You)</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 text-slate-400">
-                                                {micOn ? <FaMicrophone size={14} className="text-emerald-500" /> : <FaMicrophoneSlash size={14} className="text-rose-500" />}
-                                                {cameraOn ? <FaVideo size={14} className="text-emerald-500" /> : <FaVideoSlash size={14} className="text-rose-500" />}
-                                            </div>
-                                        </div>
-                                        {onlineUsers.filter(u => String(u.userId) !== String(user?.id)).length === 0 ? (
-                                            <div className="h-32 flex flex-col items-center justify-center text-slate-400">
-                                                <FaUsers size={28} className="mb-2 opacity-20" />
-                                                <p className="text-xs font-bold">Waiting for others...</p>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                {onlineUsers.filter(u => String(u.userId) !== String(user?.id)).map(u => {
-                                                    const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId) || Number(ru.uid) === Number(u.userId));
-                                                    const isBlocked = blockedStudents.has(String(u.userId));
-                                                    const hasPermission = !isBlocked && (!audioLocked || studentsWithUnmutePermission.has(String(u.userId)));
-                                                    const isHandRaisedByU = handsRaised.some(h => String(h.id) === String(u.userId));
-
-                                                    return (
-                                                        <div key={u.userId} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="relative">
-                                                                    <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase">{u.userName?.charAt(0)}</div>
-                                                                    {isHandRaisedByU && (
-                                                                        <div className="absolute -top-1 -right-1 bg-amber-500 text-white p-0.5 rounded-full animate-bounce">
-                                                                            <FaHandPaper size={8} />
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <span className="text-xs font-bold text-slate-600">{u.userName}</span>
-                                                            </div>
-                                                            <div className="flex gap-2 items-center">
-                                                                {rUser?.hasAudio ? (
-                                                                    <FaMicrophone size={12} className="text-emerald-500" title="Speaking" />
-                                                                ) : hasPermission ? (
-                                                                    <FaMicrophone size={12} className="text-slate-400 opacity-50" title="Allowed but muted" />
-                                                                ) : (
-                                                                    <FaMicrophoneSlash size={12} className="text-rose-400/50" title="Muted by instructor" />
-                                                                )}
-
-                                                                {isInstructor && (
-                                                                    <div className="flex gap-1 ml-2">
-                                                                        {rUser?.hasAudio || hasPermission ? (
-                                                                            <button
-                                                                                onClick={() => handleMuteStudent(u.userId)}
-                                                                                className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase hover:bg-red-200"
-                                                                                title="Force Mute & Revoke Permission"
-                                                                            >
-                                                                                Mute
-                                                                            </button>
-                                                                        ) : (
-                                                                            <button
-                                                                                onClick={() => handleGrantUnmutePermission(u.userId)}
-                                                                                className="text-[8px] bg-blue-100 text-blue-600 px-2 py-1 rounded font-black uppercase hover:bg-blue-200"
-                                                                                title="Allow to Speak"
-                                                                            >
-                                                                                Allow
-                                                                            </button>
-                                                                        )}
-                                                                        {isHandRaisedByU && (
-                                                                            <button
-                                                                                onClick={() => approveStudent(u.userId)}
-                                                                                className="text-[8px] bg-amber-100 text-amber-600 px-2 py-1 rounded font-black uppercase hover:bg-amber-200"
-                                                                            >
-                                                                                Approve
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                                {rUser?.hasVideo ? <FaVideo size={12} className="text-emerald-500" /> : <FaVideoSlash size={12} className="text-slate-300" />}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {showTray === 'hands' && (
-                                    <div className="p-4 space-y-3">
-                                        {handsRaised.length === 0 ? (
-                                            <div className="h-40 flex flex-col items-center justify-center text-slate-300">
-                                                <FaHandPaper size={24} className="mb-2 opacity-20" />
-                                                <p className="text-[10px] font-bold uppercase tracking-widest italic">No active requests</p>
-                                            </div>
-                                        ) : (
-                                            handsRaised.map(student => (
-                                                <div key={student.id} className="p-4 bg-amber-50 rounded-2xl border border-amber-200 flex items-center justify-between">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs font-bold text-amber-900">{student.name}</span>
-                                                        <span className="text-[8px] font-bold text-amber-600 uppercase tracking-widest">Question Pending</span>
-                                                    </div>
-                                                    {isInstructor && (
-                                                        <button
-                                                            onClick={() => approveStudent(student.id)}
-                                                            className="bg-amber-600 text-white px-4 py-2 rounded-xl text-[8px] font-bold uppercase hover:bg-amber-700 transition-all"
-                                                        >
-                                                            Grant Access
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )
+                }
+            </div >
 
 
             {/* Global CSS for unique animations */}
-            <style>{`
+            < style > {`
                 @keyframes reaction-float {
                     0% { transform: translateY(0) scale(0.5); opacity: 0; }
                     20% { opacity: 1; transform: translateY(-30px) scale(1.1); }
@@ -1500,26 +1545,28 @@ const LiveClassRoom: React.FC = () => {
                 .scrollbar-minimal::-webkit-scrollbar-thumb:hover {
                     background: rgba(255, 255, 255, 0.1);
                 }
-            `}</style>
+            `}</style >
 
             {/* Toast Notification */}
-            {notification && (
-                <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
-                    <div className={`px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md border ${notification.type === 'error' ? 'bg-red-500/90 border-red-400 text-white' :
-                        notification.type === 'success' ? 'bg-emerald-500/90 border-emerald-400 text-white' :
-                            notification.type === 'warning' ? 'bg-amber-500/90 border-amber-400 text-white' :
-                                'bg-blue-600/90 border-blue-400 text-white'
-                        }`}>
-                        {notification.type === 'error' && <FaTimesCircle size={20} />}
-                        {notification.type === 'success' && <FaCheckCircle size={20} />}
-                        {notification.type === 'warning' && <FaExclamationTriangle size={20} />}
-                        {notification.type === 'info' && <FaInfoCircle size={20} />}
-                        <span className="font-bold text-sm tracking-wide">{notification.message}</span>
+            {
+                notification && (
+                    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
+                        <div className={`px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md border ${notification.type === 'error' ? 'bg-red-500/90 border-red-400 text-white' :
+                            notification.type === 'success' ? 'bg-emerald-500/90 border-emerald-400 text-white' :
+                                notification.type === 'warning' ? 'bg-amber-500/90 border-amber-400 text-white' :
+                                    'bg-blue-600/90 border-blue-400 text-white'
+                            }`}>
+                            {notification.type === 'error' && <FaTimesCircle size={20} />}
+                            {notification.type === 'success' && <FaCheckCircle size={20} />}
+                            {notification.type === 'warning' && <FaExclamationTriangle size={20} />}
+                            {notification.type === 'info' && <FaInfoCircle size={20} />}
+                            <span className="font-bold text-sm tracking-wide">{notification.message}</span>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 
-export default LiveClassRoom;
+export default SuperInstructorLiveClassRoom;

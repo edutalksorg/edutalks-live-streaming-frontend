@@ -306,7 +306,19 @@ const UserManagement: React.FC = () => {
                                         >
                                             <option value="">Select Option...</option>
                                             {categories
-                                                .filter(c => educationLevel === 'school' ? c.name.includes('Class') : !c.name.includes('Class'))
+                                                .filter(c => {
+                                                    const schoolGradePrefixes = ['6th', '7th', '8th', '9th', '10th', '11th', '12th'];
+                                                    const isSchoolGrade = schoolGradePrefixes.some(prefix => c.name.startsWith(prefix));
+                                                    // Filter by level
+                                                    if (educationLevel === 'school') {
+                                                        if (!isSchoolGrade) return false;
+                                                    } else {
+                                                        if (isSchoolGrade) return false;
+                                                    }
+                                                    // Robust Filter: Remove empty or "selected option" placeholders
+                                                    return c.name && c.name.trim() !== '' && !c.name.toLowerCase().includes('select option');
+                                                })
+                                                .sort((a, b) => a.name.localeCompare(b.name))
                                                 .map((cat) => (
                                                     <option key={cat.id} value={cat.name}>{cat.name}</option>
                                                 ))

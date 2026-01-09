@@ -214,7 +214,11 @@ const SuperInstructorDashboard: React.FC = () => {
                 <div>
                     <h2 className="text-5xl font-black text-accent-white tracking-tighter italic">Super Instructor <span className="text-gradient-red italic">Dashboard</span></h2>
                     <p className="text-accent-gray mt-3 font-black uppercase tracking-[0.4em] text-[10px] opacity-60 italic">
-                        Managing <span className="text-primary">Grade {className}</span> Academic Ecosystem
+                        Managing <span className="text-primary">
+                            {className.toLowerCase().includes('academic ecosystem')
+                                ? className
+                                : `${(className.includes('UG') || className.includes('PG') || className.includes('Class') || className.includes('Grade')) ? className : `Grade ${className}`} Academic Ecosystem`}
+                        </span>
                     </p>
                 </div>
             </div>

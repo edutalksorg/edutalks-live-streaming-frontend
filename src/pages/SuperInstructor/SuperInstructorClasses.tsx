@@ -75,10 +75,16 @@ const SuperInstructorClasses: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            // Convert to UTC before sending
+            const submissionData = {
+                ...formData,
+                start_time: new Date(formData.start_time).toISOString()
+            };
+
             if (editingClass) {
-                await api.put(`/api/super-instructor/classes/${editingClass.id}`, formData);
+                await api.put(`/api/super-instructor/classes/${editingClass.id}`, submissionData);
             } else {
-                await api.post('/api/super-instructor/classes', formData);
+                await api.post('/api/super-instructor/classes', submissionData);
             }
             setShowModal(false);
             setEditingClass(null);
@@ -92,10 +98,16 @@ const SuperInstructorClasses: React.FC = () => {
 
     const handleEdit = (cls: ClassSession) => {
         setEditingClass(cls);
+
+        // Convert UTC timestamp to Local ISO string for input
+        const date = new Date(cls.start_time);
+        const tzOffset = date.getTimezoneOffset() * 60000;
+        const localISOTime = (new Date(date.getTime() - tzOffset)).toISOString().slice(0, 16);
+
         setFormData({
             title: cls.title,
             description: cls.description,
-            start_time: new Date(cls.start_time).toISOString().slice(0, 16),
+            start_time: localISOTime,
             duration: cls.duration,
             subject_id: cls.subject_id?.toString() || ''
         });

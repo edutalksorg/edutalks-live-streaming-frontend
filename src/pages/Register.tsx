@@ -61,12 +61,22 @@ const Register: React.FC = () => {
 
     const getFilteredCategories = () => {
         if (!educationLevel) return [];
+        const schoolGradePrefixes = ['6th', '7th', '8th', '9th', '10th', '11th', '12th'];
+
+        let filtered = [];
         if (educationLevel === 'school') {
-            return categories.filter(c => c.name.includes('Class'));
+            // Filter: Name starts with any of the school prefixes
+            filtered = categories.filter(c => schoolGradePrefixes.some(prefix => c.name.startsWith(prefix)));
         } else {
-            // UG or PG - Show Tech Categories
-            return categories.filter(c => !c.name.includes('Class'));
+            // UG or PG: Name does NOT start with any school prefixes
+            filtered = categories.filter(c => !schoolGradePrefixes.some(prefix => c.name.startsWith(prefix)));
         }
+
+        // Additional Filter: Remove "Select Option..." or empty names if they exist in DB
+        filtered = filtered.filter(c => c.name && c.name.trim() !== '' && !c.name.toLowerCase().includes('select option'));
+
+        // Sort Alphabetically
+        return filtered.sort((a, b) => a.name.localeCompare(b.name));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -260,6 +270,16 @@ const Register: React.FC = () => {
                         Already have an account?
                         <Link to="/login" className="text-primary hover:text-primary-hover ml-2 underline transition-all">Log in</Link>
                     </p>
+                </div>
+
+                {/* DEBUG SECTION - REMOVE AFTER FIXING */}
+                <div className="mt-4 p-4 bg-black/50 text-[10px] text-left font-mono text-green-400 overflow-auto max-h-40 rounded border border-green-500/30">
+                    <p>DEBUG INFO:</p>
+                    <p>API URL: {import.meta.env.VITE_API_URL || 'undefined (using proxy?)'}</p>
+                    <p>Education Level: {educationLevel}</p>
+                    <p>Total Categories Fetched: {categories.length}</p>
+                    <p>Filtered Count: {getFilteredCategories().length}</p>
+                    <p>Sample Category 1: {JSON.stringify(categories[0])}</p>
                 </div>
             </div >
 
