@@ -12,6 +12,7 @@ interface User {
     is_active: number;
     created_at: string;
     grade?: string;
+    course_name?: string;
 }
 
 const UserManagement: React.FC = () => {
@@ -144,7 +145,7 @@ const UserManagement: React.FC = () => {
                             </span>
                             {user.grade && (
                                 <span className="ml-2 px-2 py-1 text-[8px] font-black uppercase tracking-wider rounded-lg border border-white/5 bg-surface-dark text-accent-gray shadow-sm">
-                                    {user.grade}
+                                    {(user.grade === 'UG' || user.grade === 'PG') && user.course_name ? `${user.grade} - ${user.course_name}` : user.grade}
                                 </span>
                             )}
                         </div>
@@ -190,7 +191,7 @@ const UserManagement: React.FC = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-accent-gray text-xs font-black uppercase tracking-wider">
-                                        {user.grade || '-'}
+                                        {(user.grade === 'UG' || user.grade === 'PG') && user.course_name ? `${user.grade} - ${user.course_name}` : user.grade || '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         {user.is_active ? (
@@ -308,16 +309,18 @@ const UserManagement: React.FC = () => {
                                             {categories
                                                 .filter(c => {
                                                     const schoolGradePrefixes = ['6th', '7th', '8th', '9th', '10th', '11th', '12th'];
-                                                    const isSchoolGrade = schoolGradePrefixes.some(prefix => c.name.startsWith(prefix));
-                                                    // Filter by level
+
                                                     if (educationLevel === 'school') {
-                                                        if (!isSchoolGrade) return false;
-                                                    } else {
-                                                        if (isSchoolGrade) return false;
+                                                        return schoolGradePrefixes.some(prefix => c.name.startsWith(prefix));
+                                                    } else if (educationLevel === 'ug') {
+                                                        return c.name.startsWith('UG -');
+                                                    } else if (educationLevel === 'pg') {
+                                                        return c.name.startsWith('PG -');
                                                     }
-                                                    // Robust Filter: Remove empty or "selected option" placeholders
-                                                    return c.name && c.name.trim() !== '' && !c.name.toLowerCase().includes('select option');
+                                                    return false;
                                                 })
+                                                .filter(c => c.name && c.name.trim() !== '' && !c.name.toLowerCase().includes('select option'))
+                                                .filter((c, index, self) => index === self.findIndex(t => t.name === c.name))
                                                 .sort((a, b) => a.name.localeCompare(b.name))
                                                 .map((cat) => (
                                                     <option key={cat.id} value={cat.name}>{cat.name}</option>

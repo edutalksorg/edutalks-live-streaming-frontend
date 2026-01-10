@@ -12,13 +12,11 @@ const Register: React.FC = () => {
         password: '',
         phone: '',
         grade: '10th',
-        role: 'student',
-        selected_course_id: ''
+        role: 'student'
     });
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
-    const [subjects, setSubjects] = useState<{ id: number; name: string }[]>([]);
 
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -36,24 +34,6 @@ const Register: React.FC = () => {
         fetchCategories();
     }, []);
 
-    useEffect(() => {
-        const fetchSubjects = async () => {
-            if (formData.grade && !['6th Class', '7th Class', '8th Class', '9th Class', '10th Class', '11th Class', '12th Class'].includes(formData.grade)) {
-                try {
-                    // Encode to handle characters like '&'
-                    const encodedGrade = encodeURIComponent(formData.grade);
-                    const res = await api.get(`/api/classes/categories/${encodedGrade}/subjects`);
-                    setSubjects(res.data);
-                } catch (err) {
-                    console.error("Failed to fetch subjects");
-                    setSubjects([]);
-                }
-            } else {
-                setSubjects([]);
-            }
-        };
-        fetchSubjects();
-    }, [formData.grade]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -65,39 +45,20 @@ const Register: React.FC = () => {
 
         let filtered = [];
         if (educationLevel === 'school') {
-            // Filter: Name starts with any of the school prefixes
-            filtered = categories.filter(c => schoolGradePrefixes.some(prefix => c.name.startsWith(prefix)));
             filtered = categories.filter(c => schoolGradePrefixes.some(prefix => c.name.startsWith(prefix)));
         } else if (educationLevel === 'ug') {
-            filtered = categories.filter(c => c.name === 'UG');
+            filtered = categories.filter(c => c.name.startsWith('UG -'));
         } else if (educationLevel === 'pg') {
-            filtered = categories.filter(c => c.name === 'PG');
+            filtered = categories.filter(c => c.name.startsWith('PG -'));
         } else {
-            // Default Fallback
             filtered = categories.filter(c => !schoolGradePrefixes.some(prefix => c.name.startsWith(prefix)));
         }
 
-        // Additional Filter: Remove "Select Option..." or empty names if they exist in DB
         filtered = filtered.filter(c => c.name && c.name.trim() !== '' && !c.name.toLowerCase().includes('select option'));
-
-        // Deduplication Logic
-        // 1. Remove strict duplicates (same name)
         filtered = filtered.filter((c, index, self) =>
             index === self.findIndex(t => t.name === c.name)
         );
 
-        // 2. Remove "X" if "X Class" exists
-        const names = new Set(filtered.map(c => c.name));
-        filtered = filtered.filter(c => {
-            const nameWithClass = `${c.name} Class`;
-            // If "X Class" exists in the list, and current item is "X", remove "X"
-            if (names.has(nameWithClass) && c.name !== nameWithClass) {
-                return false;
-            }
-            return true;
-        });
-
-        // Sort Alphabetically
         return filtered.sort((a, b) => a.name.localeCompare(b.name));
     };
 
@@ -202,7 +163,7 @@ const Register: React.FC = () => {
                                         value={educationLevel}
                                         onChange={(e) => {
                                             setEducationLevel(e.target.value);
-                                            setFormData({ ...formData, grade: '', selected_course_id: '' }); // Reset selections
+                                            setFormData({ ...formData, grade: '' }); // Reset selections
                                         }}
                                         required={formData.role === 'student'}
                                     >
@@ -235,26 +196,6 @@ const Register: React.FC = () => {
                         )}
 
 
-                        {/* Specific Course Selection - for School and UG/PG */}
-                        {subjects.length > 0 && formData.role === 'student' && (educationLevel === 'school' || educationLevel === 'ug' || educationLevel === 'pg') && (
-                            <div className="space-y-3 animate-slideIn">
-                                <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">
-                                    Select Specific Course
-                                </label>
-                                <select
-                                    name="selected_course_id"
-                                    className="w-full"
-                                    value={formData.selected_course_id}
-                                    onChange={handleChange}
-                                    required
-                                >
-                                    <option value="">Select a Course...</option>
-                                    {subjects.map((sub) => (
-                                        <option key={sub.id} value={sub.id}>{sub.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
 
                         <div className="md:col-span-2 space-y-3">
                             <label className="block text-[10px] font-black text-accent-gray uppercase tracking-widest ml-1">Secure Encryption</label>
@@ -294,15 +235,6 @@ const Register: React.FC = () => {
                     </p>
                 </div>
 
-                {/* DEBUG SECTION - REMOVE AFTER FIXING */}
-                <div className="mt-4 p-4 bg-black/50 text-[10px] text-left font-mono text-green-400 overflow-auto max-h-40 rounded border border-green-500/30">
-                    <p>DEBUG INFO:</p>
-                    <p>API URL: {import.meta.env.VITE_API_URL || 'undefined (using proxy?)'}</p>
-                    <p>Education Level: {educationLevel}</p>
-                    <p>Total Categories Fetched: {categories.length}</p>
-                    <p>Filtered Count: {getFilteredCategories().length}</p>
-                    <p>Sample Category 1: {JSON.stringify(categories[0])}</p>
-                </div>
             </div >
 
             {showSuccess && (
