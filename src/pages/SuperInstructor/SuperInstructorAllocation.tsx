@@ -255,14 +255,14 @@ const SuperInstructorAllocation: React.FC = () => {
                                             <div className="mt-2 p-3 bg-surface-dark rounded-xl border border-surface-border">
                                                 <div className="flex justify-between text-[9px] mb-2 font-black uppercase tracking-widest">
                                                     <span className="text-accent-gray">Allocation</span>
-                                                    <span className={batch.student_count >= (batch.max_students || 2) ? 'text-emerald-400 opacity-100' : 'text-primary'}>
-                                                        {batch.student_count} / {batch.max_students || 2}
+                                                    <span className={batch.student_count >= (batch.max_students || 30) ? 'text-emerald-400 opacity-100' : 'text-primary'}>
+                                                        {batch.student_count} / {batch.max_students || 30}
                                                     </span>
                                                 </div>
                                                 <div className="w-full bg-surface-light rounded-full h-2 overflow-hidden shadow-inner">
                                                     <div
-                                                        className={`h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(238,29,35,0.3)] ${batch.student_count >= (batch.max_students || 2) ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-primary'}`}
-                                                        style={{ width: `${Math.min(100, (batch.student_count / (batch.max_students || 2)) * 100)}%` }}
+                                                        className={`h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(238,29,35,0.3)] ${batch.student_count >= (batch.max_students || 30) ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-primary'}`}
+                                                        style={{ width: `${Math.min(100, (batch.student_count / (batch.max_students || 30)) * 100)}%` }}
                                                     ></div>
                                                 </div>
                                             </div>
