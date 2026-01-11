@@ -267,7 +267,16 @@ const UserManagement: React.FC = () => {
                                 <label className="text-[10px] font-black text-accent-gray uppercase tracking-widest ml-2">Account Role</label>
                                 <select
                                     className="w-full bg-surface-dark border border-white/5 rounded-2xl p-4 text-accent-white focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer"
-                                    value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                                    value={newUser.role}
+                                    onChange={e => {
+                                        const role = e.target.value;
+                                        const update: any = { role };
+                                        if (role === 'admin') {
+                                            update.grade = '';
+                                            setEducationLevel('');
+                                        }
+                                        setNewUser({ ...newUser, ...update });
+                                    }}
                                 >
                                     <option value="admin">Admin</option>
                                     <option value="super_instructor">Super Instructor</option>

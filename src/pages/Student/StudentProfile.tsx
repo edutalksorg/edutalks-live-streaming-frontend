@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { FaUser, FaEnvelope, FaPhone, FaSchool, FaCrown, FaCreditCard, FaLock, FaExclamationCircle, FaCalendarAlt, FaArrowRight } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaPhone, FaSchool, FaCrown, FaCreditCard, FaLock, FaExclamationCircle, FaCalendarAlt, FaArrowRight, FaWhatsapp } from 'react-icons/fa';
 import { useModal } from '../../context/ModalContext';
 
 interface ProfileData {
@@ -153,7 +153,7 @@ const StudentProfile: React.FC = () => {
                             </div>
                             <div className="flex-1">
                                 <p className="text-[10px] text-accent-white font-black uppercase tracking-widest leading-relaxed">Sector Reassignment Required?</p>
-                                <p className="text-[9px] text-accent-gray italic font-medium opacity-60">Operational command verification needed: <span className="text-primary font-black">+91 98765 43210</span></p>
+                                <p className="text-[9px] text-accent-gray italic font-medium opacity-60">Operational command verification needed: <a href="tel:9640111233" className="text-primary font-black hover:underline">9640111233</a></p>
                             </div>
                         </div>
                     </div>
@@ -208,16 +208,25 @@ const StudentProfile: React.FC = () => {
                         <ul className="space-y-6">
                             <li className="flex items-center gap-5 group/item">
                                 <div className="bg-white/10 p-3 rounded-xl border border-white/20 group-hover/item:bg-white/20 transition-colors"><FaPhone size={14} /></div>
-                                <span className="font-black italic tracking-widest text-[11px]">+91 98765 43210</span>
+                                <a href="tel:9640111233" className="font-black italic tracking-widest text-[11px] text-white hover:text-white transition-colors">9640111233</a>
+                            </li>
+                            <li className="flex items-center gap-5 group/item">
+                                <div className="bg-white/10 p-3 rounded-xl border border-white/20 group-hover/item:bg-white/20 transition-colors"><FaPhone size={14} /></div>
+                                <a href="tel:9505111233" className="font-black italic tracking-widest text-[11px] text-white hover:text-white transition-colors">9505111233</a>
                             </li>
                             <li className="flex items-center gap-5 group/item">
                                 <div className="bg-white/10 p-3 rounded-xl border border-white/20 group-hover/item:bg-white/20 transition-colors"><FaEnvelope size={14} /></div>
-                                <span className="font-black italic tracking-widest text-[11px]">COMMAND@EDUTALKS.NET</span>
+                                <a href="mailto:contact@edutalksacademy.in" className="font-black italic tracking-widest text-[11px] text-white hover:text-white transition-colors">contact@edutalksacademy.in</a>
                             </li>
                         </ul>
-                        <button className="w-full mt-12 bg-white text-primary py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.3)] transition-all active:scale-95">
-                            INITIATE COMMS
-                        </button>
+                        <a
+                            href="https://wa.me/917995674266"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full mt-12 bg-white text-[#25D366] py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            <FaWhatsapp size={24} />
+                        </a>
                     </div>
 
                     <div className="premium-card p-10 border-surface-border shadow-2xl">
