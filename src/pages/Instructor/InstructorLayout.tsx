@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { FaChalkboardTeacher, FaCalendarAlt, FaClipboardList, FaSignOutAlt, FaUserGraduate, FaBookOpen, FaMedal, FaBars, FaTimes } from 'react-icons/fa';
 import Logo from '../../components/Logo';
+import ThemeToggle from '../../components/ThemeToggle';
 
 const InstructorLayout: React.FC = () => {
     const { logout, user } = useContext(AuthContext)!;
@@ -23,7 +24,7 @@ const InstructorLayout: React.FC = () => {
     };
 
     return (
-        <div className="dark flex flex-col xl:flex-row h-screen bg-background-dark antialiased font-sans transition-colors duration-500 overflow-hidden">
+        <div className="flex flex-col xl:flex-row h-screen bg-background-dark antialiased font-sans transition-colors duration-500 overflow-hidden text-foreground">
             {/* Mobile Header */}
             <div className="xl:hidden flex items-center justify-between p-4 bg-surface border-b border-surface-border z-50">
                 <Link to="/instructor" onClick={() => setIsSidebarOpen(false)}>
@@ -71,6 +72,7 @@ const InstructorLayout: React.FC = () => {
                                 <p className="text-[10px] text-primary mt-1 uppercase tracking-widest font-black">Instructor</p>
                             </div>
                         </div>
+                        <ThemeToggle />
                     </div>
                 </div>
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
@@ -101,7 +103,7 @@ const InstructorLayout: React.FC = () => {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-auto bg-background-dark transition-colors duration-500">
+            <div className="flex-1 overflow-auto bg-background transition-colors duration-500">
                 <div className="p-4 md:p-6 xl:p-10 max-w-7xl mx-auto">
                     <Outlet />
                 </div>

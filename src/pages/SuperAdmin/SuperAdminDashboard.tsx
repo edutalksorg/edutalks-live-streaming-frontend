@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { useTheme } from '../../context/ThemeContext';
 import { FaUsers, FaWallet, FaVideo, FaBell } from 'react-icons/fa';
 
 const DashboardHome: React.FC = () => {
     const navigate = useNavigate();
-    const { theme } = useTheme();
     const [stats, setStats] = useState({
         totalUsers: 0,
         totalRevenue: 0,
@@ -33,10 +31,10 @@ const DashboardHome: React.FC = () => {
     if (loading) return <div className="p-10 text-center text-primary lg:text-3xl font-black uppercase tracking-widest animate-pulse italic">Accessing Master Control...</div>;
 
     return (
-        <div className={`transition-colors duration-500 ${theme === 'dark' ? 'dark' : ''}`}>
+        <div className="transition-colors duration-500">
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-12 gap-6">
                 <div>
-                    <h2 className="text-4xl font-black text-accent-white tracking-tighter italic uppercase">Master <span className="text-primary">Control</span></h2>
+                    <h2 className="text-4xl font-black text-foreground tracking-tighter italic uppercase">Master <span className="text-primary">Control</span></h2>
                     <p className="text-accent-gray mt-2 font-bold uppercase tracking-[0.2em] text-[10px] opacity-70">Overseeing the EduTalks Ecosystem</p>
                 </div>
                 <button

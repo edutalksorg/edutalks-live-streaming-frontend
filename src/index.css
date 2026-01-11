@@ -1,31 +1,60 @@
 @import "tailwindcss";
 
 :root {
+  /* --- Light Mode (Default) --- */
+  --background: #F8FAFC;
+  --background-dark: #F1F5F9;
+  --background-light: #FFFFFF;
+  --foreground: #0F172A;
+
+  --surface: #FFFFFF;
+  --surface-dark: #F1F5F9;
+  --surface-light: #F8FAFC;
+  --surface-border: #E2E8F0;
+  --surface-rgb: 255, 255, 255;
+
   --color-primary: #EE1D23;
   --color-primary-hover: #D1191F;
   --color-primary-active: #B91C1C;
   --color-primary-light: #FEE2E2;
   --color-primary-glow: rgba(238, 29, 35, 0.15);
 
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
+  --accent-blue: #3B82F6;
+  --accent-purple: #8B5CF6;
+  --accent-indigo: #6366F1;
+  --accent-emerald: #10B981;
 
-  --accent-blue: #60A5FA;
-  --accent-purple: #A78BFA;
-  --accent-indigo: #818CF8;
-  --accent-emerald: #34D399;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
 
-  /* Always Dark Mode */
-  --background: #0F0F0F;
+  --shadow-main: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 15px rgba(238, 29, 35, 0.1);
+  --shadow-glow-hover: 0 0 25px rgba(238, 29, 35, 0.2);
+  --pattern-opacity: 0.03;
+}
+
+.dark {
+  /* --- Dark Mode Overrides --- */
+  --background: #0A0A0A;
+  --background-dark: #050505;
+  --background-light: #0F0F0F;
   --foreground: #F8FAFC;
-  --background-dark: #0A0A0A;
-  --surface: #1A1A1A;
-  --surface-light: #242424;
-  --surface-border: #2D2D2D;
+
+  --surface: #0F0F0F;
+  --surface-dark: #050505;
+  --surface-light: #161616;
+  --surface-border: #1F1F1F;
+  --surface-rgb: 15, 15, 15;
+
+  --color-primary: #EE1D23;
+  --color-primary-hover: #FF3B41;
+  --color-primary-active: #D1191F;
+  --color-primary-light: #450A0A;
+  --color-primary-glow: rgba(238, 29, 35, 0.25);
 
   --text-main: #F8FAFC;
-  --text-muted: #CBD5E1;
+  --text-muted: #94A3B8;
 
   --shadow-main: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
   --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
@@ -41,8 +70,12 @@
   --color-primary-light: var(--color-primary-light);
   --color-primary-glow: var(--color-primary-glow);
 
+  --color-background: var(--background);
+  --color-background-dark: var(--background-dark);
+  --color-background-light: var(--background-light);
+
   --color-surface: var(--surface);
-  --color-surface-dark: var(--background-dark);
+  --color-surface-dark: var(--surface-dark);
   --color-surface-light: var(--surface-light);
   --color-surface-border: var(--surface-border);
 
@@ -53,6 +86,8 @@
 
   --color-accent-white: var(--text-main);
   --color-accent-gray: var(--text-muted);
+
+  --color-foreground: var(--foreground);
 
   --radius-premium: 1.5rem;
   --radius-pill: 9999px;

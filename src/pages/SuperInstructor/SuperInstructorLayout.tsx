@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { FaSignOutAlt, FaChartLine, FaVideo, FaBars, FaTimes } from 'react-icons/fa';
 import Logo from '../../components/Logo';
+import ThemeToggle from '../../components/ThemeToggle';
 
 const SuperInstructorLayout: React.FC = () => {
     const { logout, user } = useContext(AuthContext)!;
@@ -22,7 +23,7 @@ const SuperInstructorLayout: React.FC = () => {
     };
 
     return (
-        <div className="dark flex flex-col lg:flex-row h-screen bg-background-dark antialiased transition-colors duration-500 overflow-hidden">
+        <div className="flex flex-col lg:flex-row h-screen bg-background-dark antialiased transition-colors duration-500 overflow-hidden text-foreground">
             {/* Mobile Header */}
             <div className="lg:hidden flex items-center justify-between px-6 h-16 bg-surface border-b border-surface-border z-50">
                 <Logo />
@@ -53,7 +54,7 @@ const SuperInstructorLayout: React.FC = () => {
                 <div className="p-6 text-2xl font-black hidden lg:flex items-center gap-2 border-b border-surface-border">
                     <Logo />
                 </div>
-                <div className="p-6 border-b border-surface-border bg-background-dark/50 flex flex-col gap-4">
+                <div className="p-6 border-b border-surface-border bg-surface-dark/50 flex flex-col gap-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-white shadow-lg">
@@ -64,6 +65,7 @@ const SuperInstructorLayout: React.FC = () => {
                                 <p className="text-[10px] text-primary mt-1 uppercase tracking-widest font-black">Super Instructor</p>
                             </div>
                         </div>
+                        <ThemeToggle />
                     </div>
                 </div>
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -83,7 +85,7 @@ const SuperInstructorLayout: React.FC = () => {
                     </Link>
                 </nav>
                 <div className="p-4 border-t border-surface-border">
-                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-background-dark hover:bg-primary transition-all duration-300 font-black text-sm shadow-lg text-accent-white group">
+                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-surface-dark hover:bg-primary transition-all duration-300 font-black text-sm shadow-lg text-accent-white group">
                         <FaSignOutAlt className="group-hover:rotate-12 transition-transform" /> Logout
                     </button>
                     <p className="text-[10px] text-center text-accent-gray mt-4 uppercase tracking-[0.2em] font-black italic"> Premium EdTech Platform </p>
@@ -91,7 +93,7 @@ const SuperInstructorLayout: React.FC = () => {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-auto bg-background-dark transition-colors duration-500">
+            <div className="flex-1 overflow-auto bg-background transition-colors duration-500">
                 <div className="p-4 md:p-6 lg:p-10">
                     <Outlet />
                 </div>

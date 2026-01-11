@@ -1,6 +1,7 @@
 import Logo from '../components/Logo';
 import { Link } from 'react-router-dom';
 import { FaVideo, FaChalkboardTeacher, FaChartLine, FaUserShield, FaCheckCircle, FaCode } from 'react-icons/fa';
+import ThemeToggle from '../components/ThemeToggle';
 
 
 const LandingPage: React.FC = () => {
@@ -24,7 +25,7 @@ const LandingPage: React.FC = () => {
                             <a href="#features" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">Features</a>
                             <a href="#plans" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">Plans</a>
                             <a href="#about" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">About</a>
-
+                            <ThemeToggle />
                             <Link to="/login" className="text-accent-gray font-black text-xs uppercase tracking-widest hover:text-primary transition-all">Login</Link>
                             <Link to="/register" className="btn-primary shadow-lg shadow-primary/30 scale-105 px-8">
                                 Join Now
@@ -57,7 +58,7 @@ const LandingPage: React.FC = () => {
                     </div>
                     <div className="md:w-1/2 relative group animate-in fade-in slide-in-from-right duration-1000">
                         <div className="absolute inset-0 bg-primary/20 rounded-[3rem] filter blur-[120px] opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                        <div className="relative premium-card p-3 border-[10px] border-white overflow-hidden rounded-[3rem] shadow-2xl rotate-3 group-hover:rotate-0 transition-all duration-700">
+                        <div className="relative premium-card p-3 border-[10px] border-surface-border overflow-hidden rounded-[3rem] shadow-2xl rotate-3 group-hover:rotate-0 transition-all duration-700">
                             <img
                                 src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1471&q=80"
                                 alt="Student Learning"
@@ -84,9 +85,9 @@ const LandingPage: React.FC = () => {
                             { icon: FaChalkboardTeacher, title: "Best Mentors", desc: "Learn from industry experts with proven success records and elite pedagogy." },
                             { icon: FaChartLine, title: "Smart Progress", desc: "Advanced AI-driven analytics to track your growth and identify weak spots." }
                         ].map((feature, idx) => (
-                            <div key={idx} className="bg-surface p-12 rounded-[2.5rem] border border-white/5 hover:border-primary/40 group transition-all duration-500 hover:-translate-y-4 shadow-2xl relative overflow-hidden">
+                            <div key={idx} className="bg-surface p-12 rounded-[2.5rem] border border-surface-border hover:border-primary/40 group transition-all duration-500 hover:-translate-y-4 shadow-2xl relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/20 transition-all"></div>
-                                <div className="w-20 h-20 bg-surface-light text-white rounded-2xl flex items-center justify-center mb-10 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-xl border border-white/5">
+                                <div className="w-20 h-20 bg-surface-light text-accent-white rounded-2xl flex items-center justify-center mb-10 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-xl border border-surface-border">
                                     <feature.icon size={36} />
                                 </div>
                                 <h4 className="text-3xl font-black text-accent-white mb-6 italic">{feature.title}</h4>

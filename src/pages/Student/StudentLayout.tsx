@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { FaSignOutAlt, FaBookOpen, FaVideo, FaClipboardCheck, FaTrophy, FaThLarge, FaUserGraduate, FaCrown } from 'react-icons/fa';
 import Logo from '../../components/Logo';
+import ThemeToggle from '../../components/ThemeToggle';
 
 const StudentLayout: React.FC = () => {
     const { logout, user } = useContext(AuthContext)!;
@@ -30,8 +31,7 @@ const StudentLayout: React.FC = () => {
     };
 
     return (
-        <div className="dark min-h-screen bg-background-dark font-sans text-foreground antialiased transition-colors duration-500">
-            {/* Top Navigation */}
+        <div className="min-h-screen bg-background font-sans text-foreground antialiased transition-colors duration-500">
             {/* Top Navigation */}
             <nav className="glass-morphism border-b border-surface-border fixed w-full z-50 shadow-2xl">
                 <div className="max-w-[1920px] mx-auto px-6 sm:px-12 lg:px-16">
@@ -71,6 +71,8 @@ const StudentLayout: React.FC = () => {
                                     <p className="text-[8px] md:text-[9px] text-accent-gray mt-1 uppercase tracking-widest font-black leading-none">{user?.role}</p>
                                 </div>
                             </Link>
+
+                            <ThemeToggle />
 
                             <button
                                 onClick={handleLogout}

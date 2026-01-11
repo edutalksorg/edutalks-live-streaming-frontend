@@ -1,6 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaVideo, FaClipboardList, FaUsers, FaMedal, FaBookOpen } from 'react-icons/fa';
 import api from '../../services/api';
@@ -8,7 +7,6 @@ import { useModal } from '../../context/ModalContext';
 
 const InstructorDashboard: React.FC = () => {
     const { user } = useContext(AuthContext)!;
-    const { theme } = useTheme();
     const [stats, setStats] = useState({ totalStudents: 0, classesCount: 0, activeExams: 0, pendingReviews: 0 });
     const [batches, setBatches] = useState<any[]>([]);
     const [displayClassName, setDisplayClassName] = useState('');
@@ -54,7 +52,7 @@ const InstructorDashboard: React.FC = () => {
     if (loading) return <div className="flex items-center justify-center min-h-[400px] text-primary lg:text-3xl font-black uppercase tracking-widest animate-pulse italic">Accessing Instructor Portal...</div>;
 
     return (
-        <div className={`max-w-7xl mx-auto transition-colors duration-500 ${theme === 'dark' ? 'dark' : ''}`}>
+        <div className="max-w-7xl mx-auto transition-colors duration-500">
             <header className="mb-10">
                 <h2 className="text-4xl font-extrabold text-gradient-red mb-2 italic tracking-tight">
                     Welcome back, {user?.name}
@@ -97,8 +95,8 @@ const InstructorDashboard: React.FC = () => {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 {/* My Batches */}
                 <div className="xl:col-span-2 space-y-6">
-                    <div className="premium-card p-6 lg:p-8 bg-surface-light/30">
-                        <h3 className="text-2xl font-black text-accent-white flex items-center gap-3 italic tracking-tight">
+                    <div className="premium-card p-6 lg:p-8 bg-surface">
+                        <h3 className="text-2xl font-black text-foreground flex items-center gap-3 italic tracking-tight">
                             <span className="w-2 h-8 bg-primary rounded-full shadow-primary-glow"></span>
                             My Assigned Batches
                         </h3>
@@ -108,7 +106,7 @@ const InstructorDashboard: React.FC = () => {
                         {batches.length > 0 ? batches.map((batch: any) => (
                             <div key={batch.id} className="group bg-surface p-6 lg:p-10 rounded-[2.5rem] shadow-premium hover:shadow-premium-hover hover:border-primary/30 transition-all border border-surface-border relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors"></div>
-                                <h4 className="font-black text-2xl text-accent-white mb-2 relative z-10 italic tracking-tight">{batch.name}</h4>
+                                <h4 className="font-black text-2xl text-foreground mb-2 relative z-10 italic tracking-tight">{batch.name}</h4>
                                 <p className="text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-6 relative z-10 italic">{batch.subject_name}</p>
                                 <div className="flex justify-between items-center relative z-10 pt-4 border-t border-surface-border">
                                     <div className="text-[10px] text-accent-gray font-black uppercase tracking-widest">
@@ -133,7 +131,7 @@ const InstructorDashboard: React.FC = () => {
                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform -rotate-12 translate-x-4 -translate-y-4">
                             <FaVideo size={180} />
                         </div>
-                        <h3 className="text-3xl font-black text-accent-white mb-3 italic tracking-tighter">Go Live <span className="text-primary">Now</span></h3>
+                        <h3 className="text-3xl font-black text-foreground mb-3 italic tracking-tighter">Go Live <span className="text-primary">Now</span></h3>
                         <p className="text-accent-gray text-base mb-10 font-medium italic leading-relaxed">Conduct a session for your assigned students and answer doubts in real-time.</p>
                         <button
                             onClick={() => setShowLiveModal(true)}
@@ -144,7 +142,7 @@ const InstructorDashboard: React.FC = () => {
                     </div>
 
                     <div className="premium-card p-6 lg:p-10">
-                        <h3 className="text-xl font-black text-accent-white mb-8 flex items-center gap-3 italic tracking-tight">
+                        <h3 className="text-xl font-black text-foreground mb-8 flex items-center gap-3 italic tracking-tight">
                             <span className="w-1.5 h-6 bg-accent-white/20 rounded-full"></span>
                             Quick Actions
                         </h3>
@@ -154,7 +152,7 @@ const InstructorDashboard: React.FC = () => {
                                 <div className="p-4 bg-surface-dark text-accent-gray group-hover:bg-primary group-hover:text-white rounded-2xl transition-all shadow-xl group-hover:rotate-6">
                                     <FaBookOpen size={20} />
                                 </div>
-                                <span className="font-black text-accent-white text-[10px] uppercase tracking-widest group-hover:text-primary transition-colors">Upload Study Material</span>
+                                <span className="font-black text-foreground text-[10px] uppercase tracking-widest group-hover:text-primary transition-colors">Upload Study Material</span>
                             </Link>
                         </div>
                     </div>
