@@ -277,14 +277,20 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
             });
         });
 
-        socket.on('user_left', (data) => {
+        socket.on('user_left', (data: { userId: string, username?: string, role?: string }) => {
             setOnlineUsers(prev => prev.filter(u => u.userId !== data.userId));
             setStudentsWithUnmutePermission(prev => {
                 const newSet = new Set(prev);
                 newSet.delete(String(data.userId));
                 return newSet;
             });
-            showToast(`${data.username || 'A student'} left the meeting`, 'info');
+
+            const isLeavingInstructor = data.role === 'instructor' || data.role === 'super_instructor' || data.role === 'admin' || data.role === 'super_admin';
+            if (isLeavingInstructor) {
+                showToast("Instructor ended the class", 'warning');
+            } else {
+                showToast(`${data.username || 'A student'} left the meeting`, 'info');
+            }
         });
 
         socket.on('class_ended', () => {

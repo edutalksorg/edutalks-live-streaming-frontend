@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, type ReactNode } from 'react';
 import api from '../services/api';
+import { io, Socket } from 'socket.io-client';
 
 interface User {
     id: number;
@@ -18,6 +19,7 @@ interface AuthContextType {
     login: (token: string, user: User) => void;
     logout: () => void;
     loading: boolean;
+    socket: Socket | null;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,6 +60,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         validateToken();
     }, []);
 
+    const [socket, setSocket] = useState<Socket | null>(null);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (user && token) {
+            const URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+            const newSocket = io(URL, {
+                auth: { token },
+                transports: ['websocket', 'polling']
+            });
+            setSocket(newSocket);
+            return () => {
+                newSocket.disconnect();
+            };
+        } else {
+            setSocket(null);
+        }
+    }, [user]);
+
     const login = (token: string, userData: User) => {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
@@ -71,7 +92,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, loading, socket }}>
             {children}
         </AuthContext.Provider>
     );

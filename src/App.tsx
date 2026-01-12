@@ -52,6 +52,8 @@ import StudentExamResult from './pages/Student/StudentExamResult';
 import TournamentExamRunner from './pages/Student/TournamentExamRunner';
 import TournamentResult from './pages/Student/TournamentResult';
 import TournamentLeaderboard from './pages/Student/TournamentLeaderboard';
+import StudentDoubts from './pages/Student/Doubts';
+import InstructorDoubts from './pages/Instructor/Doubts';
 import { ThemeProvider } from './context/ThemeContext';
 
 
@@ -116,6 +118,7 @@ function App() {
                     <Route path="exams/:id/grading" element={<InstructorGrading />} />
                     <Route path="tournaments" element={<InstructorTournaments />} />
                     <Route path="notes" element={<InstructorNotes />} />
+                    <Route path="doubts" element={<InstructorDoubts />} />
                   </Route>
                   <Route path="/instructor/live/:id" element={<LiveClassRoom />} />
                   <Route path="/instructor/tournament-monitor/:id" element={<TournamentMonitor />} />
@@ -139,6 +142,7 @@ function App() {
                     <Route path="tournament-result/:id" element={<TournamentResult />} />
                     <Route path="tournament-leaderboard/:id" element={<TournamentLeaderboard />} />
                     <Route path="super-instructor-classes" element={<StudentSuperInstructorClasses />} />
+                    <Route path="doubts" element={<StudentDoubts />} />
                   </Route>
                   <Route path="/student/live/:id" element={<LiveClassRoom />} />
                   <Route path="/student/super-instructor-classroom/:id" element={<StudentSuperInstructorClassRoom />} />

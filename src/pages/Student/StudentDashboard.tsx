@@ -5,10 +5,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useModal } from '../../context/ModalContext';
 import { FaVideo, FaBook, FaChevronDown, FaChevronUp, FaFileAlt, FaCheckCircle, FaPlayCircle, FaHourglassHalf, FaTimes, FaClock } from 'react-icons/fa';
-import { io } from 'socket.io-client';
 import SubscriptionPopup from '../../components/SubscriptionPopup';
-
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL.replace('/api', '');
 
 interface Subject {
     id: number;
@@ -66,7 +63,7 @@ interface ClassSession {
 }
 
 const StudentDashboard: React.FC = () => {
-    const { user } = useContext(AuthContext)!;
+    const { user, socket } = useContext(AuthContext)!;
     const { theme } = useTheme();
     const { showAlert } = useModal();
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -131,29 +128,33 @@ const StudentDashboard: React.FC = () => {
     useEffect(() => {
         fetchData();
 
-        // Socket for real-time updates
-        const socket = io(SOCKET_URL);
+        if (socket) {
+            const handleSync = () => fetchData();
+            socket.on('global_sync', handleSync);
+            socket.on('class_live', handleSync);
+            socket.on('class_ended', handleSync);
+            socket.on('si_class_live', handleSync);
+            socket.on('si_class_ended', handleSync);
 
-        socket.on('global_sync', (payload) => {
-            console.log("[StudentDashboard] Global sync received:", payload);
-            fetchData();
-        });
+            const ticker = setInterval(() => {
+                setCurrentTime(new Date());
+            }, 10000);
 
-        socket.on('class_live', () => fetchData());
-        socket.on('class_ended', () => fetchData());
-        socket.on('si_class_live', () => fetchData());
-        socket.on('si_class_ended', () => fetchData());
-
-        // Heartbeat for auto-activating items
-        const ticker = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 10000);
-
-        return () => {
-            socket.disconnect();
-            clearInterval(ticker);
-        };
-    }, []);
+            return () => {
+                socket.off('global_sync', handleSync);
+                socket.off('class_live', handleSync);
+                socket.off('class_ended', handleSync);
+                socket.off('si_class_live', handleSync);
+                socket.off('si_class_ended', handleSync);
+                clearInterval(ticker);
+            };
+        } else {
+            const ticker = setInterval(() => {
+                setCurrentTime(new Date());
+            }, 10000);
+            return () => clearInterval(ticker);
+        }
+    }, [socket]);
 
     if (loading) return (
         <div className="flex items-center justify-center min-h-[60vh]">

@@ -1,27 +1,71 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import api from '../../services/api';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { FaChalkboardTeacher, FaCalendarAlt, FaClipboardList, FaSignOutAlt, FaUserGraduate, FaBookOpen, FaMedal, FaBars, FaTimes } from 'react-icons/fa';
+import { FaChalkboardTeacher, FaCalendarAlt, FaClipboardList, FaSignOutAlt, FaUserGraduate, FaBookOpen, FaMedal, FaBars, FaTimes, FaQuestionCircle } from 'react-icons/fa';
 import Logo from '../../components/Logo';
 import ThemeToggle from '../../components/ThemeToggle';
 
 const InstructorLayout: React.FC = () => {
-    const { logout, user } = useContext(AuthContext)!;
+    const { logout, user, socket } = useContext(AuthContext)!;
     const navigate = useNavigate();
     const location = useLocation();
 
-    const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [stats, setStats] = useState({ activeExams: 0, pendingReviews: 0, pendingDoubts: 0 });
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
+    const fetchStats = async () => {
+        try {
+            const res = await api.get('/api/instructor/dashboard');
+            const doubtsRes = await api.get('/api/doubts/instructor');
+            const pendingDoubts = doubtsRes.data.filter((d: any) => d.status === 'pending').length;
+
+            setStats({
+                activeExams: res.data.stats.activeExams || 0,
+                pendingReviews: res.data.stats.pendingReviews || 0,
+                pendingDoubts: pendingDoubts
+            });
+        } catch (error) {
+            console.error("Layout stats fetch error:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchStats();
+
+        if (socket) {
+            const handleSync = (data: any) => {
+                if (['exams', 'doubts'].includes(data.type)) {
+                    fetchStats();
+                }
+            };
+            socket.on('global_sync', handleSync);
+            return () => {
+                socket.off('global_sync', handleSync);
+            };
+        }
+    }, [socket]);
+
     const isActive = (path: string) => {
         return location.pathname === path
             ? 'bg-primary border-l-4 border-accent-white text-white'
             : 'text-accent-gray hover:bg-surface-light hover:text-accent-white';
     };
+
+    const navItems = [
+        { to: "/instructor", icon: FaChalkboardTeacher, label: "Dashboard" },
+        { to: "/instructor/classes", icon: FaCalendarAlt, label: "My Classes" },
+        { to: "/instructor/students", icon: FaUserGraduate, label: "Students" },
+        { to: "/instructor/notes", icon: FaBookOpen, label: "Study Material" },
+        { to: "/instructor/exams", icon: FaClipboardList, label: "Exams", count: stats.activeExams },
+        { to: "/instructor/tournaments", icon: FaMedal, label: "Tournaments" },
+        { to: "/instructor/doubts", icon: FaQuestionCircle, label: "Doubts", count: stats.pendingDoubts },
+    ];
 
     return (
         <div className="flex flex-col xl:flex-row h-screen bg-background-dark antialiased font-sans transition-colors duration-500 overflow-hidden text-foreground">
@@ -76,21 +120,21 @@ const InstructorLayout: React.FC = () => {
                     </div>
                 </div>
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
-                    {[
-                        { to: "/instructor", icon: FaChalkboardTeacher, label: "Dashboard" },
-                        { to: "/instructor/classes", icon: FaCalendarAlt, label: "My Classes" },
-                        { to: "/instructor/students", icon: FaUserGraduate, label: "Students" },
-                        { to: "/instructor/notes", icon: FaBookOpen, label: "Study Material" },
-                        { to: "/instructor/exams", icon: FaClipboardList, label: "Exams" },
-                        { to: "/instructor/tournaments", icon: FaMedal, label: "Tournaments" },
-                    ].map((item) => (
+                    {navItems.map((item) => (
                         <Link
                             key={item.to}
                             to={item.to}
                             onClick={() => setIsSidebarOpen(false)}
                             className={`block py-3 px-4 rounded-xl transition-all duration-300 font-bold text-sm ${isActive(item.to)}`}
                         >
-                            <div className="flex items-center gap-3"><item.icon size={18} /> <span>{item.label}</span></div>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3"><item.icon size={18} /> <span>{item.label}</span></div>
+                                {item.count !== undefined && item.count > 0 && (
+                                    <span className="bg-primary text-white text-[10px] px-2 py-0.5 rounded-full font-black min-w-[1.5rem] text-center shadow-lg animate-pulse">
+                                        {item.count}
+                                    </span>
+                                )}
+                            </div>
                         </Link>
                     ))}
                 </nav>

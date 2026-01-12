@@ -6,7 +6,7 @@ import api from '../../services/api';
 import { useModal } from '../../context/ModalContext';
 
 const InstructorDashboard: React.FC = () => {
-    const { user } = useContext(AuthContext)!;
+    const { user, socket } = useContext(AuthContext)!;
     const [stats, setStats] = useState({ totalStudents: 0, classesCount: 0, activeExams: 0, pendingReviews: 0 });
     const [batches, setBatches] = useState<any[]>([]);
     const [displayClassName, setDisplayClassName] = useState('');
@@ -20,7 +20,23 @@ const InstructorDashboard: React.FC = () => {
 
     useEffect(() => {
         fetchDashboardData();
-    }, []);
+
+        if (socket) {
+            const handleSync = (data: any) => {
+                // Refresh on relevant sync events
+                if (['exams', 'doubts', 'classes'].includes(data.type)) {
+                    fetchDashboardData();
+                } else if (!data.type) {
+                    // Generic sync
+                    fetchDashboardData();
+                }
+            };
+            socket.on('global_sync', handleSync);
+            return () => {
+                socket.off('global_sync', handleSync);
+            };
+        }
+    }, [socket]);
 
     const fetchDashboardData = async () => {
         try {
