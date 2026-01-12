@@ -968,25 +968,7 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                 {/* Minimal Tactical Header */}
                 <header className="absolute top-0 left-0 w-full z-30 p-4 flex justify-between items-start pointer-events-none transition-all duration-700">
                     <div className="flex flex-col gap-2 pointer-events-auto">
-                        {/* Compact Layout Mode Controls */}
-                        {isLive && (
-                            <div className="flex gap-1 bg-white/70 backdrop-blur-md p-1 rounded-xl border border-slate-200 shadow-sm pointer-events-auto transition-all hover:bg-white/90">
-                                {[
-                                    { id: 'focus', title: 'Focus Mode', icon: FaExpand },
-                                    { id: 'balanced', title: 'Balanced Mode', icon: FaUsers },
-                                    { id: 'discussion', title: 'Discussion Mode', icon: FaComments }
-                                ].map(mode => (
-                                    <button
-                                        key={mode.id}
-                                        onClick={() => setLayoutMode(mode.id as any)}
-                                        className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all ${layoutMode === mode.id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}
-                                        title={mode.title}
-                                    >
-                                        <mode.icon size={12} />
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                        {/* Removed: 3 screen size option buttons - now using Focus View toggle on main stage */}
                     </div>
 
                     <div className="flex items-start gap-3 pointer-events-auto">
@@ -1044,6 +1026,15 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                                             </span>
                                         </div>
                                     )}
+
+                                    {/* Focus View Toggle */}
+                                    <button
+                                        onClick={() => setLayoutMode(layoutMode === 'focus' ? 'balanced' : 'focus')}
+                                        className="absolute top-4 right-4 z-30 bg-black/40 backdrop-blur-md p-2.5 rounded-xl border border-white/10 text-white/70 hover:text-white transition-all hover:scale-110 active:scale-95 group shadow-2xl"
+                                        title={layoutMode === 'focus' ? "Show Sidebar" : "Hide Sidebar (Focus)"}
+                                    >
+                                        {layoutMode === 'focus' ? <FaCompress size={16} /> : <FaExpand size={16} />}
+                                    </button>
 
                                     {/* Fallback for Screen Share if track hasn't arrived */}
                                     {isScreenSharing && !showWhiteboard && (

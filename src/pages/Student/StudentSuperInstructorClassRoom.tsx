@@ -848,7 +848,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
             <div className="w-24 h-24 border-8 border-primary border-t-transparent rounded-full animate-spin shadow-[0_0_50px_rgba(238,29,35,0.3)]"></div>
             <div className="space-y-2">
                 <h1 className="text-3xl font-black text-white italic tracking-[0.2em] uppercase">Initializing Nexus</h1>
-                <p className="text-accent-gray italic font-bold tracking-widest opacity-40 uppercase text-xs">Synchronizing Neural Frequencies...</p>
+                <p className="text-accent-gray italic font-bold tracking-widest opacity-70 uppercase text-xs">Synchronizing Neural Frequencies...</p>
             </div>
         </div>
     );
@@ -898,7 +898,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                 {/* Minimal Tactical Header */}
                 <header className="absolute top-0 left-0 w-full z-30 p-4 flex justify-between items-start pointer-events-none transition-all duration-700">
                     <div className="flex flex-col gap-2 pointer-events-auto">
-                        {/* Status indicators can go here if needed */}
+                        {/* Removed: 3 screen size option buttons - now using Focus View toggle on main stage */}
                     </div>
 
                     <div className="flex items-start gap-4 pointer-events-auto">
@@ -939,7 +939,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                     {/* 70/30 Stage + Sidebar Layout (When Screen Sharing) */}
                     {(isScreenSharing || showWhiteboard) && (
                         <div className="flex-1 flex overflow-hidden">
-                            {/* Main Stage (70%) */}
+                            {/* Main Stage (70% or 100% in focus mode) */}
                             <div className={`transition-all duration-700 h-full ${layoutMode === 'focus' ? 'w-full' : 'p-4 w-[70%]'}`}>
                                 <div className={`relative h-full flex items-center justify-center bg-slate-900 overflow-hidden ${layoutMode === 'focus' ? '' : 'rounded-3xl border border-slate-700 shadow-2xl'}`}>
                                     <div
@@ -994,21 +994,26 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                                             className={`absolute ${getPipClasses()} w-48 aspect-video bg-slate-900 rounded-2xl overflow-hidden border-2 border-blue-600 shadow-2xl z-50 cursor-pointer group transition-all duration-500 hover:scale-110`}
                                         >
                                             <div id="local-player-pip" className="w-full h-full" ref={(el) => { if (el && cameraOn) localVideoTrack?.play(el) }} />
-                                            {!cameraOn && <div className="absolute inset-0 flex items-center justify-center bg-slate-800 text-[10px] font-bold text-white uppercase italic">Offline</div>}
+                                            {!cameraOn && (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+                                                    <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 text-lg font-black italic border border-blue-500/20">{user?.name?.slice(0, 2).toUpperCase()}</div>
+                                                </div>
+                                            )}
                                             <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-0.5 rounded text-[8px] font-bold text-white uppercase font-black italic">Me</div>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Participant Sidebar (30%) */}
+                            {/* Participant Sidebar (30%) - Hidden in focus mode */}
                             {layoutMode !== 'focus' && (
                                 <div className="w-[30%] h-full bg-slate-50 border-l border-slate-200 flex flex-col p-4 overflow-y-auto gap-4 scrollbar-minimal animate-in slide-in-from-right duration-500 relative">
                                     <div className="flex items-center justify-between mb-2">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Nexus Matrix</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Nexus Matrix</p>
                                         <div className="flex gap-1">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                            <span className="text-[8px] font-bold text-slate-400 uppercase">{onlineUsers.length} ONLINE</span>
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span className="text-[8px] font-bold text-slate-500 uppercase">{onlineUsers.length} ONLINE</span>
                                         </div>
                                     </div>
 
@@ -1051,10 +1056,10 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Video Grid (Shown if no active content OR in Discussion Mode) */}
-                    {!(showWhiteboard || isScreenSharing) || layoutMode === 'discussion' ? (
-                        <div className={`p-4 transition-all duration-500 overflow-y-auto flex-1 ${layoutMode === 'discussion' && (showWhiteboard || isScreenSharing) ? 'mt-4 h-1/5 shrink-0 border-t border-slate-200' : 'h-full'}`}>
-                            <div className={`grid gap-4 auto-rows-fr h-full ${layoutMode === 'discussion' && (showWhiteboard || isScreenSharing) ? 'grid-flow-col overflow-x-auto overflow-y-hidden scrollbar-minimal' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'}`}>
+                    {/* Video Grid (Shown if no active content) */}
+                    {!(showWhiteboard || isScreenSharing) && (
+                        <div className="p-4 transition-all duration-500 overflow-y-auto flex-1 h-full">
+                            <div className="grid gap-4 auto-rows-fr h-full grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                                 {/* Local Participant */}
                                 <div className={`relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border-2 shadow-xl group transition-all duration-300 ${activeSpeakerUid === Number(user?.id) ? 'border-emerald-500 scale-[1.02] z-10' : 'border-slate-200'}`}>
                                     <div id="local-player" className="w-full h-full" ref={(el) => { if (el && cameraOn) localVideoTrack?.play(el) }} />
@@ -1093,7 +1098,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                                 })}
                             </div>
                         </div>
-                    ) : null}
+                    )}
 
 
                     {/* Reactions Float Plane */}
@@ -1118,7 +1123,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                             <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-900 leading-none">{classDetails.title}</h2>
                             <div className="flex items-center gap-1.5 mt-1.5">
                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-                                <p className="text-[8px] text-slate-400 font-bold uppercase tracking-[0.2em]">Session Active</p>
+                                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em]">Session Active</p>
                             </div>
                         </div>
                         <div className="h-8 w-px bg-slate-100" />
