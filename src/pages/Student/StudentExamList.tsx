@@ -79,9 +79,10 @@ const StudentExamList: React.FC = () => {
                     const isUpcoming = currentTime < new Date(exam.date);
                     const noAttemptsLeft = exam.attempt_count >= exam.attempts_allowed;
                     const canAttempt = !isExpired && !noAttemptsLeft && !isUpcoming;
+                    const isExpiredAndNotAttempted = isExpired && !exam.submission_id;
 
                     return (
-                        <div key={exam.id} className={`premium-card p-10 flex flex-col justify-between transition-all duration-500 group ${isExpired ? 'opacity-50 grayscale' : 'hover:scale-[1.02]'}`}>
+                        <div key={exam.id} className={`premium-card p-10 flex flex-col justify-between transition-all duration-500 group ${isExpiredAndNotAttempted ? 'opacity-50 grayscale' : 'hover:scale-[1.02]'}`}>
                             <div>
                                 <div className="flex justify-between items-start mb-6">
                                     <div className="flex flex-col gap-2">
@@ -90,7 +91,10 @@ const StudentExamList: React.FC = () => {
                                             {exam.type === 'olympiad' && (
                                                 <span className="bg-accent-blue/10 text-accent-blue text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest border border-accent-blue/20">OLYMPIAD UNIT</span>
                                             )}
-                                            {isExpired && (
+                                            {exam.submission_id && (
+                                                <span className="bg-emerald-500/10 text-emerald-500 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest border border-emerald-500/20">ATTEMPTED</span>
+                                            )}
+                                            {isExpired && !exam.submission_id && (
                                                 <span className="bg-primary/10 text-primary text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest border border-primary/20">EXPIRED</span>
                                             )}
                                         </div>
@@ -152,7 +156,7 @@ const StudentExamList: React.FC = () => {
                                             }}
                                             className="btn-outline w-full py-4 text-[10px]"
                                         >
-                                            ANALYZE PREVIOUS DATA
+                                            VIEW RESULT
                                         </Link>
                                     </div>
                                     {canAttempt && (
@@ -168,7 +172,7 @@ const StudentExamList: React.FC = () => {
                                                 }}
                                                 className="btn-primary w-full py-4 text-[10px]"
                                             >
-                                                RE-ENGAGE MISSION
+                                                RE-ATTEMPT EXAM
                                             </Link>
                                         </div>
                                     )}

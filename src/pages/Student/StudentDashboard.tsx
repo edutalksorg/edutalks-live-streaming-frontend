@@ -141,6 +141,8 @@ const StudentDashboard: React.FC = () => {
 
         socket.on('class_live', () => fetchData());
         socket.on('class_ended', () => fetchData());
+        socket.on('si_class_live', () => fetchData());
+        socket.on('si_class_ended', () => fetchData());
 
         // Heartbeat for auto-activating items
         const ticker = setInterval(() => {
@@ -387,7 +389,16 @@ const StudentDashboard: React.FC = () => {
                                                                     <div
                                                                         onClick={(e) => {
                                                                             const isActuallyUpcoming = exam.date && currentTime < new Date(exam.date);
-                                                                            if (exam.status === 'Upcoming' || isActuallyUpcoming) return;
+                                                                            if (exam.status === 'Upcoming' || isActuallyUpcoming) {
+                                                                                const startTime = new Date(exam.date).toLocaleString([], {
+                                                                                    hour: '2-digit',
+                                                                                    minute: '2-digit',
+                                                                                    day: 'numeric',
+                                                                                    month: 'short'
+                                                                                });
+                                                                                showAlert(`Negative. This mission is scheduled for ${startTime}. Prepare for deployment.`, 'info');
+                                                                                return;
+                                                                            }
 
                                                                             const isAttemptNow = exam.status === 'Attempt Now' || (exam.date && currentTime >= new Date(exam.date) && exam.status === 'Upcoming');
 

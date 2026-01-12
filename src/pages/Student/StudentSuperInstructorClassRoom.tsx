@@ -12,7 +12,7 @@ import {
     FaPhoneSlash, FaHandPaper,
     FaDesktop, FaChalkboard,
     FaUsers, FaComments, FaClock, FaExpand, FaCompress,
-    FaShieldAlt
+    FaShieldAlt, FaUserAlt, FaColumns
 } from 'react-icons/fa';
 
 const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID;
@@ -898,28 +898,10 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                 {/* Minimal Tactical Header */}
                 <header className="absolute top-0 left-0 w-full z-30 p-4 flex justify-between items-start pointer-events-none transition-all duration-700">
                     <div className="flex flex-col gap-2 pointer-events-auto">
-                        {/* Compact Layout Mode Controls */}
-                        {isLive && (
-                            <div className="flex gap-1 bg-white/70 backdrop-blur-md p-1 rounded-xl border border-slate-200 shadow-sm pointer-events-auto transition-all hover:bg-white/90">
-                                {[
-                                    { id: 'focus', title: 'Focus Mode', icon: FaExpand },
-                                    { id: 'balanced', title: 'Balanced Mode', icon: FaUsers },
-                                    { id: 'discussion', title: 'Discussion Mode', icon: FaComments }
-                                ].map(mode => (
-                                    <button
-                                        key={mode.id}
-                                        onClick={() => setLayoutMode(mode.id as any)}
-                                        className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all ${layoutMode === mode.id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}
-                                        title={mode.title}
-                                    >
-                                        <mode.icon size={12} />
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                        {/* Status indicators can go here if needed */}
                     </div>
 
-                    <div className="flex items-start gap-3 pointer-events-auto">
+                    <div className="flex items-start gap-4 pointer-events-auto">
                         {!isLive && (
                             <div className="bg-white/90 backdrop-blur-xl border border-blue-200 p-3 px-5 rounded-2xl flex items-center gap-4 animate-pulse shadow-lg shadow-blue-500/5">
                                 <FaClock className="text-blue-600 text-lg" />
@@ -975,6 +957,15 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                                         </div>
                                     )}
 
+                                    {/* Focus View Toggle */}
+                                    <button
+                                        onClick={() => setLayoutMode(layoutMode === 'focus' ? 'balanced' : 'focus')}
+                                        className="absolute top-4 right-4 z-30 bg-black/40 backdrop-blur-md p-2.5 rounded-xl border border-white/10 text-white/70 hover:text-white transition-all hover:scale-110 active:scale-95 group shadow-2xl"
+                                        title={layoutMode === 'focus' ? "Show Sidebar" : "Hide Sidebar (Focus)"}
+                                    >
+                                        {layoutMode === 'focus' ? <FaCompress size={16} /> : <FaExpand size={16} />}
+                                    </button>
+
                                     {/* Fallback for Screen Share if track hasn't arrived */}
                                     {isScreenSharing && !showWhiteboard && (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 pointer-events-none -z-10">
@@ -1012,7 +1003,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
 
                             {/* Participant Sidebar (30%) */}
                             {layoutMode !== 'focus' && (
-                                <div className="w-[30%] bg-slate-50 border-l border-slate-200 flex flex-col p-4 overflow-y-auto gap-4 scrollbar-minimal animate-in slide-in-from-right duration-500">
+                                <div className="w-[30%] h-full bg-slate-50 border-l border-slate-200 flex flex-col p-4 overflow-y-auto gap-4 scrollbar-minimal animate-in slide-in-from-right duration-500 relative">
                                     <div className="flex items-center justify-between mb-2">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Nexus Matrix</p>
                                         <div className="flex gap-1">
@@ -1021,35 +1012,40 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* Local Student View if sharing */}
-                                    {!isInstructor && (
-                                        <div className={`relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border-2 transition-all duration-300 shadow-lg ${activeSpeakerUid === Number(user?.id) ? 'border-emerald-500 ring-4 ring-emerald-500/10' : 'border-slate-200'}`}>
-                                            <div id="local-sidebar" className="w-full h-full" ref={(el) => { if (el && cameraOn) localVideoTrack?.play(el) }} />
-                                            {!cameraOn && <div className="absolute inset-0 flex items-center justify-center bg-slate-800 text-[10px] font-bold text-white uppercase italic">Offline</div>}
-                                            <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[8px] font-bold text-white uppercase italic">You</div>
-                                        </div>
-                                    )}
-
-                                    {/* Online Participants (Remote) - Exclude Sharer to avoid double playback conflict */}
-                                    {onlineUsers.filter(u => String(u.userId) !== String(user?.id) && String(u.userId) !== String(screenSharerUid)).map((u) => {
-                                        const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId) || Number(ru.uid) === Number(u.userId));
-                                        return (
-                                            <div key={u.userId} className={`relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border-2 transition-all duration-300 shadow-md ${activeSpeakerUid === Number(u.userId) ? 'border-emerald-500 ring-4 ring-emerald-500/10 scale-95' : 'border-slate-200'}`}>
-                                                <div id={`sidebar-video-${u.userId}`} className="w-full h-full" ref={(el) => { if (el && rUser?.hasVideo) rUser.videoTrack?.play(el) }} />
-                                                {(!rUser || !rUser.hasVideo) && (
-                                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800">
-                                                        <div className="w-10 h-10 rounded-full bg-slate-700/50 border border-white/10 flex items-center justify-center text-white text-xs font-black uppercase italic">{u.userName?.slice(0, 2).toUpperCase() || '??'}</div>
-                                                        <span className="mt-2 text-[8px] font-bold text-slate-500 uppercase tracking-tighter">Video Paused</span>
+                                    <div className="grid grid-cols-2 gap-3 auto-rows-max">
+                                        {/* Local Student View if sharing */}
+                                        {!isInstructor && (
+                                            <div className={`relative aspect-square bg-slate-900 rounded-xl overflow-hidden border-2 transition-all duration-300 shadow-lg ${activeSpeakerUid === Number(user?.id) ? 'border-emerald-500 ring-4 ring-emerald-500/10' : 'border-slate-200'}`}>
+                                                <div id="local-sidebar" className="w-full h-full" ref={(el) => { if (el && cameraOn) localVideoTrack?.play(el) }} />
+                                                {!cameraOn && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+                                                        <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 text-[10px] font-black italic border border-blue-500/20">{user?.name?.slice(0, 2).toUpperCase()}</div>
                                                     </div>
                                                 )}
-                                                <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[8px] font-bold text-white uppercase italic flex items-center gap-1.5">
-                                                    <div className={`w-1 h-1 rounded-full ${rUser?.hasAudio ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                                                    {u.userName || `User ${u.userId}`}
-                                                </div>
-                                                {activeSpeakerUid === Number(u.userId) && <div className="absolute top-2 right-2 bg-emerald-500 text-white text-[6px] font-black px-1.5 py-0.5 rounded animate-bounce uppercase">Live</div>}
+                                                <div className="absolute bottom-1.5 left-1.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[7px] font-black text-white uppercase italic">You</div>
                                             </div>
-                                        );
-                                    })}
+                                        )}
+
+                                        {/* Online Participants (Remote) - Exclude Sharer to avoid double playback conflict */}
+                                        {onlineUsers.filter(u => String(u.userId) !== String(user?.id) && String(u.userId) !== String(screenSharerUid)).map((u) => {
+                                            const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId) || Number(ru.uid) === Number(u.userId));
+                                            return (
+                                                <div key={u.userId} className={`relative aspect-square bg-slate-900 rounded-xl overflow-hidden border-2 transition-all duration-300 shadow-md ${activeSpeakerUid === Number(u.userId) ? 'border-emerald-500 ring-4 ring-emerald-500/10 scale-95' : 'border-slate-200'}`}>
+                                                    <div id={`sidebar-video-${u.userId}`} className="w-full h-full" ref={(el) => { if (el && rUser?.hasVideo) rUser.videoTrack?.play(el) }} />
+                                                    {(!rUser || !rUser.hasVideo) && (
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800">
+                                                            <div className="w-8 h-8 rounded-full bg-slate-700/50 border border-white/10 flex items-center justify-center text-white text-[10px] font-black uppercase italic">{u.userName?.slice(0, 2).toUpperCase() || '??'}</div>
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute bottom-1.5 left-1.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[7px] font-black text-white uppercase italic flex items-center gap-1">
+                                                        <div className={`w-1 h-1 rounded-full ${rUser?.hasAudio ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                                        {u.userName?.split(' ')[0] || `User ${u.userId}`}
+                                                    </div>
+                                                    {activeSpeakerUid === Number(u.userId) && <div className="absolute top-1.5 right-1.5 bg-emerald-500 text-white text-[5px] font-black px-1 py-0.5 rounded animate-bounce uppercase">Live</div>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -1057,15 +1053,14 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
 
                     {/* Video Grid (Shown if no active content OR in Discussion Mode) */}
                     {!(showWhiteboard || isScreenSharing) || layoutMode === 'discussion' ? (
-                        <div className={`p-4 transition-all duration-500 overflow-y-auto flex-1 ${layoutMode === 'discussion' ? 'mt-4 h-1/5 border-t border-slate-200' : 'h-full'}`}>
-                            <div className={`grid gap-4 auto-rows-fr h-full ${layoutMode === 'discussion' ? 'grid-flow-col overflow-x-auto scrollbar-minimal' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'}`}>
+                        <div className={`p-4 transition-all duration-500 overflow-y-auto flex-1 ${layoutMode === 'discussion' && (showWhiteboard || isScreenSharing) ? 'mt-4 h-1/5 shrink-0 border-t border-slate-200' : 'h-full'}`}>
+                            <div className={`grid gap-4 auto-rows-fr h-full ${layoutMode === 'discussion' && (showWhiteboard || isScreenSharing) ? 'grid-flow-col overflow-x-auto overflow-y-hidden scrollbar-minimal' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'}`}>
                                 {/* Local Participant */}
                                 <div className={`relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border-2 shadow-xl group transition-all duration-300 ${activeSpeakerUid === Number(user?.id) ? 'border-emerald-500 scale-[1.02] z-10' : 'border-slate-200'}`}>
                                     <div id="local-player" className="w-full h-full" ref={(el) => { if (el && cameraOn) localVideoTrack?.play(el) }} />
                                     {!cameraOn && (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800">
                                             <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 text-xl font-black italic border border-blue-500/20">{user?.name?.slice(0, 2).toUpperCase()}</div>
-                                            <span className="mt-3 text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] italic">Self Presence</span>
                                         </div>
                                     )}
                                     <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] font-black text-white uppercase italic flex items-center gap-2 border border-white/10">
@@ -1086,7 +1081,6 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                                                     <div className="w-16 h-16 rounded-full bg-slate-700/50 flex items-center justify-center text-slate-400 text-xl font-black italic border border-white/5">
                                                         {u.userName?.slice(0, 2).toUpperCase() || '??'}
                                                     </div>
-                                                    <span className="mt-3 text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] italic">Presence Offline</span>
                                                 </div>
                                             )}
                                             <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] font-black text-white uppercase italic flex items-center gap-2 border border-white/10">
