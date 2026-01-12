@@ -403,44 +403,53 @@ const LiveClassRoom: React.FC = () => {
         };
     }, [id, user?.id]);
 
+    // Track reference to prevent unnecessary re-renders/plays
+    const currentPlayingTrackRef = useRef<any>(null);
+
     // Main Stage Track Playback Effect
     useEffect(() => {
         const el = mainStageRef.current;
         if (!el || showWhiteboard) return;
 
-        console.log(`[Playback] Syncing stage. sharing: ${isScreenSharing}, sharer: ${screenSharerUid}`);
+        let targetTrack: any = null;
 
-        const playTrack = (track: any) => {
+        if (isScreenSharing && screenSharerUid) {
+            if (screenSharerUid === Number(user?.id)) {
+                targetTrack = localScreenTrack;
+            } else {
+                const sharer = remoteUsers.find(u => String(u.uid) === String(screenSharerUid));
+                targetTrack = sharer?.videoTrack;
+            }
+        }
+
+        // If the track hasn't changed, do nothing (prevents flickering)
+        if (currentPlayingTrackRef.current === targetTrack) {
+            return;
+        }
+
+        console.log(`[Playback] Switching track. From: ${currentPlayingTrackRef.current?.getTrackId()} To: ${targetTrack?.getTrackId()}`);
+
+        // Cleanup old track
+        if (currentPlayingTrackRef.current) {
             try {
-                track.stop(); // Reset local preview state
-                track.play(el);
+                currentPlayingTrackRef.current.stop();
+            } catch (e) {
+                console.warn("Failed to stop previous track:", e);
+            }
+        }
+
+        // Play new track
+        if (targetTrack) {
+            try {
+                targetTrack.play(el);
+                currentPlayingTrackRef.current = targetTrack;
             } catch (e) {
                 console.error("[Playback] Play error:", e);
             }
-        };
-
-        if (isScreenSharing && screenSharerUid) {
-            // Force a slight delay to ensure DOM is ready and any old tracks are cleared
-            setTimeout(() => {
-                if (screenSharerUid === Number(user?.id)) {
-                    if (localScreenTrack) {
-                        console.log("[Playback] Playing LOCAL screen track");
-                        playTrack(localScreenTrack);
-                    } else {
-                        console.warn("[Playback] LOCAL screen track missing");
-                    }
-                } else {
-                    const sharer = remoteUsers.find(u => String(u.uid) === String(screenSharerUid));
-                    if (sharer?.videoTrack) {
-                        console.log("[Playback] Playing REMOTE screen track from", sharer.uid);
-                        playTrack(sharer.videoTrack);
-                    } else {
-                        console.warn("[Playback] REMOTE screen track for sharer missing in remoteUsers", remoteUsers.map(u => u.uid));
-                    }
-                }
-                window.dispatchEvent(new Event('resize'));
-            }, 100);
+        } else {
+            currentPlayingTrackRef.current = null;
         }
+
     }, [isScreenSharing, screenSharerUid, remoteUsers, localScreenTrack, showWhiteboard]);
 
     // Keyboard Shortcuts

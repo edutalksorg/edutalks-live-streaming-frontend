@@ -7,7 +7,7 @@ import DoubtChat from '../../components/DoubtChat';
 import ImageMarkup from '../../components/ImageMarkup';
 
 const StudentDoubts: React.FC = () => {
-    const { user } = useContext(AuthContext)!;
+    const { user, socket } = useContext(AuthContext)!;
     const { showToast } = useToast();
     const [doubts, setDoubts] = useState<any[]>([]);
     const [subjects, setSubjects] = useState<any[]>([]);
@@ -30,19 +30,43 @@ const StudentDoubts: React.FC = () => {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        fetchDoubts();
-        fetchSubjects();
-    }, []);
+    // Track selected doubt ID to preserve selection update
+    const selectedDoubtIdRef = useRef<number | null>(null);
+    useEffect(() => { selectedDoubtIdRef.current = selectedDoubt?.id; }, [selectedDoubt]);
 
     const fetchDoubts = async () => {
         try {
             const res = await api.get('/api/doubts/student');
             setDoubts(res.data);
+
+            // Auto-update selected doubt status if it exists
+            if (selectedDoubtIdRef.current) {
+                const updated = res.data.find((d: any) => d.id === selectedDoubtIdRef.current);
+                if (updated) setSelectedDoubt(updated);
+            }
         } catch (err) {
             console.error('Error fetching doubts:', err);
         }
     };
+
+
+
+    useEffect(() => {
+        fetchDoubts();
+        fetchSubjects();
+
+        if (socket) {
+            const handleSync = (data: any) => {
+                if (data.type === 'doubts') {
+                    fetchDoubts();
+                }
+            };
+            socket.on('global_sync', handleSync);
+            return () => {
+                socket.off('global_sync', handleSync);
+            };
+        }
+    }, [socket]);
 
     const fetchSubjects = async () => {
         try {
