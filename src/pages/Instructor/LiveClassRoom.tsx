@@ -11,9 +11,9 @@ import {
     FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash,
     FaPhoneSlash, FaHandPaper,
     FaDesktop, FaChalkboard,
-    FaUsers, FaComments, FaClock, FaExpand, FaCompress,
+    FaClock, FaExpand, FaCompress,
     FaTimesCircle, FaCheckCircle, FaExclamationTriangle, FaInfoCircle,
-    FaShieldAlt, FaUserAlt, FaColumns
+    FaShieldAlt
 } from 'react-icons/fa';
 
 const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID;
