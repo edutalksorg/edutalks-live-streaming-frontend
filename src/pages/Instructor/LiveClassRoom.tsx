@@ -183,6 +183,22 @@ const LiveClassRoom: React.FC = () => {
             }
         });
 
+        // --- NEW: Handle Remote Screen Share State ---
+        socket.on('screen_share_status', (data) => {
+            console.log("[Socket] Received screen_share_status:", data);
+            if (data.allowed) {
+                // Someone started sharing
+                setScreenSharerUid(Number(data.studentId));
+                setIsScreenSharing(true);
+            } else {
+                // Stopped sharing
+                if (Number(data.studentId) === screenSharerUid) {
+                    setScreenSharerUid(null);
+                    setIsScreenSharing(false);
+                }
+            }
+        });
+
         socket.on('recording_protection_status', (data) => {
             setRecordingProtected(data.active);
             if (!isInstructorRef.current) {

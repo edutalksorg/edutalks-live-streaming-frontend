@@ -130,11 +130,18 @@ const StudentDashboard: React.FC = () => {
 
         if (socket) {
             const handleSync = () => fetchData();
+
+            // Immediate Granular Updates
+            const handleClassUpdate = (data: { classId: number, status: string }) => {
+                fetchData(); // Still fetch for safety, but check conditions first
+                console.log("Real-time class update:", data);
+            };
+
             socket.on('global_sync', handleSync);
-            socket.on('class_live', handleSync);
-            socket.on('class_ended', handleSync);
-            socket.on('si_class_live', handleSync);
-            socket.on('si_class_ended', handleSync);
+            socket.on('class_live', handleClassUpdate);
+            socket.on('class_ended', handleClassUpdate);
+            socket.on('si_class_live', handleClassUpdate);
+            socket.on('si_class_ended', handleClassUpdate);
 
             const ticker = setInterval(() => {
                 setCurrentTime(new Date());
@@ -142,10 +149,10 @@ const StudentDashboard: React.FC = () => {
 
             return () => {
                 socket.off('global_sync', handleSync);
-                socket.off('class_live', handleSync);
-                socket.off('class_ended', handleSync);
-                socket.off('si_class_live', handleSync);
-                socket.off('si_class_ended', handleSync);
+                socket.off('class_live', handleClassUpdate);
+                socket.off('class_ended', handleClassUpdate);
+                socket.off('si_class_live', handleClassUpdate);
+                socket.off('si_class_ended', handleClassUpdate);
                 clearInterval(ticker);
             };
         } else {
