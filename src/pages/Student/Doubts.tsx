@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { FaPlus, FaQuestionCircle, FaClock, FaCheckCircle, FaImage, FaMicrophone, FaStop, FaArrowRight, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaQuestionCircle, FaClock, FaCheckCircle, FaImage, FaMicrophone, FaStop, FaTrash } from 'react-icons/fa';
 import api from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
