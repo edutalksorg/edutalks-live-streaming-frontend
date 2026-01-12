@@ -1073,44 +1073,50 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
 
                             {/* Participant Sidebar (30%) */}
                             {layoutMode !== 'focus' && (
-                                <div className="w-[30%] bg-slate-50 border-l border-slate-200 flex flex-col p-4 overflow-y-auto gap-4 scrollbar-minimal animate-in slide-in-from-right duration-500">
+                                <div className="w-[30%] h-full bg-slate-50 border-l border-slate-200 flex flex-col p-4 overflow-y-auto gap-4 scrollbar-minimal animate-in slide-in-from-right duration-500 relative">
                                     <div className="flex items-center justify-between mb-2">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Nexus Matrix</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Nexus Matrix</p>
                                         <div className="flex gap-1">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                            <span className="text-[8px] font-bold text-slate-400 uppercase">{onlineUsers.length} ONLINE</span>
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span className="text-[8px] font-bold text-slate-500 uppercase">{onlineUsers.length} ONLINE</span>
                                         </div>
                                     </div>
 
-                                    {/* Local Student View if sharing */}
-                                    {!isInstructor && (
-                                        <div className={`relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border-2 transition-all duration-300 shadow-lg ${activeSpeakerUid === Number(user?.id) ? 'border-emerald-500 ring-4 ring-emerald-500/10' : 'border-slate-200'}`}>
-                                            <div id="local-sidebar" className="w-full h-full" ref={(el) => { if (el && cameraOn) localVideoTrack?.play(el) }} />
-                                            {!cameraOn && <div className="absolute inset-0 flex items-center justify-center bg-slate-800 text-[10px] font-bold text-white uppercase italic">Offline</div>}
-                                            <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[8px] font-bold text-white uppercase italic">You</div>
-                                        </div>
-                                    )}
-
-                                    {/* Online Participants (Remote) - Exclude Sharer to avoid double playback conflict */}
-                                    {onlineUsers.filter(u => String(u.userId) !== String(user?.id) && String(u.userId) !== String(screenSharerUid)).map((u) => {
-                                        const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId));
-                                        return (
-                                            <div key={u.userId} className={`relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border-2 transition-all duration-300 shadow-md ${activeSpeakerUid === Number(u.userId) ? 'border-emerald-500 ring-4 ring-emerald-500/10 scale-95' : 'border-slate-200'}`}>
-                                                <div id={`sidebar-video-${u.userId}`} className="w-full h-full" ref={(el) => { if (el && rUser?.hasVideo) rUser.videoTrack?.play(el) }} />
-                                                {(!rUser || !rUser.hasVideo) && (
-                                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800">
-                                                        <div className="w-10 h-10 rounded-full bg-slate-700/50 border border-white/10 flex items-center justify-center text-white text-xs font-black uppercase italic">{u.userName?.slice(0, 2).toUpperCase() || '??'}</div>
-                                                        <span className="mt-2 text-[8px] font-bold text-slate-500 uppercase tracking-tighter">Video Paused</span>
+                                    <div className="grid grid-cols-2 gap-3 auto-rows-max">
+                                        {/* Local Instructor View if sharing */}
+                                        {!isInstructor && (
+                                            <div className={`relative aspect-square bg-slate-900 rounded-xl overflow-hidden border-2 transition-all duration-300 shadow-lg ${activeSpeakerUid === Number(user?.id) ? 'border-emerald-500 ring-4 ring-emerald-500/10' : 'border-slate-200'}`}>
+                                                <div id="local-sidebar" className="w-full h-full" ref={(el) => { if (el && cameraOn) localVideoTrack?.play(el) }} />
+                                                {!cameraOn && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+                                                        <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 text-[10px] font-black italic border border-blue-500/20">{user?.name?.slice(0, 2).toUpperCase()}</div>
                                                     </div>
                                                 )}
-                                                <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[8px] font-bold text-white uppercase italic flex items-center gap-1.5">
-                                                    <div className={`w-1 h-1 rounded-full ${rUser?.hasAudio ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                                                    {u.userName || `User ${u.userId}`}
-                                                </div>
-                                                {activeSpeakerUid === Number(u.userId) && <div className="absolute top-2 right-2 bg-emerald-500 text-white text-[6px] font-black px-1.5 py-0.5 rounded animate-bounce uppercase">Live</div>}
+                                                <div className="absolute bottom-1.5 left-1.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[7px] font-black text-white uppercase italic">You</div>
                                             </div>
-                                        );
-                                    })}
+                                        )}
+
+                                        {/* Online Participants (Remote) - Exclude Sharer to avoid double playback conflict */}
+                                        {onlineUsers.filter(u => String(u.userId) !== String(user?.id) && String(u.userId) !== String(screenSharerUid)).map((u) => {
+                                            const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId));
+                                            return (
+                                                <div key={u.userId} className={`relative aspect-square bg-slate-900 rounded-xl overflow-hidden border-2 transition-all duration-300 shadow-md ${activeSpeakerUid === Number(u.userId) ? 'border-emerald-500 ring-4 ring-emerald-500/10 scale-95' : 'border-slate-200'}`}>
+                                                    <div id={`sidebar-video-${u.userId}`} className="w-full h-full" ref={(el) => { if (el && rUser?.hasVideo) rUser.videoTrack?.play(el) }} />
+                                                    {(!rUser || !rUser.hasVideo) && (
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800">
+                                                            <div className="w-8 h-8 rounded-full bg-slate-700/50 border border-white/10 flex items-center justify-center text-white text-[10px] font-black uppercase italic">{u.userName?.slice(0, 2).toUpperCase() || '??'}</div>
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute bottom-1.5 left-1.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[7px] font-black text-white uppercase italic flex items-center gap-1">
+                                                        <div className={`w-1 h-1 rounded-full ${rUser?.hasAudio ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                                        {u.userName?.split(' ')[0] || `User ${u.userId}`}
+                                                    </div>
+                                                    {activeSpeakerUid === Number(u.userId) && <div className="absolute top-1.5 right-1.5 bg-emerald-500 text-white text-[5px] font-black px-1 py-0.5 rounded animate-bounce uppercase">Live</div>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             )}
                         </div>
