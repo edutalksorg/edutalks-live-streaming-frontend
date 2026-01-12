@@ -12,7 +12,7 @@ import {
     FaPhoneSlash, FaHandPaper,
     FaDesktop, FaChalkboard,
     FaClock, FaExpand, FaCompress,
-    FaShieldAlt
+    FaShieldAlt, FaComments, FaUsers
 } from 'react-icons/fa';
 
 const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID;
