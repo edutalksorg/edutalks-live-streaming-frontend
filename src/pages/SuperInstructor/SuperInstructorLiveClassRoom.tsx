@@ -125,6 +125,9 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
     const isViolationLockedRef = useRef(false);
     useEffect(() => { isViolationLockedRef.current = isViolationLocked; }, [isViolationLocked]);
 
+    // Ref to store pending "user left" timeouts
+    const pendingLeftToastsRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>({});
+
     useEffect(() => {
         const fetchDetails = async () => {
             try {
@@ -271,6 +274,13 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
         });
 
         socket.on('user_joined', (data) => {
+            // If this user was pending to leave, cancel it (it was just a refresh)
+            if (pendingLeftToastsRef.current[data.userId]) {
+                clearTimeout(pendingLeftToastsRef.current[data.userId]);
+                delete pendingLeftToastsRef.current[data.userId];
+                console.log(`[Socket] User ${data.userId} reconnected quickly (refresh detected). Cancelled leave toast.`);
+            }
+
             setOnlineUsers(prev => {
                 const filtered = prev.filter(u => u.userId !== data.userId);
                 return [...filtered, data];
@@ -278,19 +288,27 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
         });
 
         socket.on('user_left', (data: { userId: string, username?: string, role?: string }) => {
-            setOnlineUsers(prev => prev.filter(u => u.userId !== data.userId));
-            setStudentsWithUnmutePermission(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(String(data.userId));
-                return newSet;
-            });
+            // Delay the "left" action to see if they reconnect quickly
+            const timeoutId = setTimeout(() => {
+                setOnlineUsers(prev => prev.filter(u => u.userId !== data.userId));
+                setStudentsWithUnmutePermission(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(String(data.userId));
+                    return newSet;
+                });
 
-            const isLeavingInstructor = data.role === 'instructor' || data.role === 'super_instructor' || data.role === 'admin' || data.role === 'super_admin';
-            if (isLeavingInstructor) {
-                showToast("Instructor ended the class", 'warning');
-            } else {
-                showToast(`${data.username || 'A student'} left the meeting`, 'info');
-            }
+                const isLeavingInstructor = data.role === 'instructor' || data.role === 'super_instructor' || data.role === 'admin' || data.role === 'super_admin';
+                if (isLeavingInstructor) {
+                    showToast("Instructor ended the class", 'warning');
+                } else {
+                    showToast(`${data.username || 'A student'} left the meeting`, 'info');
+                }
+
+                // Cleanup ref entry
+                delete pendingLeftToastsRef.current[data.userId];
+            }, 4000); // 4 seconds delay
+
+            pendingLeftToastsRef.current[data.userId] = timeoutId;
         });
 
         socket.on('class_ended', () => {
