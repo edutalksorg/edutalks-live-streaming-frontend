@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
             const newSocket = io(URL, {
                 auth: { token },
-                transports: ['websocket', 'polling']
+                transports: ['polling', 'websocket']
             });
             setSocket(newSocket);
             return () => {

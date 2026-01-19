@@ -121,7 +121,7 @@ const StudentSubscription: React.FC = () => {
                     <div className="absolute top-0 right-0 bg-primary text-white font-bold px-4 py-1 rounded-bl-xl text-[10px] uppercase tracking-widest">Most Popular</div>
                     <h3 className="text-xl font-black text-foreground mb-2">Pro Monthly</h3>
                     <div className="flex items-baseline gap-1 mb-6">
-                        <span className="text-4xl font-black text-foreground">₹499</span>
+                        <span className="text-4xl font-black text-foreground">₹1</span>
                         <span className="text-accent-gray font-bold text-sm">/month</span>
                     </div>
                     <p className="text-sm text-gray-500 mb-8 font-medium">Perfect for short-term learning goals.</p>
@@ -133,7 +133,7 @@ const StudentSubscription: React.FC = () => {
                         <li className="flex items-center gap-3"><FaCheck className="text-green-500" /> Tournaments</li>
                     </ul>
                     <button
-                        onClick={() => handleBuy(499, 'Monthly')}
+                        onClick={() => handleBuy(1, 'Monthly')}
                         disabled={loadingPlan === 'Monthly' || user?.plan_name === 'Monthly'}
                         className={`w-full py-3 rounded-xl font-bold transition-all disabled:opacity-70 ${user?.plan_name === 'Monthly' ? 'bg-green-500 text-white cursor-default' : 'bg-primary text-white hover:bg-primary-hover'}`}
                     >
