@@ -122,10 +122,8 @@ const LiveClassRoom: React.FC = () => {
 
     useEffect(() => { showTrayRef.current = showTray; }, [showTray]);
 
+    // Ref to ignore blur events immediately after screen sharing stops (browser UI interaction causes false positive)
     const isLocalSharingEndingRef = useRef(false);
-    const [isViolationLocked, setIsViolationLocked] = useState(false);
-    const isViolationLockedRef = useRef(false);
-    useEffect(() => { isViolationLockedRef.current = isViolationLocked; }, [isViolationLocked]);
 
     // Ref to store pending "user left" timeouts
     const pendingLeftToastsRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>({});
@@ -551,7 +549,7 @@ const LiveClassRoom: React.FC = () => {
         if (isScreenSharing) {
             // "Screen Recording" detected
             setIsWindowBlurred(true);
-        } else if (document.visibilityState === 'visible' && !isViolationLockedRef.current) {
+        } else if (document.visibilityState === 'visible') {
             // Safe state
             setIsWindowBlurred(false);
         }
@@ -565,7 +563,6 @@ const LiveClassRoom: React.FC = () => {
             }
         };
         const handleFocus = () => {
-            if (isViolationLockedRef.current) return;
             // If still recording/sharing, keep blurred
             if (isScreenSharing) return;
             setIsWindowBlurred(false);
@@ -584,7 +581,7 @@ const LiveClassRoom: React.FC = () => {
                     timestamp: new Date()
                 });
             } else {
-                if (isViolationLockedRef.current || isScreenSharing) return;
+                if (isScreenSharing && !isInstructorRef.current && recordingProtectedRef.current) return;
                 setIsWindowBlurred(false);
             }
         };
@@ -1014,15 +1011,13 @@ const LiveClassRoom: React.FC = () => {
                         <FaShieldAlt size={48} />
                     </div>
                     <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">
-                        {isViolationLocked ? "SECURITY LOCKOUT" : "Content Protected"}
+                        Content Protected
                     </h2>
                     <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">
-                        {isViolationLocked
-                            ? "Suspicious activity detected. Access has been locked."
-                            : "Live stream is blurred because protection is active and you have left the focal area."}
+                        Live stream is blurred because protection is active and you have left the focal area.
                     </p>
                     <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em] animate-bounce">
-                        {isViolationLocked ? "Please Refresh Page to Re-verify" : "Return to focal tab to resume"}
+                        Return to focal tab to resume
                     </p>
                 </div>
             )}
