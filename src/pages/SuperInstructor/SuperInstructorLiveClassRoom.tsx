@@ -306,7 +306,7 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
 
                 // Cleanup ref entry
                 delete pendingLeftToastsRef.current[data.userId];
-            }, 4000); // 4 seconds delay
+            }, 15000); // 15 seconds delay
 
             pendingLeftToastsRef.current[data.userId] = timeoutId;
         });
@@ -775,6 +775,12 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                 console.error("Error stopping screen share:", err);
             }
         } else {
+            // Check for whiteboard conflict
+            if (showWhiteboard) {
+                showAlert("First stop the whiteboard then share the screen", "warning", "CONFLICT DETECTED");
+                return;
+            }
+
             // Starting Screen Share
             try {
                 // Grace period for picker
@@ -794,7 +800,7 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                 setLocalScreenTrack(track);
                 setIsScreenSharing(true);
                 setScreenSharerUid(Number(user?.id));
-                setShowWhiteboard(false);
+                // setShowWhiteboard(false);
 
                 await client?.publish(track);
                 socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: true });
@@ -1242,9 +1248,13 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                             {isInstructor && (
                                 <button
                                     onClick={() => {
+                                        if (isScreenSharing) {
+                                            showAlert("First stop the screen share then start sharing whiteboard", "warning", "CONFLICT DETECTED");
+                                            return;
+                                        }
                                         const next = !showWhiteboard;
                                         setShowWhiteboard(next);
-                                        if (next) setIsScreenSharing(false);
+                                        // if (next) setIsScreenSharing(false);
                                         socketRef.current?.emit('toggle_whiteboard_visibility', { classId: id, show: next });
                                     }}
                                     className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${showWhiteboard ? 'bg-indigo-600 border-indigo-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}

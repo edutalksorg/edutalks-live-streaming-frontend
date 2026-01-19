@@ -92,6 +92,9 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
     const isInstructorRef = useRef(isInstructor);
     useEffect(() => { isInstructorRef.current = isInstructor; }, [isInstructor]);
 
+    // Ref to store pending "user left" timeouts
+    const pendingLeftToastsRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>({});
+
     // --- Effects ---
 
     useEffect(() => { showTrayRef.current = showTray; }, [showTray]);
@@ -235,14 +238,29 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
         });
 
         socket.on('user_joined', (data) => {
+            // If this user was pending to leave, cancel it (it was just a refresh)
+            if (pendingLeftToastsRef.current[data.userId]) {
+                clearTimeout(pendingLeftToastsRef.current[data.userId]);
+                delete pendingLeftToastsRef.current[data.userId];
+                console.log(`[Socket] User ${data.userId} reconnected quickly (refresh detected). Cancelled leave toast.`);
+            }
+
             setOnlineUsers(prev => {
                 const filtered = prev.filter(u => u.userId !== data.userId);
                 return [...filtered, data];
             });
         });
 
-        socket.on('user_left', (data) => {
-            setOnlineUsers(prev => prev.filter(u => u.userId !== data.userId));
+        socket.on('user_left', (data: { userId: string, username?: string, role?: string }) => {
+            // Delay the "left" action to see if they reconnect quickly
+            const timeoutId = setTimeout(() => {
+                setOnlineUsers(prev => prev.filter(u => u.userId !== data.userId));
+
+                // Cleanup ref entry
+                delete pendingLeftToastsRef.current[data.userId];
+            }, 15000); // 15 seconds delay
+
+            pendingLeftToastsRef.current[data.userId] = timeoutId;
         });
 
         socket.on('si_class_ended', () => {
@@ -332,42 +350,43 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
     useEffect(() => {
         if (!recordingProtected) return;
 
+        // Immediate Logic Check on State Change
+        if (isScreenSharing) {
+            // "Screen Recording" (sharing) detected -> Force Blur
+            setIsWindowBlurred(true);
+        } else if (document.visibilityState === 'visible' && !isViolationLockedRef.current) {
+            // Sharing stopped and we are visible -> Unblur
+            setIsWindowBlurred(false);
+        }
+
         const moveWatermark = () => {
             const top = Math.floor(Math.random() * 80) + 10 + '%';
             const left = Math.floor(Math.random() * 80) + 10 + '%';
             setWatermarkPos({ top, left });
         };
-
         const interval = setInterval(moveWatermark, 5000);
 
-
         const handleBlur = () => {
-            // Ignore if we just stopped screen sharing (prevent false positive)
             if (isLocalSharingEndingRef.current) return;
-
+            setIsWindowBlurred(true);
+            // If strictly locking on blur:
             if (!isInstructorRef.current) {
-                setIsWindowBlurred(true);
-                // Permanent Lockout for Violation
-                setIsViolationLocked(true);
+                // setIsViolationLocked(true); // Maybe too strict if just a brief switch?
             }
         };
 
-        // If screen sharing is active while protected (e.g. enabled mid-stream), force blur to protect content
-        if (isScreenSharing && !isInstructorRef.current) {
-            setIsWindowBlurred(true);
-        }
         const handleFocus = () => {
-            // Strict enforcement: if locked or sharing, refuse to clear blur
-            if (isViolationLockedRef.current || (isScreenSharing && !isInstructorRef.current && recordingProtected)) {
-                return;
-            }
+            if (isViolationLockedRef.current) return;
+            if (isScreenSharing) return; // Keep blurred if sharing
             setIsWindowBlurred(false);
         };
+
         const handleVisibilityChange = () => {
             if (document.visibilityState !== 'visible') {
+                if (isLocalSharingEndingRef.current) return;
                 if (!isInstructorRef.current) {
                     setIsWindowBlurred(true);
-                    setIsViolationLocked(true); // Permanent Lockout
+                    // Permanent Lockout REMOVED to allow auto-resume
                     // Report violation if recording protection is on and they switch away
                     socketRef.current?.emit('violation_report', {
                         classId: id,
@@ -378,10 +397,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                     });
                 }
             } else {
-                // If locked or sharing, refuse to clear blur
-                if (isViolationLockedRef.current || (isScreenSharing && !isInstructorRef.current && recordingProtected)) {
-                    return;
-                }
+                if (isViolationLockedRef.current || isScreenSharing) return;
                 setIsWindowBlurred(false);
             }
         };
@@ -677,10 +693,10 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
 
     const toggleScreenShare = async () => {
         if (!isInstructor) {
-            if (recordingProtected) {
-                showAlert("Screen Sharing is restricted during Protected Sessions.", "error", "RESTRICTED ACCESS");
-                return;
-            }
+            // if (recordingProtected) {
+            //    showAlert("Screen Sharing is restricted during Protected Sessions.", "error", "RESTRICTED ACCESS");
+            //    return;
+            // }
             if (screenLocked) return;
         }
         if (isScreenSharing) {
@@ -1059,13 +1075,13 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                     {/* Video Grid (Shown if no active content) */}
                     {!(showWhiteboard || isScreenSharing) && (
                         <div className="p-4 transition-all duration-500 overflow-y-auto flex-1 h-full">
-                            <div className="grid gap-4 auto-rows-fr h-full grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                            <div className="grid gap-3 auto-rows-max h-full grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                                 {/* Local Participant */}
                                 <div className={`relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border-2 shadow-xl group transition-all duration-300 ${activeSpeakerUid === Number(user?.id) ? 'border-emerald-500 scale-[1.02] z-10' : 'border-slate-200'}`}>
                                     <div id="local-player" className="w-full h-full" ref={(el) => { if (el && cameraOn) localVideoTrack?.play(el) }} />
                                     {!cameraOn && (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800">
-                                            <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 text-xl font-black italic border border-blue-500/20">{user?.name?.slice(0, 2).toUpperCase()}</div>
+                                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 text-lg md:text-xl font-black italic border border-blue-500/20">{user?.name?.slice(0, 2).toUpperCase()}</div>
                                         </div>
                                     )}
                                     <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] font-black text-white uppercase italic flex items-center gap-2 border border-white/10">
@@ -1117,40 +1133,40 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                 </main>
 
                 {/* Tactical Command Bar */}
-                <footer className="h-20 bg-white border-t border-slate-200 px-8 flex justify-between items-center z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-                    <div className="flex items-center gap-6">
+                <footer className="h-20 bg-white border-t border-slate-200 px-4 md:px-8 flex justify-between items-center z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] overflow-x-auto scrollbar-hide gap-4">
+                    <div className="flex items-center gap-4 md:gap-6 shrink-0">
                         <div className="flex flex-col">
-                            <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-900 leading-none">{classDetails.title}</h2>
+                            <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-900 leading-none whitespace-nowrap">{classDetails.title}</h2>
                             <div className="flex items-center gap-1.5 mt-1.5">
                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-                                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em]">Session Active</p>
+                                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em] whitespace-nowrap">Session Active</p>
                             </div>
                         </div>
-                        <div className="h-8 w-px bg-slate-100" />
-                        <div className="flex gap-3">
+                        <div className="h-8 w-px bg-slate-100 hidden md:block" />
+                        <div className="flex gap-2 md:gap-3">
                             <button
                                 onClick={() => toggleMic()}
                                 disabled={!isInstructor && audioLocked}
-                                className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md group ${micOn ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-blue-600 border-blue-700 text-white animate-pulse shadow-blue-500/20'}`}
+                                className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md group ${micOn ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-blue-600 border-blue-700 text-white animate-pulse shadow-blue-500/20'}`}
                                 title={micOn ? "Disable Microphone" : "Enable Microphone"}
                             >
-                                {micOn ? <FaMicrophone size={18} /> : <FaMicrophoneSlash size={18} />}
+                                {micOn ? <FaMicrophone size={16} /> : <FaMicrophoneSlash size={16} />}
                             </button>
                             <button
                                 onClick={() => toggleCamera()}
                                 disabled={!isInstructor && videoLocked}
-                                className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${cameraOn ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-blue-600 border-blue-700 text-white shadow-blue-500/20'}`}
+                                className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${cameraOn ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-blue-600 border-blue-700 text-white shadow-blue-500/20'}`}
                                 title={cameraOn ? "Disable Visuals" : "Enable Visuals"}
                             >
-                                {cameraOn ? <FaVideo size={18} /> : <FaVideoSlash size={18} />}
+                                {cameraOn ? <FaVideo size={16} /> : <FaVideoSlash size={16} />}
                             </button>
                             {isInstructor && (
                                 <button
                                     onClick={requestScreenShare}
-                                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${isScreenSharing ? 'bg-blue-600 border-blue-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
+                                    className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${isScreenSharing ? 'bg-blue-600 border-blue-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
                                     title="Share Screen"
                                 >
-                                    <FaDesktop size={18} />
+                                    <FaDesktop size={16} />
                                 </button>
                             )}
                             {isInstructor && (
@@ -1161,46 +1177,46 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                                         if (next) setIsScreenSharing(false);
                                         socketRef.current?.emit('toggle_whiteboard_visibility', { classId: id, show: next });
                                     }}
-                                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${showWhiteboard ? 'bg-indigo-600 border-indigo-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
+                                    className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${showWhiteboard ? 'bg-indigo-600 border-indigo-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
                                     title="Open Whiteboard"
                                 >
-                                    <FaChalkboard size={18} />
+                                    <FaChalkboard size={16} />
                                 </button>
                             )}
                         </div>
                     </div>
 
 
-                    <div className="flex gap-4 items-center">
+                    <div className="flex gap-2 md:gap-4 items-center shrink-0">
                         {isInstructor ? (
                             <button
                                 onClick={handleEndClass}
-                                className="flex items-center gap-3 px-6 h-12 rounded-xl bg-red-600 text-white font-bold uppercase tracking-widest text-[10px] hover:bg-red-700 transition-all shadow-lg active:scale-95"
+                                className="flex items-center gap-2 md:gap-3 px-4 md:px-6 h-10 md:h-12 rounded-xl bg-red-600 text-white font-bold uppercase tracking-widest text-[9px] md:text-[10px] hover:bg-red-700 transition-all shadow-lg active:scale-95 whitespace-nowrap"
                                 title="End Session for All"
                             >
-                                <FaPhoneSlash size={16} />
+                                <FaPhoneSlash size={14} />
                                 <span>End Session</span>
                             </button>
                         ) : (
                             <>
                                 <button
                                     onClick={handleHandRaise}
-                                    className={`flex items-center gap-3 px-6 h-12 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all border shadow-md transform active:scale-95 ${isHandRaised ? 'bg-blue-600 text-white border-blue-700 shadow-blue-500/30 animate-bounce' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}
+                                    className={`flex items-center gap-2 md:gap-3 px-4 md:px-6 h-10 md:h-12 rounded-xl font-bold uppercase tracking-widest text-[9px] md:text-[10px] transition-all border shadow-md transform active:scale-95 whitespace-nowrap ${isHandRaised ? 'bg-blue-600 text-white border-blue-700 shadow-blue-500/30 animate-bounce' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}
                                 >
-                                    <FaHandPaper className={isHandRaised ? 'rotate-12' : ''} />
+                                    <FaHandPaper className={isHandRaised ? 'rotate-12' : ''} size={14} />
                                     {isHandRaised ? 'Waiting...' : 'Raise Hand'}
                                 </button>
                                 <button
                                     onClick={() => navigate('/student')}
-                                    className="flex items-center gap-3 px-6 h-12 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 font-bold uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all shadow-md active:scale-95"
+                                    className="flex items-center gap-2 md:gap-3 px-4 md:px-6 h-10 md:h-12 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 font-bold uppercase tracking-widest text-[9px] md:text-[10px] hover:bg-slate-200 transition-all shadow-md active:scale-95 whitespace-nowrap"
                                     title="Leave Class"
                                 >
-                                    <FaPhoneSlash size={16} />
+                                    <FaPhoneSlash size={14} />
                                     <span>Leave</span>
                                 </button>
                             </>
                         )}
-                        <div className="flex gap-1.5 bg-slate-100 rounded-xl p-1.5 border border-slate-200">
+                        <div className="hidden md:flex gap-1.5 bg-slate-100 rounded-xl p-1.5 border border-slate-200">
                             {['👍', '👏', '❓', '❤️', '🔥'].map(emoji => (
                                 <button
                                     key={emoji}
@@ -1212,7 +1228,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                             ))}
                         </div>
 
-                        <div className="h-8 w-px bg-slate-100 mx-2" />
+                        <div className="h-8 w-px bg-slate-100 mx-1 md:mx-2 hidden md:block" />
 
                         <div className="flex gap-2">
                             {[
@@ -1230,10 +1246,10 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                                             if (tray.id === 'chat') setUnreadMsgCount(0);
                                         }
                                     }}
-                                    className={`relative w-12 h-12 rounded-xl flex items-center justify-center transition-all border shadow-md ${showTray === tray.id ? 'bg-blue-600 border-blue-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}
+                                    className={`relative w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all border shadow-md ${showTray === tray.id ? 'bg-blue-600 border-blue-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}
                                     title={tray.title}
                                 >
-                                    <tray.icon size={18} />
+                                    <tray.icon size={16} />
                                     {tray.count > 0 && (
                                         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                                             {tray.count}
@@ -1243,7 +1259,6 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                             ))}
                         </div>
                     </div>
-
                 </footer>
 
                 {/* Pop-up Tray Overlay */}
