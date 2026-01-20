@@ -22,6 +22,17 @@ const AdminLayout: React.FC = () => {
             : 'hover:bg-surface-light text-accent-gray';
     };
 
+    const scrollToSection = (id: string) => {
+        if (window.innerWidth < 1024) setIsSidebarOpen(false);
+
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
     return (
         <div className="flex flex-col lg:flex-row h-screen bg-background-dark antialiased transition-colors duration-500 overflow-hidden text-foreground">
             {/* Mobile Header */}
@@ -75,11 +86,19 @@ const AdminLayout: React.FC = () => {
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                     <Link
                         to="/admin"
-                        onClick={() => setIsSidebarOpen(false)}
+                        onClick={() => scrollToSection('dashboard-overview')}
                         className={`block py-3 px-4 rounded-xl transition duration-200 font-bold text-sm ${isActive('/admin')}`}
                     >
                         <div className="flex items-center gap-3"><FaEye size={18} /> Overview</div>
                     </Link>
+                    {location.pathname === '/admin' && (
+                        <div className="ml-10 space-y-2 mt-1 border-l-2 border-surface-border pl-3 animate-in slide-in-from-left-2 duration-300">
+                            <button onClick={() => scrollToSection('dashboard-overview')} className="block text-[11px] font-bold uppercase tracking-wider text-accent-gray hover:text-white transition-colors text-left w-full">Overview</button>
+                            <button onClick={() => scrollToSection('dashboard-assignments')} className="block text-[11px] font-bold uppercase tracking-wider text-accent-gray hover:text-white transition-colors text-left w-full">Assignments</button>
+                            <button onClick={() => scrollToSection('dashboard-enrollment')} className="block text-[11px] font-bold uppercase tracking-wider text-accent-gray hover:text-white transition-colors text-left w-full">Enrollment</button>
+                            <button onClick={() => scrollToSection('dashboard-payments')} className="block text-[11px] font-bold uppercase tracking-wider text-accent-gray hover:text-white transition-colors text-left w-full">Payments</button>
+                        </div>
+                    )}
                 </nav>
                 <div className="p-4 border-t border-surface-border">
                     <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-surface-dark hover:bg-primary transition-all duration-300 font-bold text-sm shadow-lg text-accent-white">
