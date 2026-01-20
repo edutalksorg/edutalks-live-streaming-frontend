@@ -927,14 +927,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
         // Auto-enable permissions for the approved student is handled by the socket listener 'hand_approved'
     };
 
-    const requestScreenShare = () => {
-        if (isInstructor) {
-            toggleScreenShare();
-        } else {
-            socketRef.current?.emit('request_screen_share', { classId: id, studentId: user?.id, studentName: user?.name });
-            showAlert("Request sent to Super Instructor...", "info", "UPLINK REQUEST");
-        }
-    };
+
 
     if (!classDetails) return (
         <div className="h-screen w-screen bg-[#0A0A10] flex flex-col items-center justify-center p-8 text-center space-y-8">
