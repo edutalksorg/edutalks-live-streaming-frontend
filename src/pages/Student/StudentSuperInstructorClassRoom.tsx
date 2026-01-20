@@ -927,7 +927,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
         // Auto-enable permissions for the approved student is handled by the socket listener 'hand_approved'
     };
 
-
+    // requestScreenShare removed to fix unused variable error
 
     if (!classDetails) return (
         <div className="h-screen w-screen bg-[#0A0A10] flex flex-col items-center justify-center p-8 text-center space-y-8">

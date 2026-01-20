@@ -1169,7 +1169,7 @@ const LiveClassRoom: React.FC = () => {
 
 
 
-
+    // requestScreenShare removed to fix unused variable error
 
     if (!classDetails) return (
         <div className="h-screen w-screen bg-[#0A0A10] flex flex-col items-center justify-center p-8 text-center space-y-8">
@@ -1671,19 +1671,35 @@ const LiveClassRoom: React.FC = () => {
 
                                         {/* Instructor Controls */}
                                         {isInstructor && (
-                                            <div className="flex gap-2 pb-2 border-b border-slate-100">
-                                                <button
-                                                    onClick={handleMuteAll}
-                                                    className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
-                                                >
-                                                    Mute All
-                                                </button>
-                                                <button
-                                                    onClick={handleUnlockAll}
-                                                    className="flex-1 bg-emerald-100 text-emerald-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-emerald-200 transition-colors"
-                                                >
-                                                    Unlock All
-                                                </button>
+                                            <div className="flex flex-col gap-2 pb-2 border-b border-slate-100">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={handleMuteAll}
+                                                        className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
+                                                    >
+                                                        Mute All
+                                                    </button>
+                                                    <button
+                                                        onClick={handleUnlockAll}
+                                                        className="flex-1 bg-emerald-100 text-emerald-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-emerald-200 transition-colors"
+                                                    >
+                                                        Unlock All
+                                                    </button>
+                                                </div>
+                                                <div className="flex gap-2 pb-2 border-b border-slate-100 mt-2">
+                                                    <button
+                                                        onClick={handleStopAllScreenShares}
+                                                        className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
+                                                    >
+                                                        Stop All Screens
+                                                    </button>
+                                                    <button
+                                                        onClick={handleUnlockAllScreenShares}
+                                                        className="flex-1 bg-blue-100 text-blue-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-blue-200 transition-colors"
+                                                    >
+                                                        Unlock Screens
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
 
@@ -1692,7 +1708,7 @@ const LiveClassRoom: React.FC = () => {
                                             {onlineUsers.filter(u => String(u.userId) !== String(user?.id)).map(u => {
                                                 const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId));
                                                 const isBlocked = blockedStudents.has(String(u.userId));
-                                                const hasPermission = !isBlocked && (!audioLocked || studentsWithUnmutePermission.has(String(u.userId)));
+                                                // Removed unused hasPermission declaration
                                                 const isHandRaisedByU = handsRaised.some(h => String(h.id) === String(u.userId));
 
                                                 return (
