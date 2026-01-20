@@ -1707,7 +1707,7 @@ const LiveClassRoom: React.FC = () => {
                                         <div className="space-y-2">
                                             {onlineUsers.filter(u => String(u.userId) !== String(user?.id)).map(u => {
                                                 const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId));
-                                                const isBlocked = blockedStudents.has(String(u.userId));
+
                                                 // Removed unused hasPermission declaration
                                                 const isHandRaisedByU = handsRaised.some(h => String(h.id) === String(u.userId));
 
