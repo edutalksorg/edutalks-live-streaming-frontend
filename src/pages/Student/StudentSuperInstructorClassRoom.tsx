@@ -42,6 +42,11 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
     const [localVideoTrack, setLocalVideoTrack] = useState<ICameraVideoTrack | null>(null);
     const [micOn, setMicOn] = useState(false);
     const [cameraOn, setCameraOn] = useState(false);
+    const cameraOnRef = useRef(cameraOn);
+    useEffect(() => { cameraOnRef.current = cameraOn; }, [cameraOn]);
+
+    const localVideoTrackRef = useRef(localVideoTrack);
+    useEffect(() => { localVideoTrackRef.current = localVideoTrack; }, [localVideoTrack]);
 
     // Socket & Signaling
     const socketRef = useRef<Socket | null>(null);
@@ -63,7 +68,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
     const audioLockedRef = useRef(audioLocked);
     useEffect(() => { audioLockedRef.current = audioLocked; }, [audioLocked]);
     const [videoLocked, setVideoLocked] = useState(false);
-    const [screenLocked, setScreenLocked] = useState(false);
+    const [screenLocked, setScreenLocked] = useState(true); // Locked by default - instructor must grant permission
 
     const [recordingProtected, setRecordingProtected] = useState(false);
     const [watermarkPos, setWatermarkPos] = useState({ top: '10%', left: '10%' });
@@ -91,6 +96,12 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
 
     const micOnRef = useRef(micOn);
     useEffect(() => { micOnRef.current = micOn; }, [micOn]);
+
+    const isScreenSharingRef = useRef(isScreenSharing);
+    useEffect(() => { isScreenSharingRef.current = isScreenSharing; }, [isScreenSharing]);
+
+    const localScreenTrackRef = useRef(localScreenTrack);
+    useEffect(() => { localScreenTrackRef.current = localScreenTrack; }, [localScreenTrack]);
 
 
     const [remoteUsers, setRemoteUsers] = useState<any[]>([]);
@@ -270,6 +281,125 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
             }, 15000); // 15 seconds delay
 
             pendingLeftToastsRef.current[data.userId] = timeoutId;
+        });
+
+        // --- Screen Share Permission Handlers ---
+        socket.on('force_stop_screen_share', async (data) => {
+            console.log('[Socket] force_stop_screen_share received', data);
+            const sid = String(data.studentId);
+
+            // Remove permission for this student
+            setStudentsWithScreenSharePermission(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(sid);
+                console.log('[Permission State] Removed permission for student:', sid);
+                return newSet;
+            });
+            setBlockedScreenShareStudents(prev => new Set(prev).add(sid));
+
+            if (String(user?.id) === sid) {
+                // Check if currently sharing using Reft to avoid stale closures
+                if (isScreenSharingRef.current) {
+                    console.log('[Screen Share] Force stopping (individual)...');
+                    try {
+                        const track = localScreenTrackRef.current;
+                        if (track) {
+                            await client?.unpublish(track);
+                            track.stop();
+                            track.close();
+                        }
+                    } catch (err) {
+                        console.error("Error force stopping screen share:", err);
+                    }
+                    setLocalScreenTrack(null);
+                    setIsScreenSharing(false);
+                    setScreenSharerUid(null);
+
+                    // Republish camera if needed
+                    if (localVideoTrack && cameraOn) {
+                        await client?.publish(localVideoTrack);
+                    }
+
+                    socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
+                    showAlert("Super Instructor has stopped your screen share.", 'warning');
+                }
+            }
+        });
+
+        socket.on('force_stop_all_screen_share', async () => {
+            console.log('[Socket] force_stop_all_screen_share received');
+            // Clear all permissions
+            setStudentsWithScreenSharePermission(new Set());
+            console.log('[Permission State] Cleared all screen share permissions');
+
+            if (!isInstructorRef.current) {
+                // Students only: lock screen sharing and stop if currently sharing
+                setScreenLocked(true);
+                setBlockedScreenShareStudents(prev => new Set(prev).add(String(user?.id)));
+
+                if (isScreenSharingRef.current) {
+                    console.log('[Screen Share] Force stopping (all)...');
+                    try {
+                        const track = localScreenTrackRef.current;
+                        if (track) {
+                            await client?.unpublish(track);
+                            track.stop();
+                            track.close();
+                        }
+                    } catch (err) {
+                        console.error("Error force stopping all screen shares:", err);
+                    }
+                    setLocalScreenTrack(null);
+                    setIsScreenSharing(false);
+                    setScreenSharerUid(null);
+
+                    // Republish camera if needed
+                    if (localVideoTrack && cameraOn) {
+                        await client?.publish(localVideoTrack);
+                    }
+
+                    socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
+                    showAlert("Super Instructor has stopped all screen sharing.", 'warning');
+                }
+            }
+        });
+
+        socket.on('grant_screen_share_permission', (data) => {
+            console.log('[Socket] grant_screen_share_permission received', data);
+            const sid = String(data.studentId);
+
+            setStudentsWithScreenSharePermission(prev => {
+                const newSet = new Set(prev).add(sid);
+                console.log('[Permission Update] Granted permission to:', sid);
+                return newSet;
+            });
+            setBlockedScreenShareStudents(prev => {
+                const next = new Set(prev);
+                next.delete(sid);
+                return next;
+            });
+
+            if (String(user?.id) === sid) {
+                setScreenLocked(false);
+                console.log('[Permission Granted] Screen unlocked for current user');
+                showAlert("Super Instructor granted you permission to share screen.", 'success');
+            }
+        });
+
+        socket.on('unlock_all_screen_shares', () => {
+            console.log('[Socket] unlock_all_screen_shares received');
+
+            // Grant permission to ALL online students
+            const allStudentIds = onlineUsers.map(u => String(u.userId));
+            setStudentsWithScreenSharePermission(new Set(allStudentIds));
+            console.log('[Permission State] Granted screen share permission to all students:', allStudentIds);
+
+            setBlockedScreenShareStudents(new Set());
+            setScreenLocked(false);
+
+            if (!isInstructor) {
+                showAlert("Super Instructor has unlocked screen sharing.", 'success');
+            }
         });
 
         socket.on('si_class_ended', () => {
@@ -803,26 +933,37 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
         } else {
             // Starting Screen Share
             try {
-                // Set grace period for picker dialog
+                // 1. CRITICAL: Unpublish ALL video tracks before screen share
+                console.log('[Student Screen Share] Checking for published video tracks...');
+                const publishedTracks = client?.localTracks || [];
+                console.log('[Student Screen Share] Currently published tracks:', publishedTracks.map(t => ({ type: t.trackMediaType, id: t.getTrackId() })));
+
+                for (const track of publishedTracks) {
+                    if (track.trackMediaType === 'video') {
+                        console.log('[Student Screen Share] Unpublishing video track:', track.getTrackId());
+                        await client?.unpublish(track);
+                        console.log('[Student Screen Share] Video track unpublished successfully');
+                    }
+                }
+
+                // 2. Set grace period for picker dialog
                 isLocalSharingEndingRef.current = true;
                 setTimeout(() => { isLocalSharingEndingRef.current = false; }, 3000); // 3s for picker interaction
 
+                // 3. Create screen track
                 const screenTrack = await AgoraRTC.createScreenVideoTrack({}, "auto");
                 const track = Array.isArray(screenTrack) ? screenTrack[0] : screenTrack;
+                console.log('[Student Screen Share] Screen track created:', track.getTrackId());
 
-                // 1. Unpublish Camera if it's currently on
-                if (localVideoTrack && cameraOn) {
-                    await client?.unpublish(localVideoTrack);
-                    localVideoTrack.stop(); // Stop local preview
-                }
-
-                // Publish Screen
+                // 4. Publish Screen
                 setLocalScreenTrack(track);
                 setIsScreenSharing(true);
                 setScreenSharerUid(Number(user?.id));
                 setShowWhiteboard(false);
 
+                console.log('[Student Screen Share] Publishing screen track...');
                 await client?.publish(track);
+                console.log('[Student Screen Share] Screen track published successfully');
                 socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: true });
 
                 track.on("track-ended", async () => {

@@ -209,7 +209,7 @@ const SuperAdminDashboard: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-surface-border">
-                                {paidStudents.slice(0, 10).map((student) => (
+                                {paidStudents.map((student) => (
                                     <tr key={student.id} className="hover:bg-accent-emerald/5 transition-colors">
                                         <td className="p-3 font-bold text-accent-white">{student.name}</td>
                                         <td className="p-3 text-accent-gray text-[10px] mono">{student.phone || 'N/A'}</td>
@@ -219,11 +219,6 @@ const SuperAdminDashboard: React.FC = () => {
                                 ))}
                             </tbody>
                         </table>
-                        {paidStudents.length > 10 && (
-                            <div className="p-3 text-center text-accent-gray text-[10px] italic">
-                                ...and {paidStudents.length - 10} more
-                            </div>
-                        )}
                     </div>
                 </div>
 
@@ -245,7 +240,7 @@ const SuperAdminDashboard: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-surface-border">
-                                {unpaidStudents.slice(0, 10).map((student) => (
+                                {unpaidStudents.map((student) => (
                                     <tr key={student.id} className="hover:bg-accent-amber/5 transition-colors">
                                         <td className="p-3 font-bold text-accent-white">{student.name}</td>
                                         <td className="p-3 text-accent-gray text-[10px] mono">{student.phone || 'N/A'}</td>
@@ -257,11 +252,6 @@ const SuperAdminDashboard: React.FC = () => {
                                 ))}
                             </tbody>
                         </table>
-                        {unpaidStudents.length > 10 && (
-                            <div className="p-3 text-center text-accent-gray text-[10px] italic">
-                                ...and {unpaidStudents.length - 10} more
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>

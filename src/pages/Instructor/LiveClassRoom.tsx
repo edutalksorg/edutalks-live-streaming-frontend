@@ -89,6 +89,8 @@ const LiveClassRoom: React.FC = () => {
     const whiteboardRef = useRef<any>(null);
     const [reactions, setReactions] = useState<any[]>([]);
     const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+    const onlineUsersRef = useRef(onlineUsers);
+    useEffect(() => { onlineUsersRef.current = onlineUsers; }, [onlineUsers]);
 
     // Control Locks (Unlocked by default for collaboration)
     const [chatLocked, setChatLocked] = useState(false);
@@ -98,7 +100,7 @@ const LiveClassRoom: React.FC = () => {
     const [videoLocked, setVideoLocked] = useState(false);
     const videoLockedRef = useRef(videoLocked);
     useEffect(() => { videoLockedRef.current = videoLocked; }, [videoLocked]);
-    const [screenLocked, setScreenLocked] = useState(false);
+    const [screenLocked, setScreenLocked] = useState(true);
     const screenLockedRef = useRef(screenLocked);
     useEffect(() => { screenLockedRef.current = screenLocked; }, [screenLocked]);
 
@@ -428,52 +430,118 @@ const LiveClassRoom: React.FC = () => {
 
         // --- NEW: Screen Share Permission Handlers ---
         socket.on('force_stop_screen_share', async (data) => {
+            console.log('[Socket] force_stop_screen_share received', data);
             const sid = String(data.studentId);
+
+            // Remove permission for this student (both instructor and students need this update)
             setStudentsWithScreenSharePermission(prev => {
                 const newSet = new Set(prev);
                 newSet.delete(sid);
+                console.log('[Permission State] Removed permission for student:', sid, 'Remaining:', Array.from(newSet));
                 return newSet;
             });
             setBlockedScreenShareStudents(prev => new Set(prev).add(sid));
 
-            if (String(user?.id) === sid && isScreenSharingRef.current) {
-                await toggleScreenShare(); // Stop sharing
-                showToast("Instructor has stopped your screen share.", 'warning');
+            if (String(user?.id) === sid) {
+                // Check if currently sharing using Reft to avoid stale closures
+                if (isScreenSharingRef.current) {
+                    console.log('[Screen Share] Force stopping (individual)...');
+                    try {
+                        const track = localScreenTrackRef.current;
+                        if (track) {
+                            await client?.unpublish(track);
+                            track.stop();
+                            track.close();
+                        }
+                    } catch (err) {
+                        console.error("Error force stopping screen share:", err);
+                    }
+                    setLocalScreenTrack(null);
+                    setIsScreenSharing(false);
+                    setScreenSharerUid(null);
+
+                    // Republish camera if needed
+                    if (localVideoTrackRef.current && cameraOnRef.current) {
+                        await client?.publish(localVideoTrackRef.current);
+                    }
+
+                    socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
+                    showToast("Instructor has stopped your screen share.", 'warning');
+                }
             }
         });
 
         socket.on('force_stop_all_screen_share', async () => {
+            console.log('[Socket] force_stop_all_screen_share received');
+            // Clear all permissions for everyone (instructor needs this to update UI)
             setStudentsWithScreenSharePermission(new Set());
+            console.log('[Permission State] Cleared all screen share permissions');
 
             if (!isInstructorRef.current) {
+                // Students only: lock screen sharing and stop if currently sharing
                 setScreenLocked(true);
                 setBlockedScreenShareStudents(prev => new Set(prev).add(String(user?.id)));
 
                 if (isScreenSharingRef.current) {
-                    await toggleScreenShare(); // Stop sharing
+                    console.log('[Screen Share] Force stopping (all)...');
+                    try {
+                        const track = localScreenTrackRef.current;
+                        if (track) {
+                            await client?.unpublish(track);
+                            track.stop();
+                            track.close();
+                        }
+                    } catch (err) {
+                        console.error("Error force stopping all screen shares:", err);
+                    }
+                    setLocalScreenTrack(null);
+                    setIsScreenSharing(false);
+                    setScreenSharerUid(null);
+
+                    // Republish camera if needed
+                    if (localVideoTrackRef.current && cameraOnRef.current) {
+                        await client?.publish(localVideoTrackRef.current);
+                    }
+
+                    socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
                     showToast("Instructor has stopped all screen sharing.", 'warning');
                 }
             }
         });
 
         socket.on('grant_screen_share_permission', (data) => {
+            console.log('[Socket] grant_screen_share_permission received', data);
             const sid = String(data.studentId);
-            setStudentsWithScreenSharePermission(prev => new Set(prev).add(sid));
+            setStudentsWithScreenSharePermission(prev => {
+                const newSet = new Set(prev).add(sid);
+                console.log('[Permission Update] New permission set:', Array.from(newSet));
+                return newSet;
+            });
             setBlockedScreenShareStudents(prev => {
                 const next = new Set(prev);
                 next.delete(sid);
+                console.log('[Blocked Update] New blocked set:', Array.from(next));
                 return next;
             });
 
             if (String(user?.id) === sid) {
                 setScreenLocked(false);
+                console.log('[Permission Granted] Screen unlocked for current user');
                 showToast("Instructor granted you permission to share screen.", 'success');
             }
         });
 
         socket.on('unlock_all_screen_shares', () => {
+            console.log('[Socket] unlock_all_screen_shares received');
+
+            // Grant permission to ALL online students (not just unlock)
+            const allStudentIds = onlineUsersRef.current.map(u => String(u.userId));
+            setStudentsWithScreenSharePermission(new Set(allStudentIds));
+            console.log('[Permission State] Granted screen share permission to all students:', allStudentIds);
+
             setBlockedScreenShareStudents(new Set());
             setScreenLocked(false);
+
             if (!isInstructor) {
                 showToast("Instructor has unlocked screen sharing.", 'success');
             }
@@ -980,26 +1048,37 @@ const LiveClassRoom: React.FC = () => {
             // Starting Screen Share
             let screenTrack: any = null;
             try {
-                // Grace period for picker
+                // 1. CRITICAL: Unpublish ALL video tracks before screen share
+                console.log('[Screen Share] Checking for published video tracks...');
+                const publishedTracks = client?.localTracks || [];
+                console.log('[Screen Share] Currently published tracks:', publishedTracks.map(t => ({ type: t.trackMediaType, id: t.getTrackId() })));
+
+                for (const track of publishedTracks) {
+                    if (track.trackMediaType === 'video') {
+                        console.log('[Screen Share] Unpublishing video track:', track.getTrackId());
+                        await client?.unpublish(track);
+                        console.log('[Screen Share] Video track unpublished successfully');
+                    }
+                }
+
+                // 2. Grace period for picker
                 isLocalSharingEndingRef.current = true;
                 setTimeout(() => { isLocalSharingEndingRef.current = false; }, 3000);
 
+                // 3. Create screen track
                 const tracks = await AgoraRTC.createScreenVideoTrack({}, "auto");
                 screenTrack = Array.isArray(tracks) ? tracks[0] : tracks;
+                console.log('[Screen Share] Screen track created:', screenTrack.getTrackId());
 
-                // 1. Unpublish Camera if it's currently on
-                if (localVideoTrack && cameraOn) {
-                    await client?.unpublish(localVideoTrack);
-                    localVideoTrack.stop(); // Stop local preview
-                }
-
-                // Publish Screen
+                // 4. Publish Screen
                 setLocalScreenTrack(screenTrack);
                 setIsScreenSharing(true);
                 setScreenSharerUid(Number(user?.id));
                 // setShowWhiteboard(false); // Removed auto-hide
 
+                console.log('[Screen Share] Publishing screen track...');
                 await client?.publish(screenTrack);
+                console.log('[Screen Share] Screen track published successfully');
                 socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: true });
 
                 screenTrack.on("track-ended", async () => {
@@ -1107,25 +1186,48 @@ const LiveClassRoom: React.FC = () => {
     };
 
     // --- Admin Screen Share Controls ---
+    // --- Admin Screen Share Controls ---
     const handleStopScreenShare = (studentId: string) => {
         socketRef.current?.emit('admin_stop_screen_share', { classId: id, studentId });
+        // Optimistic Update
+        setStudentsWithScreenSharePermission(prev => {
+            const next = new Set(prev);
+            next.delete(studentId);
+            return next;
+        });
+        setBlockedScreenShareStudents(prev => new Set(prev).add(studentId));
     };
 
     const handleGrantScreenSharePermission = (studentId: string) => {
         socketRef.current?.emit('admin_grant_screen_share', { classId: id, studentId });
+        // Optimistic Update
+        setStudentsWithScreenSharePermission(prev => new Set(prev).add(studentId));
+        setBlockedScreenShareStudents(prev => {
+            const next = new Set(prev);
+            next.delete(studentId);
+            return next;
+        });
     };
 
     const handleStopAllScreenShares = async () => {
         const confirmed = await showConfirm("Stop all student screen shares and lock?", "warning", "STOP ALL SCREENS");
         if (confirmed) {
             socketRef.current?.emit('admin_stop_all_screen_shares', { classId: id });
+            // Optimistic Update
+            setStudentsWithScreenSharePermission(new Set());
+            setScreenLocked(true);
         }
     };
 
     const handleUnlockAllScreenShares = async () => {
-        const confirmed = await showConfirm("Unlock screen sharing for all students?", "info", "UNLOCK SCHREENS");
+        const confirmed = await showConfirm("Unlock screen sharing for all students?", "info", "UNLOCK SCREENS");
         if (confirmed) {
             socketRef.current?.emit('admin_unlock_all_screen_shares', { classId: id });
+            // Optimistic Update
+            const allStudentIds = onlineUsersRef.current.map(u => String(u.userId));
+            setStudentsWithScreenSharePermission(new Set(allStudentIds));
+            setBlockedScreenShareStudents(new Set());
+            setScreenLocked(false);
         }
     };
 
@@ -1687,18 +1789,24 @@ const LiveClassRoom: React.FC = () => {
                                                     </button>
                                                 </div>
                                                 <div className="flex gap-2 pb-2 border-b border-slate-100 mt-2">
-                                                    <button
-                                                        onClick={handleStopAllScreenShares}
-                                                        className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
-                                                    >
-                                                        Stop All Screens
-                                                    </button>
-                                                    <button
-                                                        onClick={handleUnlockAllScreenShares}
-                                                        className="flex-1 bg-blue-100 text-blue-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-blue-200 transition-colors"
-                                                    >
-                                                        Unlock Screens
-                                                    </button>
+                                                    {/* Show STOP ALL only if EVERYONE has permission. If even one student lacks permission, show ALLOW ALL. */}
+                                                    {studentsWithScreenSharePermission.size > 0 && studentsWithScreenSharePermission.size >= onlineUsers.filter(u => String(u.userId) !== String(user?.id)).length ? (
+                                                        <button
+                                                            onClick={handleStopAllScreenShares}
+                                                            className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
+                                                            title="Revoke screen share permission for all students"
+                                                        >
+                                                            Stop All Screens
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={handleUnlockAllScreenShares}
+                                                            className="flex-1 bg-emerald-100 text-emerald-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-emerald-200 transition-colors"
+                                                            title="Grant screen share permission to all students"
+                                                        >
+                                                            Allow All Screens
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         )}
@@ -1750,20 +1858,23 @@ const LiveClassRoom: React.FC = () => {
                                                                         </button>
                                                                     </div>
                                                                     <div className="flex flex-col gap-1">
-                                                                        <button
-                                                                            onClick={() => handleGrantScreenSharePermission(String(u.userId))}
-                                                                            className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200"
-                                                                            title="Allow Screen Share"
-                                                                        >
-                                                                            <FaDesktop size={10} />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleStopScreenShare(String(u.userId))}
-                                                                            className="w-6 h-6 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-200"
-                                                                            title="Stop Screen Share"
-                                                                        >
-                                                                            <FaTimesCircle size={10} />
-                                                                        </button>
+                                                                        {Number(screenSharerUid) === Number(u.userId) || studentsWithScreenSharePermission.has(String(u.userId)) ? (
+                                                                            <button
+                                                                                onClick={() => handleStopScreenShare(String(u.userId))}
+                                                                                className="w-6 h-6 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200"
+                                                                                title="Stop Share & Revoke Permission"
+                                                                            >
+                                                                                <FaTimesCircle size={10} />
+                                                                            </button>
+                                                                        ) : (
+                                                                            <button
+                                                                                onClick={() => handleGrantScreenSharePermission(String(u.userId))}
+                                                                                className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center hover:bg-emerald-200"
+                                                                                title="Allow Screen Share"
+                                                                            >
+                                                                                <FaDesktop size={10} />
+                                                                            </button>
+                                                                        )}
                                                                     </div>
                                                                 </>
                                                             )}

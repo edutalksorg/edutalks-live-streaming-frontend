@@ -89,6 +89,8 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
     const whiteboardRef = useRef<any>(null);
     const [reactions, setReactions] = useState<any[]>([]);
     const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+    const onlineUsersRef = useRef(onlineUsers);
+    useEffect(() => { onlineUsersRef.current = onlineUsers; }, [onlineUsers]);
 
     // Control Locks (Unlocked by default for collaboration)
     const [chatLocked, setChatLocked] = useState(false);
@@ -98,7 +100,7 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
     const [videoLocked, setVideoLocked] = useState(false);
     const videoLockedRef = useRef(videoLocked);
     useEffect(() => { videoLockedRef.current = videoLocked; }, [videoLocked]);
-    const [screenLocked, setScreenLocked] = useState(false);
+    const [screenLocked, setScreenLocked] = useState(true); // Locked by default - instructor must grant permission
     const screenLockedRef = useRef(screenLocked);
     useEffect(() => { screenLockedRef.current = screenLocked; }, [screenLocked]);
 
@@ -429,9 +431,13 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
         });
 
         socket.on('force_stop_all_screen_share', async () => {
+            console.log('[Socket] force_stop_all_screen_share received');
+            // Clear all permissions for everyone (instructor needs this to update UI)
             setStudentsWithScreenSharePermission(new Set());
+            console.log('[Permission State] Cleared all screen share permissions');
 
             if (!isInstructorRef.current) {
+                // Students only: lock screen sharing and stop if currently sharing
                 setScreenLocked(true);
                 setBlockedScreenShareStudents(prev => new Set(prev).add(String(user?.id)));
 
@@ -458,8 +464,16 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
         });
 
         socket.on('unlock_all_screen_shares', () => {
+            console.log('[Socket] unlock_all_screen_shares received');
+
+            // Grant permission to ALL online students (not just unlock)
+            const allStudentIds = onlineUsersRef.current.map(u => String(u.userId));
+            setStudentsWithScreenSharePermission(new Set(allStudentIds));
+            console.log('[Permission State] Granted screen share permission to all students:', allStudentIds);
+
             setBlockedScreenShareStudents(new Set());
             setScreenLocked(false);
+
             if (!isInstructor) {
                 showToast("Instructor has unlocked screen sharing.", 'success');
             }
@@ -777,25 +791,50 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
     }, [isLive, user?.id]);
 
     // --- Admin Screen Share Controls ---
+    // --- Admin Screen Share Controls ---
     const handleStopScreenShare = (studentId: string) => {
         socketRef.current?.emit('admin_stop_screen_share', { classId: id, studentId });
+        // Optimistic Update
+        setStudentsWithScreenSharePermission(prev => {
+            const next = new Set(prev);
+            next.delete(studentId);
+            return next;
+        });
+        setBlockedScreenShareStudents(prev => new Set(prev).add(studentId));
     };
 
     const handleGrantScreenSharePermission = (studentId: string) => {
         socketRef.current?.emit('admin_grant_screen_share', { classId: id, studentId });
+        // Optimistic Update
+        setStudentsWithScreenSharePermission(prev => new Set(prev).add(studentId));
+        setBlockedScreenShareStudents(prev => {
+            const next = new Set(prev);
+            next.delete(studentId);
+            return next;
+        });
     };
 
     const handleStopAllScreenShares = async () => {
         const confirmed = await showConfirm("Stop all student screen shares and lock?", "warning", "STOP ALL SCREENS");
         if (confirmed) {
             socketRef.current?.emit('admin_stop_all_screen_shares', { classId: id });
+            // Optimistic Update
+            setStudentsWithScreenSharePermission(new Set());
+            // Optionally clear blocked list or add everyone? Usually stop all implies reset or lock everyone.
+            // Based on listener logic, we don't necessarily ban everyone, just stop/clear permissions.
+            // But we might want to ensure buttons show "Allow All" next, which they will if set is empty.
         }
     };
 
     const handleUnlockAllScreenShares = async () => {
-        const confirmed = await showConfirm("Unlock screen sharing for all students?", "info", "UNLOCK SCHREENS");
+        const confirmed = await showConfirm("Unlock screen sharing for all students?", "info", "UNLOCK SCREENS");
         if (confirmed) {
             socketRef.current?.emit('admin_unlock_all_screen_shares', { classId: id });
+            // Optimistic Update
+            const allStudentIds = onlineUsersRef.current.map(u => String(u.userId));
+            setStudentsWithScreenSharePermission(new Set(allStudentIds));
+            setBlockedScreenShareStudents(new Set());
+            setScreenLocked(false);
         }
     };
 
@@ -1654,18 +1693,24 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                                                             </button>
                                                         </div>
                                                         <div className="flex gap-2 pb-2 border-b border-slate-100 mt-2">
-                                                            <button
-                                                                onClick={handleStopAllScreenShares}
-                                                                className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
-                                                            >
-                                                                Stop All Screens
-                                                            </button>
-                                                            <button
-                                                                onClick={handleUnlockAllScreenShares}
-                                                                className="flex-1 bg-blue-100 text-blue-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-blue-200 transition-colors"
-                                                            >
-                                                                Unlock Screens
-                                                            </button>
+                                                            {/* Show STOP ALL only if EVERYONE has permission. If even one student lacks permission, show ALLOW ALL. */}
+                                                            {studentsWithScreenSharePermission.size > 0 && studentsWithScreenSharePermission.size >= onlineUsers.filter(u => String(u.userId) !== String(user?.id)).length ? (
+                                                                <button
+                                                                    onClick={handleStopAllScreenShares}
+                                                                    className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
+                                                                    title="Revoke screen share permission for all students"
+                                                                >
+                                                                    Stop All Screens
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={handleUnlockAllScreenShares}
+                                                                    className="flex-1 bg-emerald-100 text-emerald-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-emerald-200 transition-colors"
+                                                                    title="Grant screen share permission to all students"
+                                                                >
+                                                                    Allow All Screens
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -1742,20 +1787,23 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                                                                                 )}
                                                                             </div>
                                                                             <div className="flex gap-1">
-                                                                                <button
-                                                                                    onClick={() => handleGrantScreenSharePermission(String(u.userId))}
-                                                                                    className="text-[8px] bg-blue-100 text-blue-600 px-2 py-1 rounded font-black uppercase hover:bg-blue-200 flex-1"
-                                                                                    title="Allow Screen Share"
-                                                                                >
-                                                                                    Allow Screen
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => handleStopScreenShare(String(u.userId))}
-                                                                                    className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase hover:bg-red-200 flex-1"
-                                                                                    title="Stop Screen Share"
-                                                                                >
-                                                                                    Stop Screen
-                                                                                </button>
+                                                                                {Number(screenSharerUid) === Number(u.userId) || studentsWithScreenSharePermission.has(String(u.userId)) ? (
+                                                                                    <button
+                                                                                        onClick={() => handleStopScreenShare(String(u.userId))}
+                                                                                        className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase hover:bg-red-200 flex-1"
+                                                                                        title="Stop Share & Revoke Permission"
+                                                                                    >
+                                                                                        Stop Screen
+                                                                                    </button>
+                                                                                ) : (
+                                                                                    <button
+                                                                                        onClick={() => handleGrantScreenSharePermission(String(u.userId))}
+                                                                                        className="text-[8px] bg-emerald-100 text-emerald-600 px-2 py-1 rounded font-black uppercase hover:bg-emerald-200 flex-1"
+                                                                                        title="Allow Screen Share"
+                                                                                    >
+                                                                                        Allow Screen
+                                                                                    </button>
+                                                                                )}
                                                                             </div>
                                                                             {isHandRaisedByU && (
                                                                                 <button
