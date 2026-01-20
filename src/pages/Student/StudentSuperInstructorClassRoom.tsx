@@ -79,6 +79,16 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
     const blockedStudentsRef = useRef(blockedStudents);
     useEffect(() => { blockedStudentsRef.current = blockedStudents; }, [blockedStudents]);
 
+    // Track which students have permission to share screen
+    const [studentsWithScreenSharePermission, setStudentsWithScreenSharePermission] = useState<Set<string>>(new Set());
+    const studentsWithScreenSharePermissionRef = useRef(studentsWithScreenSharePermission);
+    useEffect(() => { studentsWithScreenSharePermissionRef.current = studentsWithScreenSharePermission; }, [studentsWithScreenSharePermission]);
+
+    // Track students who are explicitly blocked from screen sharing
+    const [blockedScreenShareStudents, setBlockedScreenShareStudents] = useState<Set<string>>(new Set());
+    const blockedScreenShareStudentsRef = useRef(blockedScreenShareStudents);
+    useEffect(() => { blockedScreenShareStudentsRef.current = blockedScreenShareStudents; }, [blockedScreenShareStudents]);
+
     const micOnRef = useRef(micOn);
     useEffect(() => { micOnRef.current = micOn; }, [micOn]);
 
@@ -150,7 +160,8 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
         });
         socket.on('screen_status', (data) => {
             setScreenLocked(data.locked);
-            if (data.locked && !isInstructor && isScreenSharing) {
+            // If locked and I am not instructor and I don't have special permission, stop sharing
+            if (data.locked && !isInstructorRef.current && !studentsWithScreenSharePermissionRef.current.has(String(user?.id)) && isScreenSharing) {
                 toggleScreenShare(); // Logic handles stop and unpublish
             }
         });
@@ -336,6 +347,59 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
             setAudioLocked(false);
             if (!isInstructor) {
                 showAlert("Instructor has unlocked all microphones.", "success");
+            }
+        });
+
+        // --- NEW: Screen Share Permission Handlers ---
+        socket.on('force_stop_screen_share', async (data) => {
+            const sid = String(data.studentId);
+            setStudentsWithScreenSharePermission(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(sid);
+                return newSet;
+            });
+            setBlockedScreenShareStudents(prev => new Set(prev).add(sid));
+
+            if (String(user?.id) === sid && isScreenSharing) {
+                await toggleScreenShare(); // Stop sharing
+                showAlert("Instructor has stopped your screen share.", "warning");
+            }
+        });
+
+        socket.on('force_stop_all_screen_share', async () => {
+            setStudentsWithScreenSharePermission(new Set());
+
+            if (!isInstructorRef.current) {
+                setScreenLocked(true);
+                setBlockedScreenShareStudents(prev => new Set(prev).add(String(user?.id)));
+
+                if (isScreenSharing) {
+                    await toggleScreenShare(); // Stop sharing
+                    showAlert("Instructor has stopped all screen sharing.", "warning");
+                }
+            }
+        });
+
+        socket.on('grant_screen_share_permission', (data) => {
+            const sid = String(data.studentId);
+            setStudentsWithScreenSharePermission(prev => new Set(prev).add(sid));
+            setBlockedScreenShareStudents(prev => {
+                const next = new Set(prev);
+                next.delete(sid);
+                return next;
+            });
+
+            if (String(user?.id) === sid) {
+                setScreenLocked(false);
+                showAlert("Instructor granted you permission to share screen.", "success");
+            }
+        });
+
+        socket.on('unlock_all_screen_shares', () => {
+            setBlockedScreenShareStudents(new Set());
+            setScreenLocked(false);
+            if (!isInstructor) {
+                showAlert("Instructor has unlocked screen sharing.", "success");
             }
         });
 
@@ -702,11 +766,15 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
 
     const toggleScreenShare = async () => {
         if (!isInstructor) {
-            // if (recordingProtected) {
-            //    showAlert("Screen Sharing is restricted during Protected Sessions.", "error", "RESTRICTED ACCESS");
-            //    return;
-            // }
-            if (screenLocked) return;
+            // Check permissions
+            const isLocked = screenLocked;
+            const isBlocked = blockedScreenShareStudentsRef.current.has(String(user?.id));
+            const hasPermission = studentsWithScreenSharePermissionRef.current.has(String(user?.id));
+
+            if (isBlocked || (isLocked && !hasPermission)) {
+                showAlert("You don't have permission to share screen.", "error");
+                return;
+            }
         }
         if (isScreenSharing) {
             // Stopping Screen Share
@@ -1175,15 +1243,13 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                             >
                                 {cameraOn ? <FaVideo size={16} /> : <FaVideoSlash size={16} />}
                             </button>
-                            {isInstructor && (
-                                <button
-                                    onClick={requestScreenShare}
-                                    className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${isScreenSharing ? 'bg-blue-600 border-blue-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
-                                    title="Share Screen"
-                                >
-                                    <FaDesktop size={16} />
-                                </button>
-                            )}
+                            <button
+                                onClick={toggleScreenShare}
+                                className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${isScreenSharing ? 'bg-blue-600 border-blue-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
+                                title="Share Screen"
+                            >
+                                <FaDesktop size={16} />
+                            </button>
                             {isInstructor && (
                                 <button
                                     onClick={() => {

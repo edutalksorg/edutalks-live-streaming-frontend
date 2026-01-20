@@ -61,6 +61,16 @@ const LiveClassRoom: React.FC = () => {
     const blockedStudentsRef = useRef(blockedStudents);
     useEffect(() => { blockedStudentsRef.current = blockedStudents; }, [blockedStudents]);
 
+    // Track which students have permission to share screen
+    const [studentsWithScreenSharePermission, setStudentsWithScreenSharePermission] = useState<Set<string>>(new Set());
+    const studentsWithScreenSharePermissionRef = useRef(studentsWithScreenSharePermission);
+    useEffect(() => { studentsWithScreenSharePermissionRef.current = studentsWithScreenSharePermission; }, [studentsWithScreenSharePermission]);
+
+    // Track students who are explicitly blocked from screen sharing
+    const [blockedScreenShareStudents, setBlockedScreenShareStudents] = useState<Set<string>>(new Set());
+    const blockedScreenShareStudentsRef = useRef(blockedScreenShareStudents);
+    useEffect(() => { blockedScreenShareStudentsRef.current = blockedScreenShareStudents; }, [blockedScreenShareStudents]);
+
     // Socket & Signaling
     const socketRef = useRef<Socket | null>(null);
     const clientRef = useRef<IAgoraRTCClient | null>(null); // To access client inside socket listeners
@@ -180,7 +190,8 @@ const LiveClassRoom: React.FC = () => {
         });
         socket.on('screen_status', (data) => {
             setScreenLocked(data.locked);
-            if (data.locked && !isInstructorRef.current && isScreenSharingRef.current) {
+            // If locked and I am not instructor and I don't have special permission, stop sharing
+            if (data.locked && !isInstructorRef.current && !studentsWithScreenSharePermissionRef.current.has(String(user?.id)) && isScreenSharingRef.current) {
                 toggleScreenShare(); // Logic handles stop and unpublish
             }
         });
@@ -412,6 +423,59 @@ const LiveClassRoom: React.FC = () => {
             setAudioLocked(false);
             if (!isInstructor) {
                 showToast("Instructor has unlocked all microphones.", 'success');
+            }
+        });
+
+        // --- NEW: Screen Share Permission Handlers ---
+        socket.on('force_stop_screen_share', async (data) => {
+            const sid = String(data.studentId);
+            setStudentsWithScreenSharePermission(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(sid);
+                return newSet;
+            });
+            setBlockedScreenShareStudents(prev => new Set(prev).add(sid));
+
+            if (String(user?.id) === sid && isScreenSharingRef.current) {
+                await toggleScreenShare(); // Stop sharing
+                showToast("Instructor has stopped your screen share.", 'warning');
+            }
+        });
+
+        socket.on('force_stop_all_screen_share', async () => {
+            setStudentsWithScreenSharePermission(new Set());
+
+            if (!isInstructorRef.current) {
+                setScreenLocked(true);
+                setBlockedScreenShareStudents(prev => new Set(prev).add(String(user?.id)));
+
+                if (isScreenSharingRef.current) {
+                    await toggleScreenShare(); // Stop sharing
+                    showToast("Instructor has stopped all screen sharing.", 'warning');
+                }
+            }
+        });
+
+        socket.on('grant_screen_share_permission', (data) => {
+            const sid = String(data.studentId);
+            setStudentsWithScreenSharePermission(prev => new Set(prev).add(sid));
+            setBlockedScreenShareStudents(prev => {
+                const next = new Set(prev);
+                next.delete(sid);
+                return next;
+            });
+
+            if (String(user?.id) === sid) {
+                setScreenLocked(false);
+                showToast("Instructor granted you permission to share screen.", 'success');
+            }
+        });
+
+        socket.on('unlock_all_screen_shares', () => {
+            setBlockedScreenShareStudents(new Set());
+            setScreenLocked(false);
+            if (!isInstructor) {
+                showToast("Instructor has unlocked screen sharing.", 'success');
             }
         });
 
@@ -872,11 +936,15 @@ const LiveClassRoom: React.FC = () => {
         }
 
         if (!isInstructor) {
-            // if (recordingProtected) {
-            //    showAlert("Screen Sharing is restricted during Protected Sessions.", "error", "RESTRICTED ACCESS");
-            //    return;
-            // }
-            if (screenLockedRef.current) return;
+            // Check permissions
+            const isLocked = screenLockedRef.current;
+            const isBlocked = blockedScreenShareStudentsRef.current.has(String(user?.id));
+            const hasPermission = studentsWithScreenSharePermissionRef.current.has(String(user?.id));
+
+            if (isBlocked || (isLocked && !hasPermission)) {
+                showToast("You don't have permission to share screen.", 'error');
+                return;
+            }
         }
         if (isScreenSharingRef.current) {
             // Stopping Screen Share
@@ -1035,6 +1103,29 @@ const LiveClassRoom: React.FC = () => {
         const confirmed = await showConfirm("Unlock all student microphones?", "info", "UNLOCK ALL");
         if (confirmed) {
             socketRef.current?.emit('admin_unlock_all', { classId: id });
+        }
+    };
+
+    // --- Admin Screen Share Controls ---
+    const handleStopScreenShare = (studentId: string) => {
+        socketRef.current?.emit('admin_stop_screen_share', { classId: id, studentId });
+    };
+
+    const handleGrantScreenSharePermission = (studentId: string) => {
+        socketRef.current?.emit('admin_grant_screen_share', { classId: id, studentId });
+    };
+
+    const handleStopAllScreenShares = async () => {
+        const confirmed = await showConfirm("Stop all student screen shares and lock?", "warning", "STOP ALL SCREENS");
+        if (confirmed) {
+            socketRef.current?.emit('admin_stop_all_screen_shares', { classId: id });
+        }
+    };
+
+    const handleUnlockAllScreenShares = async () => {
+        const confirmed = await showConfirm("Unlock screen sharing for all students?", "info", "UNLOCK SCHREENS");
+        if (confirmed) {
+            socketRef.current?.emit('admin_unlock_all_screen_shares', { classId: id });
         }
     };
 
@@ -1421,15 +1512,13 @@ const LiveClassRoom: React.FC = () => {
                             >
                                 {cameraOn ? <FaVideo size={16} /> : <FaVideoSlash size={16} />}
                             </button>
-                            {isInstructor && (
-                                <button
-                                    onClick={requestScreenShare}
-                                    className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${isScreenSharing ? 'bg-blue-600 border-blue-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
-                                    title="Share Screen"
-                                >
-                                    <FaDesktop size={16} />
-                                </button>
-                            )}
+                            <button
+                                onClick={toggleScreenShare}
+                                className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${isScreenSharing ? 'bg-blue-600 border-blue-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
+                                title="Share Screen"
+                            >
+                                <FaDesktop size={16} />
+                            </button>
                             {isInstructor && (
                                 <button
                                     onClick={() => {
@@ -1604,67 +1693,80 @@ const LiveClassRoom: React.FC = () => {
                                                 </button>
                                             </div>
                                         )}
-                                        {onlineUsers.filter(u => String(u.userId) !== String(user?.id)).map(u => {
-                                            const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId) || Number(ru.uid) === Number(u.userId));
-                                            const isBlocked = blockedStudents.has(String(u.userId));
-                                            const hasPermission = !isBlocked && (!audioLocked || studentsWithUnmutePermission.has(String(u.userId)));
-                                            const isHandRaisedByU = handsRaised.some(h => String(h.id) === String(u.userId));
 
-                                            return (
-                                                <div key={u.userId} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="relative">
-                                                            <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase">{u.userName?.charAt(0)}</div>
-                                                            {isHandRaisedByU && (
-                                                                <div className="absolute -top-1 -right-1 bg-amber-500 text-white p-0.5 rounded-full animate-bounce">
-                                                                    <FaHandPaper size={8} />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <span className="text-xs font-bold text-slate-600">{u.userName}</span>
-                                                    </div>
-                                                    <div className="flex gap-2 items-center">
-                                                        {rUser?.hasAudio ? (
-                                                            <FaMicrophone size={12} className="text-emerald-500" title="Speaking" />
-                                                        ) : hasPermission ? (
-                                                            <FaMicrophone size={12} className="text-slate-400 opacity-50" title="Allowed but muted" />
-                                                        ) : (
-                                                            <FaMicrophoneSlash size={12} className="text-rose-400/50" title="Muted by instructor" />
-                                                        )}
 
-                                                        {isInstructor && (
-                                                            <div className="flex gap-1 ml-2">
-                                                                {rUser?.hasAudio || hasPermission ? (
-                                                                    <button
-                                                                        onClick={() => handleMuteStudent(u.userId)}
-                                                                        className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase hover:bg-red-200"
-                                                                        title="Force Mute & Revoke Permission"
-                                                                    >
-                                                                        Mute
-                                                                    </button>
-                                                                ) : (
-                                                                    <button
-                                                                        onClick={() => handleGrantUnmutePermission(u.userId)}
-                                                                        className="text-[8px] bg-blue-100 text-blue-600 px-2 py-1 rounded font-black uppercase hover:bg-blue-200"
-                                                                        title="Allow to Speak"
-                                                                    >
-                                                                        Allow
-                                                                    </button>
-                                                                )}
+                                        <div className="space-y-2">
+                                            {onlineUsers.filter(u => String(u.userId) !== String(user?.id)).map(u => {
+                                                const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId));
+                                                const isBlocked = blockedStudents.has(String(u.userId));
+                                                const hasPermission = !isBlocked && (!audioLocked || studentsWithUnmutePermission.has(String(u.userId)));
+                                                const isHandRaisedByU = handsRaised.some(h => String(h.id) === String(u.userId));
+
+                                                return (
+                                                    <div key={u.userId} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="relative">
+                                                                <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase">{u.userName?.slice(0, 2) || '??'}</div>
                                                                 {isHandRaisedByU && (
-                                                                    <button
-                                                                        onClick={() => approveStudent(u.userId)}
-                                                                        className="text-[8px] bg-amber-100 text-amber-600 px-2 py-1 rounded font-black uppercase hover:bg-amber-200"
-                                                                    >
-                                                                        Approve
-                                                                    </button>
+                                                                    <div className="absolute -top-1 -right-1 bg-amber-500 text-white p-0.5 rounded-full animate-bounce">
+                                                                        <FaHandPaper size={8} />
+                                                                    </div>
                                                                 )}
                                                             </div>
-                                                        )}
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs font-bold text-slate-900">{u.userName}</span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[9px] text-slate-400 capitalize">{u.role}</span>
+                                                                    {screenSharerUid === Number(u.userId) && <span className="text-[8px] bg-rose-500 text-white px-1 py-0.5 rounded uppercase font-bold">Sharing Screen</span>}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            {isInstructor && (
+                                                                <>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <button
+                                                                            onClick={() => handleGrantUnmutePermission(String(u.userId))}
+                                                                            className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center hover:bg-emerald-200"
+                                                                            title="Allow Unmute"
+                                                                        >
+                                                                            <FaMicrophone size={10} />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleMuteStudent(String(u.userId))}
+                                                                            className="w-6 h-6 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200"
+                                                                            title="Force Mute"
+                                                                        >
+                                                                            <FaMicrophoneSlash size={10} />
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <button
+                                                                            onClick={() => handleGrantScreenSharePermission(String(u.userId))}
+                                                                            className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200"
+                                                                            title="Allow Screen Share"
+                                                                        >
+                                                                            <FaDesktop size={10} />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleStopScreenShare(String(u.userId))}
+                                                                            className="w-6 h-6 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-200"
+                                                                            title="Stop Screen Share"
+                                                                        >
+                                                                            <FaTimesCircle size={10} />
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                            <div className="flex items-center gap-1 text-slate-300">
+                                                                {rUser?.hasAudio ? <FaMicrophone size={12} className="text-emerald-500" /> : <FaMicrophoneSlash size={12} />}
+                                                                {rUser?.hasVideo ? <FaVideo size={12} className="text-emerald-500" /> : <FaVideoSlash size={12} />}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 

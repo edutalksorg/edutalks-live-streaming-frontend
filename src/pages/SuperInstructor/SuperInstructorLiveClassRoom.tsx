@@ -57,6 +57,16 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
     const blockedStudentsRef = useRef(blockedStudents);
     useEffect(() => { blockedStudentsRef.current = blockedStudents; }, [blockedStudents]);
 
+    // Track which students have permission to share screen
+    const [studentsWithScreenSharePermission, setStudentsWithScreenSharePermission] = useState<Set<string>>(new Set());
+    const studentsWithScreenSharePermissionRef = useRef(studentsWithScreenSharePermission);
+    useEffect(() => { studentsWithScreenSharePermissionRef.current = studentsWithScreenSharePermission; }, [studentsWithScreenSharePermission]);
+
+    // Track students who are explicitly blocked from screen sharing
+    const [blockedScreenShareStudents, setBlockedScreenShareStudents] = useState<Set<string>>(new Set());
+    const blockedScreenShareStudentsRef = useRef(blockedScreenShareStudents);
+    useEffect(() => { blockedScreenShareStudentsRef.current = blockedScreenShareStudents; }, [blockedScreenShareStudents]);
+
     const [cameraOn, setCameraOn] = useState(false);
     const cameraOnRef = useRef(cameraOn);
     useEffect(() => { cameraOnRef.current = cameraOn; }, [cameraOn]);
@@ -182,7 +192,8 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
         });
         socket.on('screen_status', (data) => {
             setScreenLocked(data.locked);
-            if (data.locked && !isInstructorRef.current && isScreenSharingRef.current) {
+            // If locked and I am not instructor and I don't have special permission, stop sharing
+            if (data.locked && !isInstructorRef.current && !studentsWithScreenSharePermissionRef.current.has(String(user?.id)) && isScreenSharingRef.current) {
                 toggleScreenShare(); // Logic handles stop and unpublish
             }
         });
@@ -398,6 +409,59 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
             setAudioLocked(false);
             if (!isInstructor) {
                 showToast("Instructor has unlocked all microphones.", 'success');
+            }
+        });
+
+        // --- NEW: Screen Share Permission Handlers ---
+        socket.on('force_stop_screen_share', async (data) => {
+            const sid = String(data.studentId);
+            setStudentsWithScreenSharePermission(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(sid);
+                return newSet;
+            });
+            setBlockedScreenShareStudents(prev => new Set(prev).add(sid));
+
+            if (String(user?.id) === sid && isScreenSharingRef.current) {
+                await toggleScreenShare(); // Stop sharing
+                showToast("Instructor has stopped your screen share.", 'warning');
+            }
+        });
+
+        socket.on('force_stop_all_screen_share', async () => {
+            setStudentsWithScreenSharePermission(new Set());
+
+            if (!isInstructorRef.current) {
+                setScreenLocked(true);
+                setBlockedScreenShareStudents(prev => new Set(prev).add(String(user?.id)));
+
+                if (isScreenSharingRef.current) {
+                    await toggleScreenShare(); // Stop sharing
+                    showToast("Instructor has stopped all screen sharing.", 'warning');
+                }
+            }
+        });
+
+        socket.on('grant_screen_share_permission', (data) => {
+            const sid = String(data.studentId);
+            setStudentsWithScreenSharePermission(prev => new Set(prev).add(sid));
+            setBlockedScreenShareStudents(prev => {
+                const next = new Set(prev);
+                next.delete(sid);
+                return next;
+            });
+
+            if (String(user?.id) === sid) {
+                setScreenLocked(false);
+                showToast("Instructor granted you permission to share screen.", 'success');
+            }
+        });
+
+        socket.on('unlock_all_screen_shares', () => {
+            setBlockedScreenShareStudents(new Set());
+            setScreenLocked(false);
+            if (!isInstructor) {
+                showToast("Instructor has unlocked screen sharing.", 'success');
             }
         });
 
@@ -711,6 +775,29 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
             if (c) { c.leave(); }
         };
     }, [isLive, user?.id]);
+
+    // --- Admin Screen Share Controls ---
+    const handleStopScreenShare = (studentId: string) => {
+        socketRef.current?.emit('admin_stop_screen_share', { classId: id, studentId });
+    };
+
+    const handleGrantScreenSharePermission = (studentId: string) => {
+        socketRef.current?.emit('admin_grant_screen_share', { classId: id, studentId });
+    };
+
+    const handleStopAllScreenShares = async () => {
+        const confirmed = await showConfirm("Stop all student screen shares and lock?", "warning", "STOP ALL SCREENS");
+        if (confirmed) {
+            socketRef.current?.emit('admin_stop_all_screen_shares', { classId: id });
+        }
+    };
+
+    const handleUnlockAllScreenShares = async () => {
+        const confirmed = await showConfirm("Unlock screen sharing for all students?", "info", "UNLOCK SCHREENS");
+        if (confirmed) {
+            socketRef.current?.emit('admin_unlock_all_screen_shares', { classId: id });
+        }
+    };
 
     const toggleMic = async (bypassChecks: boolean = false, forceState?: boolean) => {
         // Check if student has permission to unmute
@@ -1127,14 +1214,14 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                         {/* Connection Status Indicator */}
                         <div className="flex items-center gap-2">
                             <div className={`px-3 py-1.5 rounded-lg border flex items-center gap-2 backdrop-blur-md transition-all ${!clientRef.current ? 'bg-slate-100 border-slate-300 text-slate-500' :
-                                    clientRef.current.connectionState === 'CONNECTED' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' :
-                                        clientRef.current.connectionState === 'DISCONNECTED' ? 'bg-red-50 border-red-200 text-red-600' :
-                                            'bg-amber-50 border-amber-200 text-amber-600 animate-pulse'
+                                clientRef.current.connectionState === 'CONNECTED' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' :
+                                    clientRef.current.connectionState === 'DISCONNECTED' ? 'bg-red-50 border-red-200 text-red-600' :
+                                        'bg-amber-50 border-amber-200 text-amber-600 animate-pulse'
                                 }`}>
                                 <div className={`w-2 h-2 rounded-full ${!clientRef.current ? 'bg-slate-400' :
-                                        clientRef.current.connectionState === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' :
-                                            clientRef.current.connectionState === 'DISCONNECTED' ? 'bg-red-500' :
-                                                'bg-amber-500'
+                                    clientRef.current.connectionState === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' :
+                                        clientRef.current.connectionState === 'DISCONNECTED' ? 'bg-red-500' :
+                                            'bg-amber-500'
                                     }`} />
                                 <span className="text-[10px] font-bold uppercase tracking-wider">
                                     {!clientRef.current ? 'Init...' : clientRef.current.connectionState}
@@ -1551,19 +1638,35 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                                                 <p className="text-xs font-bold text-blue-900">Total: {onlineUsers.length} participant{onlineUsers.length !== 1 ? 's' : ''}</p>
                                                 {/* Instructor Controls */}
                                                 {isInstructor && (
-                                                    <div className="flex gap-2 pb-2 border-b border-slate-100">
-                                                        <button
-                                                            onClick={handleMuteAll}
-                                                            className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
-                                                        >
-                                                            Mute All
-                                                        </button>
-                                                        <button
-                                                            onClick={handleUnlockAll}
-                                                            className="flex-1 bg-emerald-100 text-emerald-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-emerald-200 transition-colors"
-                                                        >
-                                                            Unlock All
-                                                        </button>
+                                                    <div className="flex flex-col gap-2 pb-2 border-b border-slate-100">
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={handleMuteAll}
+                                                                className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
+                                                            >
+                                                                Mute All
+                                                            </button>
+                                                            <button
+                                                                onClick={handleUnlockAll}
+                                                                className="flex-1 bg-emerald-100 text-emerald-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-emerald-200 transition-colors"
+                                                            >
+                                                                Unlock All
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex gap-2 pb-2 border-b border-slate-100 mt-2">
+                                                            <button
+                                                                onClick={handleStopAllScreenShares}
+                                                                className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
+                                                            >
+                                                                Stop All Screens
+                                                            </button>
+                                                            <button
+                                                                onClick={handleUnlockAllScreenShares}
+                                                                className="flex-1 bg-blue-100 text-blue-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-blue-200 transition-colors"
+                                                            >
+                                                                Unlock Screens
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -1618,28 +1721,46 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                                                                     )}
 
                                                                     {isInstructor && (
-                                                                        <div className="flex gap-1 ml-2">
-                                                                            {rUser?.hasAudio || hasPermission ? (
+                                                                        <div className="flex flex-col gap-1 ml-2">
+                                                                            <div className="flex gap-1">
+                                                                                {rUser?.hasAudio || hasPermission ? (
+                                                                                    <button
+                                                                                        onClick={() => handleMuteStudent(String(u.userId))}
+                                                                                        className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase hover:bg-red-200 flex-1"
+                                                                                        title="Force Mute & Revoke Permission"
+                                                                                    >
+                                                                                        Mute
+                                                                                    </button>
+                                                                                ) : (
+                                                                                    <button
+                                                                                        onClick={() => handleGrantUnmutePermission(String(u.userId))}
+                                                                                        className="text-[8px] bg-blue-100 text-blue-600 px-2 py-1 rounded font-black uppercase hover:bg-blue-200 flex-1"
+                                                                                        title="Allow to Speak"
+                                                                                    >
+                                                                                        Allow Mic
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex gap-1">
                                                                                 <button
-                                                                                    onClick={() => handleMuteStudent(u.userId)}
-                                                                                    className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase hover:bg-red-200"
-                                                                                    title="Force Mute & Revoke Permission"
+                                                                                    onClick={() => handleGrantScreenSharePermission(String(u.userId))}
+                                                                                    className="text-[8px] bg-blue-100 text-blue-600 px-2 py-1 rounded font-black uppercase hover:bg-blue-200 flex-1"
+                                                                                    title="Allow Screen Share"
                                                                                 >
-                                                                                    Mute
+                                                                                    Allow Screen
                                                                                 </button>
-                                                                            ) : (
                                                                                 <button
-                                                                                    onClick={() => handleGrantUnmutePermission(u.userId)}
-                                                                                    className="text-[8px] bg-blue-100 text-blue-600 px-2 py-1 rounded font-black uppercase hover:bg-blue-200"
-                                                                                    title="Allow to Speak"
+                                                                                    onClick={() => handleStopScreenShare(String(u.userId))}
+                                                                                    className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase hover:bg-red-200 flex-1"
+                                                                                    title="Stop Screen Share"
                                                                                 >
-                                                                                    Allow
+                                                                                    Stop Screen
                                                                                 </button>
-                                                                            )}
+                                                                            </div>
                                                                             {isHandRaisedByU && (
                                                                                 <button
-                                                                                    onClick={() => approveStudent(u.userId)}
-                                                                                    className="text-[8px] bg-amber-100 text-amber-600 px-2 py-1 rounded font-black uppercase hover:bg-amber-200"
+                                                                                    onClick={() => approveStudent(String(u.userId))}
+                                                                                    className="text-[8px] bg-amber-100 text-amber-600 px-2 py-1 rounded font-black uppercase hover:bg-amber-200 w-full"
                                                                                 >
                                                                                     Approve
                                                                                 </button>
