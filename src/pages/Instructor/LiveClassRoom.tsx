@@ -124,6 +124,7 @@ const LiveClassRoom: React.FC = () => {
 
     // Ref to ignore blur events immediately after screen sharing stops (browser UI interaction causes false positive)
     const isLocalSharingEndingRef = useRef(false);
+    const isTogglingRef = useRef(false); // Prevent race conditions
 
     // Ref to store pending "user left" timeouts
     const pendingLeftToastsRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>({});
@@ -457,8 +458,20 @@ const LiveClassRoom: React.FC = () => {
         // Play new track
         if (targetTrack) {
             try {
-                targetTrack.play(el);
+                // Use 'contain' for screen sharing to ensure full content visibility without cropping
+                const options = isScreenSharing ? { fit: 'contain' } : { fit: 'cover' };
+                targetTrack.play(el, options);
                 currentPlayingTrackRef.current = targetTrack;
+
+                // MANUAL OVERRIDE: Force constraints to ensure visibility
+                setTimeout(() => {
+                    const video = el.querySelector('video');
+                    if (video) {
+                        video.style.objectFit = isScreenSharing ? 'contain' : 'cover';
+                        video.style.width = '100%';
+                        video.style.height = '100%';
+                    }
+                }, 200);
             } catch (e) {
                 console.error("[Playback] Play error:", e);
             }
@@ -655,8 +668,42 @@ const LiveClassRoom: React.FC = () => {
                 agoraClient.on("user-unpublished", handleUserUnpublished);
                 agoraClient.on("user-left", handleUserLeft);
 
-                await agoraClient.join(AGORA_APP_ID, channelName, token, Number(uid));
-                console.log("Agora: Joined channel", channelName, "as UID", uid);
+                // Join with timeout and retry logic
+                let joinAttempt = 0;
+                const maxAttempts = 3;
+                let joined = false;
+
+                while (!joined && joinAttempt < maxAttempts) {
+                    joinAttempt++;
+                    try {
+                        console.log(`[Agora] Join attempt ${joinAttempt}/${maxAttempts}...`);
+
+                        const joinPromise = agoraClient.join(AGORA_APP_ID, channelName, token, Number(uid));
+                        const timeoutPromise = new Promise((_, reject) =>
+                            setTimeout(() => reject(new Error('Join timeout after 15s')), 15000)
+                        );
+
+                        await Promise.race([joinPromise, timeoutPromise]);
+
+                        console.log("✅ Agora: Successfully joined channel", channelName, "as UID", uid);
+                        joined = true;
+                        showToast("Connected to live session", "success");
+
+                    } catch (joinError: any) {
+                        console.error(`[Agora] Join attempt ${joinAttempt} failed:`, joinError);
+
+                        if (joinAttempt < maxAttempts) {
+                            const delay = Math.min(1000 * Math.pow(2, joinAttempt - 1), 5000);
+                            console.log(`[Agora] Retrying in ${delay}ms...`);
+                            showToast(`Connection attempt ${joinAttempt} failed. Retrying...`, "warning");
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                        } else {
+                            console.error("[Agora] All join attempts failed");
+                            showToast("Failed to connect. Please check your network and refresh.", "error");
+                            throw joinError;
+                        }
+                    }
+                }
 
                 // Handle users already in the channel AFTER joining
                 agoraClient.remoteUsers.forEach(async (remoteUser) => {
@@ -762,36 +809,68 @@ const LiveClassRoom: React.FC = () => {
             return;
         }
 
-        // If forceOn is true and camera is already on, do nothing
-        if (forceOn && cameraOnRef.current) return;
+        if (isTogglingRef.current) return;
+        isTogglingRef.current = true;
 
-        const currentTrack = localVideoTrackRef.current;
-        const currentCameraOn = cameraOnRef.current;
+        try {
+            // If forceOn is true and camera is already on, verify state but don't error
+            if (forceOn && cameraOnRef.current && localVideoTrackRef.current) {
+                isTogglingRef.current = false;
+                return;
+            }
 
-        if (currentTrack) {
-            const newCameraState = forceOn ? true : !currentCameraOn;
-            await currentTrack.setEnabled(newCameraState);
-            setCameraOn(newCameraState);
-            if (newCameraState && clientRef.current) {
-                try { await clientRef.current.publish(currentTrack); } catch (e) { console.warn(e); }
-            } else if (!newCameraState && clientRef.current) {
-                try { await clientRef.current.unpublish(currentTrack); } catch (e) { console.warn(e); }
+            const currentTrack = localVideoTrackRef.current;
+            const currentCameraOn = cameraOnRef.current;
+
+            if (currentTrack) {
+                const newCameraState = forceOn ? true : !currentCameraOn;
+                await currentTrack.setEnabled(newCameraState);
+                setCameraOn(newCameraState);
+
+                if (newCameraState && clientRef.current) {
+                    try {
+                        await clientRef.current.publish(currentTrack);
+                    } catch (e: any) {
+                        if (e.code !== 'TRACK_IS_ALREADY_PUBLISHED') console.warn(e);
+                    }
+                } else if (!newCameraState && clientRef.current) {
+                    try {
+                        await clientRef.current.unpublish(currentTrack);
+                    } catch (e) {
+                        console.warn(e);
+                    }
+                }
+            } else if (!currentCameraOn || forceOn) {
+                try {
+                    const track = await AgoraRTC.createCameraVideoTrack();
+                    setLocalVideoTrack(track);
+                    localVideoTrackRef.current = track; // Sync ref immediately
+                    await clientRef.current?.publish(track);
+                    setCameraOn(true);
+                } catch (e: any) {
+                    console.error("Error creating video track:", e);
+                    if (e.code === 'NOT_READABLE' || e.code === 'PERMISSION_DENIED') {
+                        showToast("Could not access camera. Please check permissions.", 'error');
+                    } else {
+                        console.warn("Camera init minor error:", e);
+                    }
+                }
             }
-        } else if (!currentCameraOn || forceOn) {
-            try {
-                const track = await AgoraRTC.createCameraVideoTrack();
-                setLocalVideoTrack(track);
-                localVideoTrackRef.current = track; // Sync ref immediately
-                await clientRef.current?.publish(track);
-                setCameraOn(true);
-            } catch (e) {
-                console.error("Error creating video track:", e);
-                showToast("Could not access camera.", 'error');
-            }
+        } catch (err) {
+            console.error("Toggle camera error:", err);
+        } finally {
+            setTimeout(() => { isTogglingRef.current = false; }, 500);
         }
     };
 
     const toggleScreenShare = async () => {
+        if (!clientRef.current) return;
+
+        if (clientRef.current.connectionState !== 'CONNECTED') {
+            showToast(`Connection Status: ${clientRef.current.connectionState}. Please wait or refresh if stuck.`, "warning");
+            return;
+        }
+
         if (!isInstructor) {
             // if (recordingProtected) {
             //    showAlert("Screen Sharing is restricted during Protected Sessions.", "error", "RESTRICTED ACCESS");
@@ -831,13 +910,14 @@ const LiveClassRoom: React.FC = () => {
             }
 
             // Starting Screen Share
+            let screenTrack: any = null;
             try {
                 // Grace period for picker
                 isLocalSharingEndingRef.current = true;
                 setTimeout(() => { isLocalSharingEndingRef.current = false; }, 3000);
 
-                const screenTrack = await AgoraRTC.createScreenVideoTrack({}, "auto");
-                const track = Array.isArray(screenTrack) ? screenTrack[0] : screenTrack;
+                const tracks = await AgoraRTC.createScreenVideoTrack({}, "auto");
+                screenTrack = Array.isArray(tracks) ? tracks[0] : tracks;
 
                 // 1. Unpublish Camera if it's currently on
                 if (localVideoTrack && cameraOn) {
@@ -846,33 +926,48 @@ const LiveClassRoom: React.FC = () => {
                 }
 
                 // Publish Screen
-                setLocalScreenTrack(track);
+                setLocalScreenTrack(screenTrack);
                 setIsScreenSharing(true);
                 setScreenSharerUid(Number(user?.id));
                 // setShowWhiteboard(false); // Removed auto-hide
 
-                await client?.publish(track);
+                await client?.publish(screenTrack);
                 socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: true });
 
-                track.on("track-ended", async () => {
+                screenTrack.on("track-ended", async () => {
                     isLocalSharingEndingRef.current = true;
                     setTimeout(() => { isLocalSharingEndingRef.current = false; }, 2000);
 
                     setIsScreenSharing(false);
                     setScreenSharerUid(null);
                     setLocalScreenTrack(null);
-                    await client?.unpublish(track);
+                    await client?.unpublish(screenTrack);
                     socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
-                    track.close();
+                    screenTrack.close();
                     if (localVideoTrack && cameraOn) {
-                        await client?.publish(localVideoTrack);
+                        try { await client?.publish(localVideoTrack); } catch (e) { console.warn(e); }
                     }
                 });
 
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Screen share error:", err);
+                showToast("Failed to start screen share. Please try again.", "error");
+
                 setIsScreenSharing(false);
                 setScreenSharerUid(null);
+
+                // CRITICAL FIX: Close the track we just created because state update might not have happened
+                if (screenTrack) {
+                    try { screenTrack.close(); } catch (e) { console.warn(e); }
+                }
+                setLocalScreenTrack(null);
+
+                // Try to restore camera
+                if (localVideoTrack && cameraOn) {
+                    try {
+                        await client?.publish(localVideoTrack);
+                    } catch (e) { console.warn("Failed to restore camera after screen share error", e); }
+                }
             }
         }
     };
@@ -1005,22 +1100,30 @@ const LiveClassRoom: React.FC = () => {
     return (
         <div ref={containerRef} className="h-screen w-screen bg-[#0A0A10] text-[#F8FAFC] font-sans flex overflow-hidden selection:bg-primary/20 relative">
             {/* Recording Protection: Blur Overlay */}
-            {!isInstructor && recordingProtected && isWindowBlurred && (
-                <div className="absolute inset-0 z-[9999] bg-slate-900/80 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-8 pointer-events-auto">
-                    <div className="flex flex-col items-center">
-                        <FaShieldAlt size={48} />
+            {/* Smart logic: Blur if student recording OR tab switch, but NOT when viewing instructor's screen */}
+            {!isInstructor && recordingProtected && (
+                (isScreenSharing && screenSharerUid === Number(user?.id)) ||
+                (isWindowBlurred && !(isScreenSharing && screenSharerUid && screenSharerUid !== Number(user?.id)))
+            ) && (
+                    <div className="absolute inset-0 z-[9999] bg-slate-900/80 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-8 pointer-events-auto">
+                        <div className="flex flex-col items-center">
+                            <FaShieldAlt size={48} />
+                        </div>
+                        <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">
+                            Content Protected
+                        </h2>
+                        <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">
+                            {screenSharerUid === Number(user?.id)
+                                ? "Screen recording is not allowed during protected sessions."
+                                : "Live stream is blurred because protection is active and you have left the focal area."}
+                        </p>
+                        <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em] animate-bounce">
+                            {screenSharerUid === Number(user?.id)
+                                ? "Stop screen share to resume"
+                                : "Return to focal tab to resume"}
+                        </p>
                     </div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">
-                        Content Protected
-                    </h2>
-                    <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">
-                        Live stream is blurred because protection is active and you have left the focal area.
-                    </p>
-                    <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em] animate-bounce">
-                        Return to focal tab to resume
-                    </p>
-                </div>
-            )}
+                )}
 
             {/* Recording Protection: Watermark */}
             {!isInstructor && recordingProtected && (
@@ -1064,6 +1167,35 @@ const LiveClassRoom: React.FC = () => {
                                 )}
                             </div>
                         )}
+
+                        {/* Connection Status Indicator */}
+                        <div className="flex items-center gap-2">
+                            <div className={`px-3 py-1.5 rounded-lg border flex items-center gap-2 backdrop-blur-md transition-all ${!clientRef.current ? 'bg-slate-100 border-slate-300 text-slate-500' :
+                                clientRef.current.connectionState === 'CONNECTED' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' :
+                                    clientRef.current.connectionState === 'DISCONNECTED' ? 'bg-red-50 border-red-200 text-red-600' :
+                                        'bg-amber-50 border-amber-200 text-amber-600 animate-pulse'
+                                }`}>
+                                <div className={`w-2 h-2 rounded-full ${!clientRef.current ? 'bg-slate-400' :
+                                    clientRef.current.connectionState === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' :
+                                        clientRef.current.connectionState === 'DISCONNECTED' ? 'bg-red-500' :
+                                            'bg-amber-500'
+                                    }`} />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">
+                                    {!clientRef.current ? 'Init...' : clientRef.current.connectionState}
+                                </span>
+                            </div>
+
+                            {/* Reconnect Button */}
+                            {clientRef.current && clientRef.current.connectionState === 'DISCONNECTED' && (
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-red-700 transition-all shadow-md active:scale-95"
+                                    title="Reconnect to session"
+                                >
+                                    Reconnect
+                                </button>
+                            )}
+                        </div>
 
                         {isLive && (
                             <div className="flex flex-col gap-2 items-end">

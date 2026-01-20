@@ -420,8 +420,20 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
 
         const playTrack = (track: any) => {
             try {
-                track.stop(); // Reset local preview state
-                track.play(el);
+                // track.stop(); // Reset local preview state - confusing if multiple plays?
+                // Agora SDK handles re-playing on same element usually, but stop() is safe.
+                // IMPORTANT: Use 'contain' for screen share to avoid zooming/cropping
+                track.play(el, { fit: 'contain' });
+
+                // MANUAL OVERRIDE: Force constraints to ensure visibility
+                setTimeout(() => {
+                    const video = el.querySelector('video');
+                    if (video) {
+                        video.style.objectFit = 'contain';
+                        video.style.width = '100%';
+                        video.style.height = '100%';
+                    }
+                }, 200);
             } catch (e) {
                 console.error("[Playback] Play error:", e);
             }
@@ -869,22 +881,30 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
     return (
         <div ref={containerRef} className="h-screen w-screen bg-[#0A0A10] text-[#F8FAFC] font-sans flex overflow-hidden selection:bg-primary/20 relative">
             {/* Recording Protection: Blur Overlay */}
-            {!isInstructor && recordingProtected && isWindowBlurred && (
-                <div className="absolute inset-0 z-[9999] bg-slate-900/80 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-8 pointer-events-auto">
-                    <div className="w-24 h-24 mb-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 animate-pulse">
-                        <FaShieldAlt size={48} />
+            {/* SMART LOGIC: Don't blur if instructor is screen sharing (students need to see it!) */}
+            {!isInstructor && recordingProtected && (
+                (isScreenSharing && screenSharerUid === Number(user?.id)) ||
+                (isWindowBlurred && !(isScreenSharing && screenSharerUid && screenSharerUid !== Number(user?.id)))
+            ) && (
+                    <div className="absolute inset-0 z-[9999] bg-slate-900/80 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-8 pointer-events-auto">
+                        <div className="w-24 h-24 mb-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 animate-pulse">
+                            <FaShieldAlt size={48} />
+                        </div>
+                        <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">
+                            Content Protected
+                        </h2>
+                        <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">
+                            {screenSharerUid === Number(user?.id)
+                                ? "Screen recording is not allowed during protected sessions."
+                                : "Live stream is blurred because protection is active and you have left the focal area."}
+                        </p>
+                        <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em] animate-bounce">
+                            {screenSharerUid === Number(user?.id)
+                                ? "Stop screen share to resume"
+                                : "Return to focal tab to resume"}
+                        </p>
                     </div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">
-                        Content Protected
-                    </h2>
-                    <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">
-                        Live stream is blurred because protection is active and you have left the focal area.
-                    </p>
-                    <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em] animate-bounce">
-                        Return to focal tab to resume
-                    </p>
-                </div>
-            )}
+                )}
 
             {/* Recording Protection: Watermark */}
             {
