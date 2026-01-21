@@ -685,6 +685,54 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [micOn, isScreenSharing, isHandRaised]);
 
+    // --- NEW: Input Deterrence (Anti-Recording/Copying) ---
+    useEffect(() => {
+        if (isInstructor) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Block PrintScreen, F12, DevTools shortcuts, View Source, Save, and Meta/Windows Key (to deter Game Bar)
+            if (e.key === 'Meta') {
+                e.preventDefault();
+                // setMetaKeyLock(true); // Assuming metaKeyLock state exists or implementing it now
+            }
+
+            if (
+                e.key === 'PrintScreen' ||
+                e.keyCode === 44 ||
+                e.key === 'F12' ||
+                e.key === 'Meta' ||
+                (e.metaKey && e.altKey && (e.key === 'r' || e.key === 'R')) || // Specific attempt to catch Win+Alt+R if bubbling allows
+                ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.key === 'i' || e.key === 'j' || e.key === 'c')) ||
+                ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
+            ) {
+                e.preventDefault();
+                e.stopPropagation();
+                showAlert("Security Restriction: System shortcuts and Screen capture are disabled.", "error", "SECURITY ALERT");
+            }
+        };
+
+        const handleContextMenu = (e: MouseEvent) => {
+            e.preventDefault();
+        };
+
+        const handleSelectStart = (e: Event) => {
+            e.preventDefault();
+        };
+
+        // Use Trigger Phase (Capture = true) to intercept events before bubbling
+        window.addEventListener('keydown', handleKeyDown, true);
+        window.addEventListener('contextmenu', handleContextMenu, true);
+        window.addEventListener('selectstart', handleSelectStart, true);
+        window.addEventListener('dragstart', handleSelectStart, true);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown, true);
+            window.removeEventListener('contextmenu', handleContextMenu, true);
+            window.removeEventListener('selectstart', handleSelectStart, true);
+            window.removeEventListener('dragstart', handleSelectStart, true);
+        };
+    }, [isInstructor]);
+
     useEffect(() => {
         if (!classDetails || isLive) return;
 
