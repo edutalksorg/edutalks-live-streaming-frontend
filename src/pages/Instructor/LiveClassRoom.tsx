@@ -756,7 +756,7 @@ const LiveClassRoom: React.FC = () => {
     }, [recordingProtected, isInstructor]);
 
     // Violation Lock State (Persistent punishment for trying to record)
-    const [isViolationLocked, setIsViolationLocked] = useState(false);
+    const [isViolationLocked] = useState(false);
     const isViolationLockedRef = useRef(isViolationLocked);
     useEffect(() => { isViolationLockedRef.current = isViolationLocked; }, [isViolationLocked]);
 
