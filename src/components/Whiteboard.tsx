@@ -159,7 +159,7 @@ const Whiteboard = forwardRef<any, WhiteboardProps>(({ className, onDraw, onClea
                     <select
                         value={lineWidth}
                         onChange={(e) => setLineWidth(Number(e.target.value))}
-                        className="bg-slate-50 text-[10px] font-bold border-slate-100 p-1.5 rounded-lg focus:border-primary outline-none"
+                        className="bg-slate-50 text-slate-900 text-[10px] font-bold border-slate-100 p-1.5 rounded-lg focus:border-primary outline-none"
                     >
                         <option value="2">Thin</option>
                         <option value="5">Medium</option>

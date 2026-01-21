@@ -47,6 +47,11 @@ const LiveClassRoom: React.FC = () => {
     const [micOn, setMicOn] = useState(false);
     const micOnRef = useRef(micOn);
     useEffect(() => { micOnRef.current = micOn; }, [micOn]);
+    // Track students who are explicitly blocked from screen sharing
+    const [blockedScreenShareStudents, setBlockedScreenShareStudents] = useState<Set<string>>(new Set());
+    const blockedScreenShareStudentsRef = useRef(blockedScreenShareStudents);
+    useEffect(() => { blockedScreenShareStudentsRef.current = blockedScreenShareStudents; }, [blockedScreenShareStudents]);
+
     const [cameraOn, setCameraOn] = useState(false);
     const cameraOnRef = useRef(cameraOn);
     useEffect(() => { cameraOnRef.current = cameraOn; }, [cameraOn]);
@@ -66,10 +71,7 @@ const LiveClassRoom: React.FC = () => {
     const studentsWithScreenSharePermissionRef = useRef(studentsWithScreenSharePermission);
     useEffect(() => { studentsWithScreenSharePermissionRef.current = studentsWithScreenSharePermission; }, [studentsWithScreenSharePermission]);
 
-    // Track students who are explicitly blocked from screen sharing
-    const [blockedScreenShareStudents, setBlockedScreenShareStudents] = useState<Set<string>>(new Set());
-    const blockedScreenShareStudentsRef = useRef(blockedScreenShareStudents);
-    useEffect(() => { blockedScreenShareStudentsRef.current = blockedScreenShareStudents; }, [blockedScreenShareStudents]);
+
 
     // Socket & Signaling
     const socketRef = useRef<Socket | null>(null);
@@ -110,6 +112,9 @@ const LiveClassRoom: React.FC = () => {
 
     const [watermarkPos, setWatermarkPos] = useState({ top: '10%', left: '10%' });
     const [isWindowBlurred, setIsWindowBlurred] = useState(false);
+    // NEW: Aggressive lock for Meta key (Windows key) to thwart Game Bar recording start
+    const [metaKeyLock, setMetaKeyLock] = useState(false);
+
 
     // Notification State
     const [notification, setNotification] = useState<{ message: string, type: 'info' | 'success' | 'error' | 'warning' } | null>(null);
@@ -430,6 +435,70 @@ const LiveClassRoom: React.FC = () => {
 
         // --- NEW: Screen Share Permission Handlers ---
         socket.on('force_stop_screen_share', async (data) => {
+            const sid = String(data.studentId);
+            setStudentsWithScreenSharePermission(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(sid);
+                return newSet;
+            });
+            setBlockedScreenShareStudents(prev => new Set(prev).add(sid));
+
+            if (String(user?.id) === sid && isScreenSharingRef.current) {
+                await toggleScreenShare(); // Stop sharing
+                showToast("Instructor has stopped your screen share.", 'warning');
+            }
+        });
+
+        socket.on('force_stop_all_screen_share', async () => {
+            console.log('[Socket] force_stop_all_screen_share received');
+            // Clear all permissions for everyone (instructor needs this to update UI)
+            setStudentsWithScreenSharePermission(new Set());
+            console.log('[Permission State] Cleared all screen share permissions');
+
+            if (!isInstructorRef.current) {
+                // Students only: lock screen sharing and stop if currently sharing
+                setScreenLocked(true);
+                setBlockedScreenShareStudents(prev => new Set(prev).add(String(user?.id)));
+
+                if (isScreenSharingRef.current) {
+                    await toggleScreenShare(); // Stop sharing
+                    showToast("Instructor has stopped all screen sharing.", 'warning');
+                }
+            }
+        });
+
+        socket.on('grant_screen_share_permission', (data) => {
+            const sid = String(data.studentId);
+            setStudentsWithScreenSharePermission(prev => new Set(prev).add(sid));
+            setBlockedScreenShareStudents(prev => {
+                const next = new Set(prev);
+                next.delete(sid);
+                return next;
+            });
+
+            if (String(user?.id) === sid) {
+                setScreenLocked(false);
+                showToast("Instructor granted you permission to share screen.", 'success');
+            }
+        });
+
+        socket.on('unlock_all_screen_shares', () => {
+            console.log('[Socket] unlock_all_screen_shares received');
+
+            // Grant permission to ALL online students (not just unlock)
+            const allStudentIds = onlineUsersRef.current.map(u => String(u.userId));
+            setStudentsWithScreenSharePermission(new Set(allStudentIds));
+
+            setBlockedScreenShareStudents(new Set());
+            setScreenLocked(false);
+
+            if (!isInstructor) {
+                showToast("Instructor has unlocked screen sharing.", 'success');
+            }
+        });
+
+        // --- NEW: Screen Share Permission Handlers ---
+        socket.on('force_stop_screen_share', async (data) => {
             console.log('[Socket] force_stop_screen_share received', data);
             const sid = String(data.studentId);
 
@@ -686,38 +755,33 @@ const LiveClassRoom: React.FC = () => {
         return () => clearInterval(interval);
     }, [recordingProtected, isInstructor]);
 
+    // Violation Lock State (Persistent punishment for trying to record)
+    const [isViolationLocked, setIsViolationLocked] = useState(false);
+    const isViolationLockedRef = useRef(isViolationLocked);
+    useEffect(() => { isViolationLockedRef.current = isViolationLocked; }, [isViolationLocked]);
+
     // Window Focus & Screen Recording Protection
     useEffect(() => {
         if (!recordingProtected || isInstructor) return;
 
-        // Immediate Logic Check on State Change
-        if (isScreenSharing) {
-            // "Screen Recording" detected
-            setIsWindowBlurred(true);
-        } else if (document.visibilityState === 'visible') {
-            // Safe state
-            setIsWindowBlurred(false);
-        }
+
 
         const handleBlur = () => {
             if (isLocalSharingEndingRef.current) return;
             setIsWindowBlurred(true);
-            // If they leave indefinitely, we lock
-            if (!isScreenSharing) {
-                // Logic to potentially lock if they are just Alt-Tabbing
-            }
+            // setIsViolationLocked(true); // Removed to prevent permanent lockout
         };
         const handleFocus = () => {
-            // If still recording/sharing, keep blurred
-            if (isScreenSharing) return;
+            // Strict enforcement: if locked or violating, refuse to clear blur
+            // Relaxed: Allow return if violation lock is not active (which we disabled)
+            if (isViolationLockedRef.current) return;
             setIsWindowBlurred(false);
         };
         const handleVisibilityChange = () => {
             if (document.visibilityState !== 'visible') {
                 if (isLocalSharingEndingRef.current) return;
                 setIsWindowBlurred(true);
-                // Violation Lock REMOVED to allow auto-resume
-                // setIsViolationLocked(true); 
+                // setIsViolationLocked(true); // Removed to prevent permanent lockout
                 socketRef.current?.emit('violation_report', {
                     classId: id,
                     studentId: user?.id,
@@ -726,7 +790,7 @@ const LiveClassRoom: React.FC = () => {
                     timestamp: new Date()
                 });
             } else {
-                if (isScreenSharing && !isInstructorRef.current && recordingProtectedRef.current) return;
+                if (isViolationLockedRef.current || (isScreenSharing && !isInstructorRef.current && recordingProtected)) return;
                 setIsWindowBlurred(false);
             }
         };
@@ -741,6 +805,63 @@ const LiveClassRoom: React.FC = () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [recordingProtected, isInstructor, id, user?.id, user?.name, isScreenSharing]);
+
+    // --- NEW: Input Deterrence (Anti-Recording/Copying) ---
+    useEffect(() => {
+        if (isInstructor) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Block PrintScreen, F12, DevTools shortcuts, View Source, Save, and Meta/Windows Key (to deter Game Bar)
+            if (e.key === 'Meta') {
+                e.preventDefault();
+                setMetaKeyLock(true); // AGGRESSIVE: Instantly black out screen
+            }
+
+            if (
+                e.key === 'PrintScreen' ||
+                e.keyCode === 44 ||
+                e.key === 'F12' ||
+                e.key === 'Meta' ||
+                (e.metaKey && e.altKey && (e.key === 'r' || e.key === 'R')) || // Specific attempt to catch Win+Alt+R if bubbling allows
+                ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.key === 'i' || e.key === 'j' || e.key === 'c')) ||
+                ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
+            ) {
+                e.preventDefault();
+                e.stopPropagation();
+                showToast("Security Restriction: System shortcuts and Screen capture are disabled.", "error");
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.key === 'Meta') {
+                // Keep locked for a moment to ensure recording catches the black screen, then release
+                setTimeout(() => setMetaKeyLock(false), 2000);
+            }
+        };
+
+        const handleContextMenu = (e: MouseEvent) => {
+            e.preventDefault();
+        };
+
+        const handleSelectStart = (e: Event) => {
+            e.preventDefault();
+        };
+
+        // Use Trigger Phase (Capture = true) to intercept events before bubbling
+        window.addEventListener('keydown', handleKeyDown, true);
+        window.addEventListener('keyup', handleKeyUp, true);
+        window.addEventListener('contextmenu', handleContextMenu, true);
+        window.addEventListener('selectstart', handleSelectStart, true);
+        window.addEventListener('dragstart', handleSelectStart, true);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown, true);
+            window.removeEventListener('keyup', handleKeyUp, true);
+            window.removeEventListener('contextmenu', handleContextMenu, true);
+            window.removeEventListener('selectstart', handleSelectStart, true);
+            window.removeEventListener('dragstart', handleSelectStart, true);
+        };
+    }, [isInstructor]);
 
     useEffect(() => {
         if (!isLive) return;
@@ -883,6 +1004,50 @@ const LiveClassRoom: React.FC = () => {
             if (c) { c.leave(); }
         };
     }, [isLive, user?.id]); // Added user?.id dependency to ensure correct user context in listeners
+
+    // --- Admin Screen Share Controls ---
+    const handleStopScreenShare = (studentId: string) => {
+        socketRef.current?.emit('admin_stop_screen_share', { classId: id, studentId });
+        // Optimistic Update
+        setStudentsWithScreenSharePermission(prev => {
+            const next = new Set(prev);
+            next.delete(studentId);
+            return next;
+        });
+        setBlockedScreenShareStudents(prev => new Set(prev).add(studentId));
+    };
+
+    const handleGrantScreenSharePermission = (studentId: string) => {
+        socketRef.current?.emit('admin_grant_screen_share', { classId: id, studentId });
+        // Optimistic Update
+        setStudentsWithScreenSharePermission(prev => new Set(prev).add(studentId));
+        setBlockedScreenShareStudents(prev => {
+            const next = new Set(prev);
+            next.delete(studentId);
+            return next;
+        });
+    };
+
+    const handleStopAllScreenShares = async () => {
+        const confirmed = await showConfirm("Stop all student screen shares and lock?", "warning", "STOP ALL SCREENS");
+        if (confirmed) {
+            socketRef.current?.emit('admin_stop_all_screen_shares', { classId: id });
+            // Optimistic Update
+            setStudentsWithScreenSharePermission(new Set());
+        }
+    };
+
+    const handleUnlockAllScreenShares = async () => {
+        const confirmed = await showConfirm("Unlock screen sharing for all students?", "info", "UNLOCK SCREENS");
+        if (confirmed) {
+            socketRef.current?.emit('admin_unlock_all_screen_shares', { classId: id });
+            // Optimistic Update
+            const allStudentIds = onlineUsersRef.current.map(u => String(u.userId));
+            setStudentsWithScreenSharePermission(new Set(allStudentIds));
+            setBlockedScreenShareStudents(new Set());
+            setScreenLocked(false);
+        }
+    };
 
     const toggleMic = async (bypassChecks: boolean = false, forceState?: boolean) => {
         // Check if student has permission to unmute
@@ -1035,6 +1200,13 @@ const LiveClassRoom: React.FC = () => {
                 setTimeout(() => { isLocalSharingEndingRef.current = false; }, 2000);
 
                 socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
+
+                // AUTOMATIC PROTECTION: Disable when sharing stops manually
+                if (isInstructor) {
+                    setRecordingProtected(false);
+                    socketRef.current?.emit('toggle_recording_protection', { classId: id, active: false });
+                    showToast("Screen Recording Protection Auto-Disabled", "info");
+                }
             } catch (err) {
                 console.error("Error stopping screen share:", err);
             }
@@ -1081,6 +1253,13 @@ const LiveClassRoom: React.FC = () => {
                 console.log('[Screen Share] Screen track published successfully');
                 socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: true });
 
+                // AUTOMATIC PROTECTION: Enable when sharing starts
+                if (isInstructor) {
+                    setRecordingProtected(true);
+                    socketRef.current?.emit('toggle_recording_protection', { classId: id, active: true });
+                    showToast("Screen Recording Protection Auto-Enabled", "warning");
+                }
+
                 screenTrack.on("track-ended", async () => {
                     isLocalSharingEndingRef.current = true;
                     setTimeout(() => { isLocalSharingEndingRef.current = false; }, 2000);
@@ -1090,6 +1269,14 @@ const LiveClassRoom: React.FC = () => {
                     setLocalScreenTrack(null);
                     await client?.unpublish(screenTrack);
                     socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
+
+                    // AUTOMATIC PROTECTION: Disable when sharing ends via native stop
+                    if (isInstructor) {
+                        setRecordingProtected(false);
+                        socketRef.current?.emit('toggle_recording_protection', { classId: id, active: false });
+                        showToast("Screen Recording Protection Auto-Disabled", "info");
+                    }
+
                     screenTrack.close();
                     if (localVideoTrack && cameraOn) {
                         try { await client?.publish(localVideoTrack); } catch (e) { console.warn(e); }
@@ -1186,50 +1373,7 @@ const LiveClassRoom: React.FC = () => {
     };
 
     // --- Admin Screen Share Controls ---
-    // --- Admin Screen Share Controls ---
-    const handleStopScreenShare = (studentId: string) => {
-        socketRef.current?.emit('admin_stop_screen_share', { classId: id, studentId });
-        // Optimistic Update
-        setStudentsWithScreenSharePermission(prev => {
-            const next = new Set(prev);
-            next.delete(studentId);
-            return next;
-        });
-        setBlockedScreenShareStudents(prev => new Set(prev).add(studentId));
-    };
 
-    const handleGrantScreenSharePermission = (studentId: string) => {
-        socketRef.current?.emit('admin_grant_screen_share', { classId: id, studentId });
-        // Optimistic Update
-        setStudentsWithScreenSharePermission(prev => new Set(prev).add(studentId));
-        setBlockedScreenShareStudents(prev => {
-            const next = new Set(prev);
-            next.delete(studentId);
-            return next;
-        });
-    };
-
-    const handleStopAllScreenShares = async () => {
-        const confirmed = await showConfirm("Stop all student screen shares and lock?", "warning", "STOP ALL SCREENS");
-        if (confirmed) {
-            socketRef.current?.emit('admin_stop_all_screen_shares', { classId: id });
-            // Optimistic Update
-            setStudentsWithScreenSharePermission(new Set());
-            setScreenLocked(true);
-        }
-    };
-
-    const handleUnlockAllScreenShares = async () => {
-        const confirmed = await showConfirm("Unlock screen sharing for all students?", "info", "UNLOCK SCREENS");
-        if (confirmed) {
-            socketRef.current?.emit('admin_unlock_all_screen_shares', { classId: id });
-            // Optimistic Update
-            const allStudentIds = onlineUsersRef.current.map(u => String(u.userId));
-            setStudentsWithScreenSharePermission(new Set(allStudentIds));
-            setBlockedScreenShareStudents(new Set());
-            setScreenLocked(false);
-        }
-    };
 
     const sendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -1285,31 +1429,34 @@ const LiveClassRoom: React.FC = () => {
 
     return (
         <div ref={containerRef} className="h-screen w-screen bg-[#0A0A10] text-[#F8FAFC] font-sans flex overflow-hidden selection:bg-primary/20 relative">
-            {/* Recording Protection: Blur Overlay */}
-            {/* Smart logic: Blur if student recording OR tab switch, but NOT when viewing instructor's screen */}
-            {!isInstructor && recordingProtected && (
-                (isScreenSharing && screenSharerUid === Number(user?.id)) ||
-                (isWindowBlurred && !(isScreenSharing && screenSharerUid && screenSharerUid !== Number(user?.id)))
-            ) && (
-                    <div className="absolute inset-0 z-[9999] bg-slate-900/80 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-8 pointer-events-auto">
-                        <div className="flex flex-col items-center">
-                            <FaShieldAlt size={48} />
-                        </div>
-                        <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">
-                            Content Protected
-                        </h2>
-                        <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">
-                            {screenSharerUid === Number(user?.id)
-                                ? "Screen recording is not allowed during protected sessions."
-                                : "Live stream is blurred because protection is active and you have left the focal area."}
-                        </p>
-                        <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em] animate-bounce">
-                            {screenSharerUid === Number(user?.id)
-                                ? "Stop screen share to resume"
-                                : "Return to focal tab to resume"}
-                        </p>
+            {/* Aggressive Meta Key Lockout Overlay */}
+            {!isInstructor && metaKeyLock && (
+                <div className="fixed inset-0 z-[100000] bg-black flex flex-col items-center justify-center text-center p-8 pointer-events-auto cursor-none">
+                    <FaShieldAlt size={64} className="text-red-600 animate-pulse mb-6" />
+                    <h1 className="text-4xl font-black text-white uppercase tracking-[0.2em] mb-4 italic">Security Intervention</h1>
+                    <p className="text-red-500 font-bold uppercase tracking-widest text-lg">System Key Detected - Content Secure</p>
+                </div>
+            )}
+
+            {/* Recording Protection: Blur Overlay - FIXED to cover entire viewport */}
+            {!isInstructor && recordingProtected && isWindowBlurred && (
+                <div className="fixed inset-0 z-[99999] bg-slate-900/95 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-8 pointer-events-auto cursor-not-allowed">
+                    <div className="flex flex-col items-center">
+                        <FaShieldAlt size={48} className="text-red-500 animate-pulse mb-4" />
                     </div>
-                )}
+                    <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">
+                        {isViolationLocked ? "SECURITY LOCKOUT" : "Content Protected"}
+                    </h2>
+                    <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">
+                        {isViolationLocked
+                            ? "Suspicious activity detected. Access has been locked."
+                            : "Screen Recording / Backgrounding Detected"}
+                    </p>
+                    <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em]">
+                        Display disabled for security
+                    </p>
+                </div>
+            )}
 
             {/* Recording Protection: Watermark */}
             {!isInstructor && recordingProtected && (
@@ -1808,22 +1955,27 @@ const LiveClassRoom: React.FC = () => {
                                                         </button>
                                                     )}
                                                 </div>
+
                                             </div>
                                         )}
 
 
                                         <div className="space-y-2">
                                             {onlineUsers.filter(u => String(u.userId) !== String(user?.id)).map(u => {
-                                                const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId));
+                                                const rUser = remoteUsers.find(ru => String(ru.uid) === String(u.userId) || Number(ru.uid) === Number(u.userId));
 
-                                                // Removed unused hasPermission declaration
+                                                // Simplified perm check logic from SuperInstructor
+                                                const isBlocked = blockedStudents.has(String(u.userId));
+                                                const hasPermission = !isBlocked && (!audioLocked || studentsWithUnmutePermission.has(String(u.userId)));
                                                 const isHandRaisedByU = handsRaised.some(h => String(h.id) === String(u.userId));
 
                                                 return (
-                                                    <div key={u.userId} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                                                    <div key={u.userId} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors">
                                                         <div className="flex items-center gap-3">
                                                             <div className="relative">
-                                                                <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase">{u.userName?.slice(0, 2) || '??'}</div>
+                                                                <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase ring-2 ring-white shadow-sm">
+                                                                    {u.userName?.charAt(0)}
+                                                                </div>
                                                                 {isHandRaisedByU && (
                                                                     <div className="absolute -top-1 -right-1 bg-amber-500 text-white p-0.5 rounded-full animate-bounce">
                                                                         <FaHandPaper size={8} />
@@ -1838,50 +1990,57 @@ const LiveClassRoom: React.FC = () => {
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div className="flex gap-2">
+                                                        <div className="flex gap-2 items-center">
+                                                            {rUser?.hasAudio ? (
+                                                                <FaMicrophone size={12} className="text-emerald-500" title="Speaking" />
+                                                            ) : hasPermission ? (
+                                                                <FaMicrophone size={12} className="text-slate-400 opacity-50" title="Allowed but muted" />
+                                                            ) : (
+                                                                <FaMicrophoneSlash size={12} className="text-rose-400/50" title="Muted by instructor" />
+                                                            )}
+
                                                             {isInstructor && (
-                                                                <>
-                                                                    <div className="flex flex-col gap-1">
-                                                                        <button
-                                                                            onClick={() => handleGrantUnmutePermission(String(u.userId))}
-                                                                            className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center hover:bg-emerald-200"
-                                                                            title="Allow Unmute"
-                                                                        >
-                                                                            <FaMicrophone size={10} />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleMuteStudent(String(u.userId))}
-                                                                            className="w-6 h-6 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200"
-                                                                            title="Force Mute"
-                                                                        >
-                                                                            <FaMicrophoneSlash size={10} />
-                                                                        </button>
+                                                                <div className="flex flex-col gap-1 ml-2">
+                                                                    <div className="flex gap-1 w-20">
+                                                                        {rUser?.hasAudio || hasPermission ? (
+                                                                            <button
+                                                                                onClick={() => handleMuteStudent(String(u.userId))}
+                                                                                className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase hover:bg-red-200 flex-1"
+                                                                                title="Force Mute & Revoke Permission"
+                                                                            >
+                                                                                Mute
+                                                                            </button>
+                                                                        ) : (
+                                                                            <button
+                                                                                onClick={() => handleGrantUnmutePermission(String(u.userId))}
+                                                                                className="text-[8px] bg-blue-100 text-blue-600 px-2 py-1 rounded font-black uppercase hover:bg-blue-200 flex-1"
+                                                                                title="Allow to Speak"
+                                                                            >
+                                                                                Allow
+                                                                            </button>
+                                                                        )}
                                                                     </div>
-                                                                    <div className="flex flex-col gap-1">
+                                                                    <div className="flex gap-1 w-20">
                                                                         {Number(screenSharerUid) === Number(u.userId) || studentsWithScreenSharePermission.has(String(u.userId)) ? (
                                                                             <button
                                                                                 onClick={() => handleStopScreenShare(String(u.userId))}
-                                                                                className="w-6 h-6 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200"
+                                                                                className="text-[8px] bg-red-100 text-red-600 px-2 py-1 rounded font-black uppercase hover:bg-red-200 flex-1"
                                                                                 title="Stop Share & Revoke Permission"
                                                                             >
-                                                                                <FaTimesCircle size={10} />
+                                                                                No Share
                                                                             </button>
                                                                         ) : (
                                                                             <button
                                                                                 onClick={() => handleGrantScreenSharePermission(String(u.userId))}
-                                                                                className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center hover:bg-emerald-200"
+                                                                                className="text-[8px] bg-emerald-100 text-emerald-600 px-2 py-1 rounded font-black uppercase hover:bg-emerald-200 flex-1"
                                                                                 title="Allow Screen Share"
                                                                             >
-                                                                                <FaDesktop size={10} />
+                                                                                Share
                                                                             </button>
                                                                         )}
                                                                     </div>
-                                                                </>
+                                                                </div>
                                                             )}
-                                                            <div className="flex items-center gap-1 text-slate-300">
-                                                                {rUser?.hasAudio ? <FaMicrophone size={12} className="text-emerald-500" /> : <FaMicrophoneSlash size={12} />}
-                                                                {rUser?.hasVideo ? <FaVideo size={12} className="text-emerald-500" /> : <FaVideoSlash size={12} />}
-                                                            </div>
                                                         </div>
                                                     </div>
                                                 );
@@ -1921,11 +2080,9 @@ const LiveClassRoom: React.FC = () => {
                         </div>
                     </div>
                 )}
-            </div>
 
-
-            {/* Global CSS for unique animations */}
-            <style>{`
+                {/* Global CSS for unique animations */}
+                <style>{`
                 @keyframes reaction-float {
                     0% { transform: translateY(0) scale(0.5); opacity: 0; }
                     20% { opacity: 1; transform: translateY(-30px) scale(1.1); }
@@ -1950,25 +2107,26 @@ const LiveClassRoom: React.FC = () => {
                 }
             `}</style>
 
-            {/* Toast Notification */}
-            {
-                notification && (
-                    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
-                        <div className={`px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md border ${notification.type === 'error' ? 'bg-red-500/90 border-red-400 text-white' :
-                            notification.type === 'success' ? 'bg-emerald-500/90 border-emerald-400 text-white' :
-                                notification.type === 'warning' ? 'bg-amber-500/90 border-amber-400 text-white' :
-                                    'bg-blue-600/90 border-blue-400 text-white'
-                            }`}>
-                            {notification.type === 'error' && <FaTimesCircle size={20} />}
-                            {notification.type === 'success' && <FaCheckCircle size={20} />}
-                            {notification.type === 'warning' && <FaExclamationTriangle size={20} />}
-                            {notification.type === 'info' && <FaInfoCircle size={20} />}
-                            <span className="font-bold text-sm tracking-wide">{notification.message}</span>
+                {/* Toast Notification */}
+                {
+                    notification && (
+                        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
+                            <div className={`px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md border ${notification.type === 'error' ? 'bg-red-500/90 border-red-400 text-white' :
+                                notification.type === 'success' ? 'bg-emerald-500/90 border-emerald-400 text-white' :
+                                    notification.type === 'warning' ? 'bg-amber-500/90 border-amber-400 text-white' :
+                                        'bg-blue-600/90 border-blue-400 text-white'
+                                }`}>
+                                {notification.type === 'error' && <FaTimesCircle size={20} />}
+                                {notification.type === 'success' && <FaCheckCircle size={20} />}
+                                {notification.type === 'warning' && <FaExclamationTriangle size={20} />}
+                                {notification.type === 'info' && <FaInfoCircle size={20} />}
+                                <span className="font-bold text-sm tracking-wide">{notification.message}</span>
+                            </div>
                         </div>
-                    </div>
-                )
-            }
-        </div >
+                    )
+                }
+            </div>
+        </div>
     );
 };
 

@@ -8,25 +8,16 @@ const ThemeToggle: React.FC = () => {
     return (
         <button
             onClick={toggleTheme}
-            className="relative w-14 h-7 rounded-full bg-surface-light border border-surface-border flex items-center px-1 transition-all duration-500 hover:border-primary/50 shadow-premium group"
-            aria-label="Toggle Theme"
+            className="relative w-14 h-7 rounded-full bg-surface-dark border border-surface-border shadow-inner transition-colors duration-300 focus:outline-none flex items-center flex-shrink-0"
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
-            <div
-                className={`absolute w-5 h-5 rounded-full shadow-lg transform transition-all duration-500 flex items-center justify-center ${theme === 'dark'
-                        ? 'translate-x-7 bg-background text-primary'
-                        : 'translate-x-0 bg-primary text-white'
-                    }`}
-            >
-                {theme === 'dark' ? (
-                    <FaMoon size={10} className="animate-in fade-in zoom-in duration-500" />
-                ) : (
-                    <FaSun size={10} className="animate-in fade-in zoom-in duration-500" />
-                )}
+            <div className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full shadow-md transform transition-transform duration-300 flex items-center justify-center z-10 ${theme === 'dark' ? 'translate-x-[1.75rem] bg-primary text-white' : 'translate-x-0 bg-white text-yellow-500'}`}>
+                {theme === 'dark' ? <FaMoon size={12} /> : <FaSun size={12} />}
             </div>
 
-            <div className="flex justify-between w-full px-1 opacity-20 group-hover:opacity-40 transition-opacity">
-                <FaSun size={10} className={theme === 'light' ? 'text-primary' : 'text-accent-gray'} />
-                <FaMoon size={10} className={theme === 'dark' ? 'text-primary' : 'text-accent-gray'} />
+            <div className="absolute inset-0 flex justify-between items-center px-2 pointer-events-none">
+                <FaSun size={10} className={`${theme === 'dark' ? 'text-accent-gray' : 'opacity-0'}`} />
+                <FaMoon size={10} className={`${theme !== 'dark' ? 'text-accent-gray' : 'opacity-0'}`} />
             </div>
         </button>
     );

@@ -107,6 +107,8 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
     const [recordingProtected, setRecordingProtected] = useState(false);
     const [watermarkPos, setWatermarkPos] = useState({ top: '10%', left: '10%' });
     const [isWindowBlurred, setIsWindowBlurred] = useState(false);
+    // NEW: Aggressive lock for Meta key (Windows key) to thwart Game Bar recording start
+    const [metaKeyLock, setMetaKeyLock] = useState(false);
 
 
     // Notification State
@@ -648,6 +650,69 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
         };
     }, [recordingProtected, isInstructor, id, user?.id, user?.name, isScreenSharing]);
 
+    // --- NEW: Input Deterrence (Anti-Recording/Copying) ---
+    useEffect(() => {
+        if (isInstructor) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Block PrintScreen, F12, DevTools shortcuts, View Source, Save, and Meta/Windows Key (to deter Game Bar)
+            if (e.key === 'Meta') {
+                e.preventDefault();
+                setMetaKeyLock(true); // AGGRESSIVE: Instantly black out screen
+            }
+
+            if (
+                e.key === 'PrintScreen' ||
+                e.keyCode === 44 ||
+                e.key === 'F12' ||
+                e.key === 'Meta' ||
+                (e.metaKey && e.altKey && (e.key === 'r' || e.key === 'R')) || // Specific attempt to catch Win+Alt+R if bubbling allows
+                ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.key === 'i' || e.key === 'j' || e.key === 'c')) ||
+                ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
+            ) {
+                e.preventDefault();
+                e.stopPropagation();
+                showToast("Security Restriction: System shortcuts and Screen capture are disabled.", "error");
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.key === 'Meta') {
+                // Keep locked for a moment to ensure recording catches the black screen, then release
+                setTimeout(() => setMetaKeyLock(false), 2000);
+            }
+        };
+
+        const handleContextMenu = (e: MouseEvent) => {
+            e.preventDefault();
+        };
+
+        const handleSelectStart = (e: Event) => {
+            e.preventDefault();
+        };
+
+        // Use Trigger Phase (Capture = true) to intercept events before bubbling
+        window.addEventListener('keydown', handleKeyDown, true);
+        window.addEventListener('contextmenu', handleContextMenu, true);
+        window.addEventListener('selectstart', handleSelectStart, true);
+        window.addEventListener('dragstart', handleSelectStart, true);
+
+        // Use Trigger Phase (Capture = true) to intercept events before bubbling
+        window.addEventListener('keydown', handleKeyDown, true);
+        window.addEventListener('keyup', handleKeyUp, true);
+        window.addEventListener('contextmenu', handleContextMenu, true);
+        window.addEventListener('selectstart', handleSelectStart, true);
+        window.addEventListener('dragstart', handleSelectStart, true);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown, true);
+            window.removeEventListener('keyup', handleKeyUp, true);
+            window.removeEventListener('contextmenu', handleContextMenu, true);
+            window.removeEventListener('selectstart', handleSelectStart, true);
+            window.removeEventListener('dragstart', handleSelectStart, true);
+        };
+    }, [isInstructor]);
+
     useEffect(() => {
         if (!isLive) return;
 
@@ -991,6 +1056,13 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                 }
 
                 socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
+
+                // AUTOMATIC PROTECTION: Disable when sharing stops manually
+                if (isInstructor) {
+                    setRecordingProtected(false);
+                    socketRef.current?.emit('toggle_recording_protection', { classId: id, active: false });
+                    showToast("Screen Recording Protection Auto-Disabled", "info");
+                }
             } catch (err) {
                 console.error("Error stopping screen share:", err);
             }
@@ -1026,6 +1098,14 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                 await client?.publish(screenTrack);
                 socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: true });
 
+                // AUTOMATIC PROTECTION: Enable when sharing starts
+                if (isInstructor) {
+                    setRecordingProtected(true);
+                    socketRef.current?.emit('toggle_recording_protection', { classId: id, active: true });
+                    showToast("Screen Recording Protection Auto-Enabled", "warning");
+                }
+
+
                 screenTrack.on("track-ended", async () => {
                     isLocalSharingEndingRef.current = true;
                     setTimeout(() => { isLocalSharingEndingRef.current = false; }, 2000);
@@ -1035,6 +1115,13 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                     setLocalScreenTrack(null);
                     await client?.unpublish(screenTrack);
                     socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
+
+                    // AUTOMATIC PROTECTION: Disable when sharing ends via native stop
+                    if (isInstructor) {
+                        setRecordingProtected(false);
+                        socketRef.current?.emit('toggle_recording_protection', { classId: id, active: false });
+                        showToast("Screen Recording Protection Auto-Disabled", "info");
+                    }
                     screenTrack.close();
                     if (localVideoTrackRef.current && cameraOnRef.current) {
                         try { await client?.publish(localVideoTrackRef.current); } catch (e) { console.warn(e); }
@@ -1187,11 +1274,20 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
 
     return (
         <div ref={containerRef} className="h-screen w-screen bg-[#0A0A10] text-[#F8FAFC] font-sans flex overflow-hidden selection:bg-primary/20 relative">
-            {/* Recording Protection: Blur Overlay */}
+            {/* Aggressive Meta Key Lockout Overlay */}
+            {!isInstructor && metaKeyLock && (
+                <div className="fixed inset-0 z-[100000] bg-black flex flex-col items-center justify-center text-center p-8 pointer-events-auto cursor-none">
+                    <FaShieldAlt size={64} className="text-red-600 animate-pulse mb-6" />
+                    <h1 className="text-4xl font-black text-white uppercase tracking-[0.2em] mb-4 italic">Security Intervention</h1>
+                    <p className="text-red-500 font-bold uppercase tracking-widest text-lg">System Key Detected - Content Secure</p>
+                </div>
+            )}
+
+            {/* Recording Protection: Blur Overlay - FIXED to cover entire viewport */}
             {!isInstructor && recordingProtected && isWindowBlurred && (
-                <div className="absolute inset-0 z-[9999] bg-slate-900/80 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-8 pointer-events-auto">
+                <div className="fixed inset-0 z-[99999] bg-slate-900/95 backdrop-blur-3xl flex flex-col items-center justify-center text-center p-8 pointer-events-auto cursor-not-allowed">
                     <div className="flex flex-col items-center">
-                        <FaShieldAlt size={48} />
+                        <FaShieldAlt size={48} className="text-red-500 animate-pulse mb-4" />
                     </div>
                     <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">
                         {isViolationLocked ? "SECURITY LOCKOUT" : "Content Protected"}
@@ -1199,10 +1295,10 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                     <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-md">
                         {isViolationLocked
                             ? "Suspicious activity detected. Access has been locked."
-                            : "Live stream is blurred because protection is active and you have left the focal area."}
+                            : "Screen Recording / Backgrounding Detected"}
                     </p>
-                    <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em] animate-bounce">
-                        {isViolationLocked ? "Please Refresh Page to Re-verify" : "Return to focal tab to resume"}
+                    <p className="mt-8 text-[10px] font-black text-red-500/50 uppercase tracking-[0.3em]">
+                        Display disabled for security
                     </p>
                 </div>
             )}

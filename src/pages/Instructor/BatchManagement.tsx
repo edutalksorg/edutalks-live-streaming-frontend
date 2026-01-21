@@ -163,11 +163,11 @@ const BatchManagement: React.FC = () => {
                                         </div>
                                         {/* Student List with Plans */}
                                         {batch.students && batch.students.length > 0 ? (
-                                            <div className="flex flex-col gap-2 mt-2">
+                                            <div className="flex flex-col gap-2 mt-2 max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
                                                 {batch.students.map(student => (
-                                                    <div key={student.id} className="flex items-center gap-2 text-xs bg-surface-dark/50 px-2 py-1 rounded-md border border-white/5">
-                                                        <span className="text-accent-white font-bold">{student.name}</span>
-                                                        <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-black tracking-wider ${student.plan_name === 'Free' ? 'bg-gray-500/20 text-gray-400' :
+                                                    <div key={student.id} className="flex items-center justify-between gap-2 text-xs bg-surface-dark/50 px-2 py-1.5 rounded-md border border-white/5 shrink-0">
+                                                        <span className="text-accent-white font-bold truncate">{student.name}</span>
+                                                        <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-black tracking-wider shrink-0 ${student.plan_name === 'Free' ? 'bg-gray-500/20 text-gray-400' :
                                                             student.plan_name === 'Pro' ? 'bg-amber-500/20 text-amber-500' :
                                                                 'bg-emerald-500/20 text-emerald-400'
                                                             }`}>

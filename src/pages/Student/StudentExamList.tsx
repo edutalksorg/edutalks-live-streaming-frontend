@@ -144,57 +144,42 @@ const StudentExamList: React.FC = () => {
 
                             {exam.submission_id ? (
                                 <div className="space-y-4 pt-6 border-t border-surface-border">
-                                    <div
-
-                                        className="w-full h-full"
+                                    <Link
+                                        to={(!user?.plan_name || user.plan_name === 'Free') ? '#' : `/student/exam-result/${exam.submission_id}`}
+                                        onClick={(e) => {
+                                            const isFree = !user?.plan_name || user.plan_name === 'Free';
+                                            if (isFree) e.preventDefault();
+                                        }}
+                                        className="btn-outline w-full py-4 text-[10px]"
                                     >
+                                        VIEW RESULT
+                                    </Link>
+                                    {canAttempt && (
                                         <Link
-                                            to={(!user?.plan_name || user.plan_name === 'Free') ? '#' : `/student/exam-result/${exam.submission_id}`}
+                                            to={(!user?.plan_name || user.plan_name === 'Free') ? '#' : `/student/exam/${exam.id}`}
                                             onClick={(e) => {
                                                 const isFree = !user?.plan_name || user.plan_name === 'Free';
                                                 if (isFree) e.preventDefault();
                                             }}
-                                            className="btn-outline w-full py-4 text-[10px]"
+                                            className="btn-primary w-full py-4 text-[10px]"
                                         >
-                                            VIEW RESULT
+                                            RE-ATTEMPT EXAM
                                         </Link>
-                                    </div>
-                                    {canAttempt && (
-                                        <div
-
-                                            className="w-full h-full"
-                                        >
-                                            <Link
-                                                to={(!user?.plan_name || user.plan_name === 'Free') ? '#' : `/student/exam/${exam.id}`}
-                                                onClick={(e) => {
-                                                    const isFree = !user?.plan_name || user.plan_name === 'Free';
-                                                    if (isFree) e.preventDefault();
-                                                }}
-                                                className="btn-primary w-full py-4 text-[10px]"
-                                            >
-                                                RE-ATTEMPT EXAM
-                                            </Link>
-                                        </div>
                                     )}
                                 </div>
                             ) : (
                                 <div className="pt-6 border-t border-surface-border">
                                     {canAttempt ? (
-                                        <div
-
-                                            className="w-full h-full"
+                                        <Link
+                                            to={(!user?.plan_name || user.plan_name === 'Free') ? '#' : `/student/exam/${exam.id}`}
+                                            onClick={(e) => {
+                                                const isFree = !user?.plan_name || user.plan_name === 'Free';
+                                                if (isFree) e.preventDefault();
+                                            }}
+                                            className="btn-primary w-full py-4 text-[10px] flex items-center justify-center gap-3"
                                         >
-                                            <Link
-                                                to={(!user?.plan_name || user.plan_name === 'Free') ? '#' : `/student/exam/${exam.id}`}
-                                                onClick={(e) => {
-                                                    const isFree = !user?.plan_name || user.plan_name === 'Free';
-                                                    if (isFree) e.preventDefault();
-                                                }}
-                                                className="btn-primary w-full py-4 text-[10px] flex items-center justify-center gap-3"
-                                            >
-                                                <FaPlay size={10} /> INITIALIZE SESSION
-                                            </Link>
-                                        </div>
+                                            <FaPlay size={10} /> INITIALIZE SESSION
+                                        </Link>
                                     ) : (
                                         <button disabled className="w-full py-4 rounded-full bg-surface-light border border-surface-border text-accent-gray/40 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 cursor-not-allowed">
                                             {isUpcoming ? 'COMMENCING SOON' : (isExpired ? 'TIME-LOCK ACTIVE' : 'LIMIT EXCEEDED')}

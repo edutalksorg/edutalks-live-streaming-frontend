@@ -65,9 +65,9 @@ const StudentLayout: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background font-sans text-foreground antialiased transition-colors duration-500">
+        <div className="h-screen w-full bg-background font-sans text-foreground antialiased transition-colors duration-500 overflow-hidden relative">
             {/* Top Navigation */}
-            <nav className="glass-morphism border-b border-surface-border fixed w-full z-50 shadow-2xl">
+            <nav className="glass-morphism border-b border-surface-border fixed top-0 left-0 w-full z-50 shadow-2xl">
                 <div className="max-w-[1920px] mx-auto px-6 sm:px-12 lg:px-16">
                     <div className="flex justify-between items-center h-16 md:h-24">
                         {/* Logo Area */}
@@ -76,13 +76,13 @@ const StudentLayout: React.FC = () => {
                         </div>
 
                         {/* Desktop Nav - Centered */}
-                        <div className="hidden lg:flex items-center justify-center flex-1 mx-4">
-                            <div className="flex space-x-2 bg-surface-light/30 p-2 rounded-full border border-surface-border backdrop-blur-md">
+                        <div className="hidden lg:flex items-center justify-center flex-1 mx-2 min-w-0 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+                            <div className="flex space-x-1 bg-surface-light/30 p-1.5 rounded-full border border-surface-border backdrop-blur-md flex-nowrap shrink-0">
                                 {navLinks.map((link) => (
                                     <Link
                                         key={link.path}
                                         to={link.path}
-                                        className={`group relative flex items-center gap-3 px-6 py-3 rounded-full text-sm font-black transition-all duration-300 ${isActive(link.path)
+                                        className={`group relative flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black transition-all duration-300 whitespace-nowrap ${isActive(link.path)
                                             ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105'
                                             : 'text-accent-gray hover:bg-primary/10 hover:text-primary'
                                             }`}
@@ -100,13 +100,13 @@ const StudentLayout: React.FC = () => {
                         </div>
 
                         {/* Right Actions */}
-                        <div className="flex items-center gap-3 md:gap-6 w-auto md:w-64 justify-end">
-                            <Link to="/student/profile" className="flex items-center gap-2 md:gap-3 group p-1 md:p-1.5 md:pr-5 rounded-full border border-surface-border hover:border-primary hover:bg-primary/10 transition-all duration-300 bg-surface/50 backdrop-blur-sm">
-                                <div className="w-8 h-8 md:w-10 md:h-10 bg-surface-dark rounded-full flex items-center justify-center text-white text-[10px] md:text-xs font-black border-2 border-surface-border shadow-md group-hover:scale-110 group-hover:bg-primary transition-all">
+                        <div className="flex items-center gap-3 md:gap-6 w-auto justify-end flex-shrink-0">
+                            <Link to="/student/profile" className="flex items-center gap-2 md:gap-3 group p-1 md:p-1.5 md:pr-5 rounded-full border border-primary transition-all duration-300 bg-surface/50 backdrop-blur-sm">
+                                <div className="w-8 h-8 md:w-10 md:h-10 bg-primary rounded-full flex items-center justify-center text-white text-[10px] md:text-xs font-black border-2 border-surface-border shadow-md transition-all">
                                     {user?.name?.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="hidden sm:block xl:block">
-                                    <p className="text-[10px] md:text-xs font-black text-accent-white group-hover:text-primary leading-none transition-colors">{user?.name?.split(' ')[0]}</p>
+                                    <p className="text-[10px] md:text-xs font-black text-primary leading-none transition-colors">{user?.name?.split(' ')[0]}</p>
                                     <p className="text-[8px] md:text-[9px] text-accent-gray mt-1 uppercase tracking-widest font-black leading-none">{user?.role}</p>
                                 </div>
                             </Link>
@@ -125,29 +125,14 @@ const StudentLayout: React.FC = () => {
                 </div>
             </nav>
 
-            {/* Main Content */}
-            <div className="pt-24 md:pt-32 pb-24 md:pb-20">
+            {/* Main Content Scroll Container */}
+            <div className="h-full w-full overflow-y-auto overflow-x-hidden pt-24 md:pt-32 pb-2">
                 <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <Outlet />
                 </main>
             </div>
 
-            {/* Mobile Nav (Bottom Bar) */}
-            <div className="lg:hidden fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 w-[95%] md:w-[90%] bg-surface/80 text-white rounded-2xl md:rounded-3xl shadow-2xl px-4 md:px-8 py-3 md:py-5 flex justify-around md:justify-between z-50 border border-white/10 backdrop-blur-xl">
-                {navLinks.map((link) => (
-                    <Link
-                        key={link.path}
-                        to={link.path}
-                        className={`flex flex-col items-center gap-1 transition-all duration-300 ${isActive(link.path) ? 'text-primary scale-110' : 'text-accent-gray hover:text-primary'
-                            }`}
-                    >
-                        <link.icon size={isActive(link.path) ? 22 : 20} className="md:size-[22px]" />
-                        <span className={`text-[8px] md:text-[10px] font-black tracking-widest uppercase transition-opacity duration-300 ${isActive(link.path) ? 'opacity-100' : 'opacity-60'}`}>
-                            {link.label}
-                        </span>
-                    </Link>
-                ))}
-            </div>
+            {/* Mobile Nav - REMOVED per user request */}
         </div>
     );
 };

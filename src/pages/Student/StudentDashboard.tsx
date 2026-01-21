@@ -254,7 +254,7 @@ const StudentDashboard: React.FC = () => {
                                 </button>
                             </div>
 
-                            <div className="space-y-3 mb-4 max-h-[200px] overflow-y-auto custom-scrollbar pr-1">
+                            <div className="space-y-3 mb-4 max-h-[200px] overflow-y-auto pr-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                                 {liveClasses.map((cls) => (
                                     <div key={`class-${cls.id}`} className="bg-surface-dark/50 border border-surface-border p-4 rounded-2xl group hover:border-primary/30 transition-all">
                                         <h4 className="text-sm font-black text-foreground italic truncate">{cls.title}</h4>
