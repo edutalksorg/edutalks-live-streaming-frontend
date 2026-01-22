@@ -137,7 +137,7 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
     // Ref to ignore blur events immediately after screen sharing stops (browser UI interaction causes false positive)
     const isLocalSharingEndingRef = useRef(false);
     const isTogglingRef = useRef(false); // Prevent rapid toggling race conditions
-    const [isViolationLocked, setIsViolationLocked] = useState(false);
+    const [isViolationLocked] = useState(false);
     const isViolationLockedRef = useRef(false);
     useEffect(() => { isViolationLockedRef.current = isViolationLocked; }, [isViolationLocked]);
 
@@ -481,23 +481,6 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
             }
         });
 
-        socket.on('recording_protection_status', (data) => {
-            setRecordingProtected(data.active);
-            if (!isInstructorRef.current) {
-                if (data.active) {
-                    showToast("Screen Protection Enabled by Instructor", "warning");
-                } else {
-                    showToast("Screen Protection Disabled", "info");
-                }
-            }
-        });
-
-        socket.on('student_violation', (data) => {
-            if (isInstructorRef.current) {
-                showToast(`Security Alert: ${data.studentName} switched tabs/blurred window!`, 'error');
-            }
-        });
-
         return () => {
             socket.disconnect();
         };
@@ -629,18 +612,19 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
         const handleBlur = () => {
             if (isLocalSharingEndingRef.current) return; // Ignore blur event if screen sharing is intentionally ending
             setIsWindowBlurred(true);
-            setIsViolationLocked(true); // Permanent Lockout
+            // setIsViolationLocked(true); // Permanent Lockout REMOVED to match Instructor
         };
         const handleFocus = () => {
             // Strict enforcement: if locked or violating, refuse to clear blur
-            if (isViolationLockedRef.current || (isScreenSharing && !isInstructorRef.current && recordingProtected)) return;
+            // Relaxed: Allow return if violation lock is not active (which we disabled)
+            if (isViolationLockedRef.current) return;
             setIsWindowBlurred(false);
         };
         const handleVisibilityChange = () => {
             if (document.visibilityState !== 'visible') {
                 if (isLocalSharingEndingRef.current) return; // Ignore if screen sharing is intentionally ending
                 setIsWindowBlurred(true);
-                setIsViolationLocked(true); // Permanent Lockout
+                // setIsViolationLocked(true); // Permanent Lockout REMOVED to match Instructor
                 // Report violation if recording protection is on and they switch away
                 socketRef.current?.emit('violation_report', {
                     classId: id,
@@ -707,12 +691,6 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
         const handleSelectStart = (e: Event) => {
             e.preventDefault();
         };
-
-        // Use Trigger Phase (Capture = true) to intercept events before bubbling
-        window.addEventListener('keydown', handleKeyDown, true);
-        window.addEventListener('contextmenu', handleContextMenu, true);
-        window.addEventListener('selectstart', handleSelectStart, true);
-        window.addEventListener('dragstart', handleSelectStart, true);
 
         // Use Trigger Phase (Capture = true) to intercept events before bubbling
         window.addEventListener('keydown', handleKeyDown, true);
@@ -1653,21 +1631,6 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                                     title={recordingProtected ? "Disable Screen Recording Protection" : "Enable Screen Recording Protection"}
                                 >
                                     <FaShieldAlt size={18} />
-                                </button>
-                            )}
-                            {isInstructor && (
-                                <button
-                                    onClick={() => {
-                                        const next = !recordingProtected;
-                                        setRecordingProtected(next);
-                                        socketRef.current?.emit('toggle_recording_protection', { classId: id, active: next });
-                                        if (next) showToast("Screen Protection Enabled", "warning");
-                                        else showToast("Screen Protection Disabled", "info");
-                                    }}
-                                    className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 border shadow-md ${recordingProtected ? 'bg-red-600 border-red-700 text-white animate-pulse' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
-                                    title={recordingProtected ? "Disable Screen Protection" : "Enable Screen Protection"}
-                                >
-                                    <FaShieldAlt size={16} />
                                 </button>
                             )}
                         </div>
