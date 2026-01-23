@@ -4,6 +4,7 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import LandingPage from './pages/LandingPage';
+import JoinClassHandler from './pages/JoinClassHandler';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { ModalProvider } from './context/ModalContext';
@@ -71,6 +72,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/join/class/:classId" element={<JoinClassHandler />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
 
                 {/* Super Admin */}

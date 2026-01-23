@@ -51,8 +51,17 @@ const InstructorDashboard: React.FC = () => {
         }
     };
 
+    const [startingLive, setStartingLive] = useState(false);
+
+    useEffect(() => {
+        if (batches.length > 0 && !liveSubjectId) {
+            setLiveSubjectId(batches[0].subject_id);
+        }
+    }, [batches]);
+
     const handleStartImmediate = async (e: React.FormEvent) => {
         e.preventDefault();
+        setStartingLive(true);
         try {
             const res = await api.post('/api/classes/start-immediate', {
                 title: liveTitle,
@@ -62,6 +71,7 @@ const InstructorDashboard: React.FC = () => {
         } catch (err) {
             console.error("Failed to start immediate class", err);
             showAlert("Failed to start class. Please try again.", "error");
+            setStartingLive(false);
         }
     };
 
@@ -214,10 +224,12 @@ const InstructorDashboard: React.FC = () => {
                                     ABORT
                                 </button>
                                 <button
-                                    type="submit"
-                                    className="btn-primary px-10 py-4 rounded-xl shadow-lg shadow-primary/20"
+                                    disabled={startingLive}
+                                    className="btn-primary px-10 py-4 rounded-xl shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    <span className="tracking-[0.2em] font-black uppercase text-[10px]">GO LIVE NOW</span>
+                                    <span className="tracking-[0.2em] font-black uppercase text-[10px]">
+                                        {startingLive ? 'STARTING...' : 'GO LIVE NOW'}
+                                    </span>
                                 </button>
                             </div>
                         </form>

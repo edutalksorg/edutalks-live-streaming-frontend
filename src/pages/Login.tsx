@@ -23,13 +23,20 @@ const Login: React.FC = () => {
             const { token, user } = res.data;
             login(token, user);
 
-            switch (user.role) {
-                case 'super_admin': navigate('/super-admin'); break;
-                case 'admin': navigate('/admin'); break;
-                case 'super_instructor': navigate('/super-instructor'); break;
-                case 'instructor': navigate('/instructor'); break;
-                case 'student': navigate('/student'); break;
-                default: navigate('/');
+            const searchParams = new URLSearchParams(window.location.search);
+            const redirect = searchParams.get('redirect');
+
+            if (redirect) {
+                navigate(redirect);
+            } else {
+                switch (user.role) {
+                    case 'super_admin': navigate('/super-admin'); break;
+                    case 'admin': navigate('/admin'); break;
+                    case 'super_instructor': navigate('/super-instructor'); break;
+                    case 'instructor': navigate('/instructor'); break;
+                    case 'student': navigate('/student'); break;
+                    default: navigate('/');
+                }
             }
         } catch (err: any) {
             setError(err.response?.data?.message || 'Login failed');
