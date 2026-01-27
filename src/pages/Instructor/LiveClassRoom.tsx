@@ -13,7 +13,7 @@ import {
     FaDesktop, FaChalkboard,
     FaClock, FaExpand, FaCompress,
     FaTimesCircle, FaCheckCircle, FaExclamationTriangle, FaInfoCircle,
-    FaShieldAlt, FaComments, FaUsers
+    FaShieldAlt, FaComments, FaUsers, FaSmile
 } from 'react-icons/fa';
 
 const AGORA_APP_ID = import.meta.env.VITE_AGORA_APP_ID;
@@ -90,6 +90,7 @@ const LiveClassRoom: React.FC = () => {
     const [isHandRaised, setIsHandRaised] = useState(false);
     const whiteboardRef = useRef<any>(null);
     const [reactions, setReactions] = useState<any[]>([]);
+    const [showReactionPicker, setShowReactionPicker] = useState(false);
     const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
     const onlineUsersRef = useRef(onlineUsers);
     useEffect(() => { onlineUsersRef.current = onlineUsers; }, [onlineUsers]);
@@ -1801,6 +1802,31 @@ const LiveClassRoom: React.FC = () => {
 
                         {/* Tray Icons and Hands */}
                         <div className="flex items-center gap-1 md:gap-2">
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowReactionPicker(!showReactionPicker)}
+                                    className={`w-8 h-8 md:w-11 md:h-11 rounded-full flex items-center justify-center transition-all border shadow-sm ${showReactionPicker ? 'bg-yellow-400 border-yellow-500 text-white' : 'bg-slate-50 border-slate-200 text-slate-500'}`}
+                                    title="Send Reaction"
+                                >
+                                    <FaSmile size={12} />
+                                </button>
+                                {showReactionPicker && (
+                                    <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md p-2 rounded-2xl border border-slate-200 shadow-2xl flex gap-1 md:gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300 z-[100]">
+                                        {['❤️', '👍', '😂', '😮', '👏'].map(emoji => (
+                                            <button
+                                                key={emoji}
+                                                onClick={() => {
+                                                    handleReaction(emoji);
+                                                    setShowReactionPicker(false);
+                                                }}
+                                                className="text-lg md:text-xl hover:scale-125 transition-transform p-1"
+                                            >
+                                                {emoji}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                             {!isInstructor && (
                                 <button
                                     onClick={handleHandRaise}
