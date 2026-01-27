@@ -52,7 +52,7 @@ const Login: React.FC = () => {
             {/* Background Pattern */}
             <div className="fixed inset-0 bg-pattern-dark pointer-events-none -z-10"></div>
 
-            <div className="max-w-md w-full premium-card p-10 animate-in fade-in zoom-in duration-700 relative">
+            <div className="max-w-md w-full premium-card p-6 lg:p-10 animate-in fade-in zoom-in duration-700 relative">
                 <div className="absolute top-6 left-6">
                     <Link to="/" className="flex items-center gap-2 text-accent-gray/60 text-[10px] font-black uppercase tracking-widest hover:text-primary transition-all group">
                         <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" /> Back

@@ -301,9 +301,9 @@ const StudentDashboard: React.FC = () => {
                     </div>
                 )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 pt-10">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-16 pt-10">
                 {/* Left Side: Subject Hub */}
-                <div className="lg:col-span-8 space-y-8 md:space-y-12">
+                <div className="xl:col-span-8 space-y-8 md:space-y-12">
                     <div className="flex flex-col gap-2">
                         <h2 className="text-3xl md:text-5xl font-black text-foreground tracking-tighter">
                             <span className="text-gradient-red italic">{dashboardData?.course_name ? 'Course' : 'Subject'}</span> Hub
@@ -506,7 +506,7 @@ const StudentDashboard: React.FC = () => {
                 </div>
 
                 {/* Right Side: Schedule */}
-                <div className="lg:col-span-4 space-y-16">
+                <div className="xl:col-span-4 space-y-16">
 
 
                     {/* Test Results Section */}

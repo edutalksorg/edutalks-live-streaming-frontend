@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import api from '../../services/api';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { FaSignOutAlt, FaBookOpen, FaVideo, FaClipboardCheck, FaTrophy, FaThLarge, FaUserGraduate, FaCrown, FaQuestionCircle } from 'react-icons/fa';
+import { FaSignOutAlt, FaBookOpen, FaVideo, FaClipboardCheck, FaTrophy, FaThLarge, FaUserGraduate, FaCrown, FaQuestionCircle, FaBars, FaTimes } from 'react-icons/fa';
 import Logo from '../../components/Logo';
 import ThemeToggle from '../../components/ThemeToggle';
 
@@ -12,6 +12,7 @@ const StudentLayout: React.FC = () => {
     const location = useLocation();
 
     const [stats, setStats] = useState({ liveNow: 0, upcomingExams: 0, pendingDoubts: 0 });
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -65,9 +66,86 @@ const StudentLayout: React.FC = () => {
     };
 
     return (
-        <div className="h-screen w-full bg-background font-sans text-foreground antialiased transition-colors duration-500 overflow-hidden relative">
-            {/* Top Navigation */}
-            <nav className="glass-morphism border-b border-surface-border fixed top-0 left-0 w-full z-50 shadow-2xl">
+        <div className="h-screen w-full bg-background font-sans text-foreground antialiased transition-colors duration-500 overflow-hidden relative flex flex-col">
+            {/* Mobile Header */}
+            <div className="lg:hidden flex items-center justify-between p-4 bg-surface border-b border-surface-border z-50 shrink-0">
+                <div className="flex items-center gap-2">
+                    <Logo />
+                </div>
+                <div className="flex items-center gap-4">
+                    <ThemeToggle />
+                    <button
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        className="p-2 text-accent-gray hover:text-primary transition-colors"
+                    >
+                        {isSidebarOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
+                    </button>
+                </div>
+            </div>
+
+            {/* Mobile Sidebar Overlay */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
+            {/* Mobile Sidebar Drawer */}
+            <div className={`
+                fixed inset-y-0 left-0 w-72 bg-surface text-foreground flex flex-col shadow-2xl z-50 border-r border-surface-border transition-transform duration-300 
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                lg:hidden
+            `}>
+                <div className="p-6 border-b border-surface-border">
+                    <Logo />
+                </div>
+                <div className="p-6 border-b border-surface-border bg-surface-dark/50">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-white shadow-lg">
+                            {user?.name?.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <p className="text-sm font-black text-foreground leading-none">{user?.name}</p>
+                            <p className="text-[10px] text-primary mt-1 uppercase tracking-widest font-black">Student</p>
+                        </div>
+                    </div>
+                </div>
+                <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+                    {navLinks.map((link) => (
+                        <Link
+                            key={link.path}
+                            to={link.path}
+                            onClick={() => setIsSidebarOpen(false)}
+                            className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all ${isActive(link.path)
+                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                                : 'text-accent-gray hover:bg-surface-light hover:text-primary'
+                                }`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <link.icon size={18} />
+                                <span className="text-sm font-black uppercase tracking-wide">{link.label}</span>
+                            </div>
+                            {link.count !== undefined && link.count > 0 && (
+                                <span className="bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-md">
+                                    {link.count}
+                                </span>
+                            )}
+                        </Link>
+                    ))}
+                </nav>
+                <div className="p-4 border-t border-surface-border">
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center justify-center gap-2 py-3 bg-surface-dark rounded-xl font-black text-accent-gray hover:bg-primary hover:text-white transition-all shadow-sm"
+                    >
+                        <FaSignOutAlt /> LOGOUT
+                    </button>
+                </div>
+            </div>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:block glass-morphism border-b border-surface-border fixed top-0 left-0 w-full z-50 shadow-2xl">
                 <div className="max-w-[1920px] mx-auto px-6 sm:px-12 lg:px-16">
                     <div className="flex justify-between items-center h-16 md:h-24">
                         {/* Logo Area */}
@@ -126,13 +204,11 @@ const StudentLayout: React.FC = () => {
             </nav>
 
             {/* Main Content Scroll Container */}
-            <div className="h-full w-full overflow-y-auto overflow-x-hidden pt-24 md:pt-32 pb-2">
+            <div className="flex-1 w-full overflow-y-auto overflow-x-hidden pt-0 lg:pt-32 pb-2 relative scroll-smooth">
                 <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <Outlet />
                 </main>
             </div>
-
-            {/* Mobile Nav - REMOVED per user request */}
         </div>
     );
 };
