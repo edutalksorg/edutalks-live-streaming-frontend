@@ -55,6 +55,8 @@ import TournamentResult from './pages/Student/TournamentResult';
 import TournamentLeaderboard from './pages/Student/TournamentLeaderboard';
 import StudentDoubts from './pages/Student/Doubts';
 import InstructorDoubts from './pages/Instructor/Doubts';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
 import { ThemeProvider } from './context/ThemeContext';
 
 
@@ -74,6 +76,8 @@ function App() {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/join/class/:classId" element={<JoinClassHandler />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
 
                 {/* Super Admin */}
                 <Route element={<PrivateRoute allowedRoles={['super_admin']} />}>

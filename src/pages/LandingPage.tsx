@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FaVideo, FaChalkboardTeacher, FaChartLine, FaUserShield, FaCheckCircle, FaCode, FaBars, FaTimes } from 'react-icons/fa';
 import ThemeToggle from '../components/ThemeToggle';
 import { useState } from 'react';
+import Footer from '../components/Footer';
 
 
 const LandingPage: React.FC = () => {
@@ -384,27 +385,7 @@ const LandingPage: React.FC = () => {
             </section>
 
             {/* Footer */}
-            <footer className="bg-surface py-24 border-t border-white/5 relative overflow-hidden">
-                <div className="absolute bottom-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px]"></div>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <div className="flex flex-col lg:flex-row justify-between items-center gap-12">
-                        <div className="flex flex-col items-center lg:items-start gap-6">
-                            <Logo size="lg" className="scale-110 drop-shadow-[0_0_10px_rgba(238,29,35,0.3)]" />
-                            <p className="text-accent-gray text-xs max-w-sm text-center lg:text-left font-black uppercase tracking-[0.2em] leading-loose opacity-70">
-                                Revolutionizing education with <span className="text-primary italic">Stunning</span> design and <span className="text-accent-white">Elite</span> mentorship.
-                            </p>
-                        </div>
-                        <div className="flex flex-wrap justify-center gap-12 text-[10px] font-black text-accent-white uppercase tracking-[0.4em]">
-                            <a href="#" className="hover:text-primary transition-all hover:scale-110">Privacy</a>
-                            <a href="#" className="hover:text-primary transition-all hover:scale-110">Terms</a>
-                            <a href="#" className="hover:text-primary transition-all hover:scale-110">Careers</a>
-                        </div>
-                    </div>
-                    <div className="mt-20 pt-10 border-t border-white/5 text-center text-accent-gray text-[9px] font-black tracking-[0.5em] uppercase italic opacity-40">
-                        © 2025 EDUTALKS PLATFORM • BUILT FOR EXCELLENCE
-                    </div>
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 };
