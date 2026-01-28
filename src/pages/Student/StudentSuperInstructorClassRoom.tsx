@@ -92,10 +92,11 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
     const studentsWithScreenSharePermissionRef = useRef(studentsWithScreenSharePermission);
     useEffect(() => { studentsWithScreenSharePermissionRef.current = studentsWithScreenSharePermission; }, [studentsWithScreenSharePermission]);
 
-    // Track students who are explicitly blocked from screen sharing
     const [blockedScreenShareStudents, setBlockedScreenShareStudents] = useState<Set<string>>(new Set());
     const blockedScreenShareStudentsRef = useRef(blockedScreenShareStudents);
     useEffect(() => { blockedScreenShareStudentsRef.current = blockedScreenShareStudents; }, [blockedScreenShareStudents]);
+
+    const [isClassEnded, setIsClassEnded] = useState(false);
 
     const micOnRef = useRef(micOn);
     useEffect(() => { micOnRef.current = micOn; }, [micOn]);
@@ -142,6 +143,9 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                 const res = await api.get(`/api/super-instructor/classes/${id}`);
                 setClassDetails(res.data);
                 setIsLive(res.data.status === 'live');
+                if (res.data.status === 'completed') {
+                    setIsClassEnded(true);
+                }
                 if (isInstructor) {
                     setAudioLocked(false);
                     setVideoLocked(false);
@@ -415,10 +419,8 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
         });
 
         socket.on('si_class_ended', () => {
-            if (!isInstructor) {
-                showAlert("The Super Instructor has ended the live session.", "info").then(() => {
-                    navigate('/student');
-                });
+            if (!isInstructorRef.current) {
+                setIsClassEnded(true);
             }
         });
 
@@ -721,6 +723,15 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
 
         return () => clearInterval(timer);
     }, [classDetails, isLive]);
+
+    useEffect(() => {
+        if (isClassEnded) {
+            const timer = setTimeout(() => {
+                navigate('/student');
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [isClassEnded, navigate]);
 
     useEffect(() => {
         if (!isLive) return;
@@ -1094,6 +1105,33 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
 
     return (
         <div ref={containerRef} className="h-screen w-full bg-[#0A0A10] text-[#F8FAFC] font-sans flex overflow-hidden selection:bg-primary/20 relative">
+            {/* Class Ended Overlay */}
+            {!isInstructor && isClassEnded && (
+                <div className="fixed inset-0 z-[200000] bg-surface flex flex-col items-center justify-center text-center p-8 backdrop-blur-xl">
+                    <div className="absolute inset-0 bg-primary/5 pointer-events-none"></div>
+                    <div className="relative space-y-8 max-w-md w-full animate-in zoom-in duration-500">
+                        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto border border-primary/20 shadow-[0_0_50px_rgba(238,29,35,0.2)]">
+                            <FaPhoneSlash className="text-primary text-4xl" />
+                        </div>
+                        <div className="space-y-4">
+                            <h1 className="text-4xl font-black text-accent-white uppercase italic tracking-[0.1em]">Session Concluded</h1>
+                            <p className="text-accent-gray text-lg leading-relaxed">The Super Instructor has ended the live session. You will be redirected to the dashboard shortly.</p>
+                        </div>
+                        <div className="pt-4">
+                            <div className="w-full bg-surface-light h-1.5 rounded-full overflow-hidden mb-8">
+                                <div className="bg-primary h-full animate-progress-shrink"></div>
+                            </div>
+                            <button
+                                onClick={() => navigate('/student')}
+                                className="btn-primary w-full py-4 text-sm font-bold uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                            >
+                                Return to Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Recording Protection: Blur Overlay */}
             {/* SMART LOGIC: Don't blur if instructor is screen sharing (students need to see it!) */}
             {!isInstructor && recordingProtected && (

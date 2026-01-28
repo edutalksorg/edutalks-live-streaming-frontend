@@ -424,3 +424,12 @@ audio {
   background-color: inherit;
   clip-path: polygon(100% 0, 100% 100%, 0 0);
 }
+
+@keyframes progress-shrink {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.animate-progress-shrink {
+  animation: progress-shrink 5s linear forwards;
+}
