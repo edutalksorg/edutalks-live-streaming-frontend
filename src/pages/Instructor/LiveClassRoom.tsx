@@ -1364,17 +1364,34 @@ const LiveClassRoom: React.FC = () => {
     // --- Admin Audio Controls ---
     const handleMuteStudent = (studentId: string) => {
         socketRef.current?.emit('admin_mute_student', { classId: id, studentId });
+        // Update local state instantly for instructor
+        const sid = String(studentId);
+        setStudentsWithUnmutePermission(prev => {
+            const next = new Set(prev);
+            next.delete(sid);
+            return next;
+        });
+        setBlockedStudents(prev => new Set(prev).add(sid));
     };
 
     const handleGrantUnmutePermission = (studentId: string) => {
         // Grant unmute permission to a specific student
         socketRef.current?.emit('admin_grant_unmute', { classId: id, studentId });
+        // Update local state instantly for instructor
+        const sid = String(studentId);
+        setStudentsWithUnmutePermission(prev => new Set(prev).add(sid));
+        setBlockedStudents(prev => {
+            const next = new Set(prev);
+            next.delete(sid);
+            return next;
+        });
     };
 
     const handleMuteAll = async () => {
         const confirmed = await showConfirm("Mute all students?", "warning", "MUTE ALL");
         if (confirmed) {
             socketRef.current?.emit('admin_mute_all', { classId: id });
+            setStudentsWithUnmutePermission(new Set()); // Clear all for instructor UI
         }
     };
 
@@ -1981,18 +1998,21 @@ const LiveClassRoom: React.FC = () => {
                                             {isInstructor && (
                                                 <div className="flex flex-col gap-2 pb-2 border-b border-slate-100">
                                                     <div className="flex gap-2">
-                                                        <button
-                                                            onClick={handleMuteAll}
-                                                            className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
-                                                        >
-                                                            Mute All
-                                                        </button>
-                                                        <button
-                                                            onClick={handleUnlockAll}
-                                                            className="flex-1 bg-emerald-100 text-emerald-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-emerald-200 transition-colors"
-                                                        >
-                                                            Unlock All
-                                                        </button>
+                                                        {!audioLocked ? (
+                                                            <button
+                                                                onClick={handleMuteAll}
+                                                                className="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-red-200 transition-colors"
+                                                            >
+                                                                Mute All
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={handleUnlockAll}
+                                                                className="flex-1 bg-emerald-100 text-emerald-600 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-emerald-200 transition-colors"
+                                                            >
+                                                                Unmute All
+                                                            </button>
+                                                        )}
                                                     </div>
                                                     <div className="flex gap-2 pb-2 border-b border-slate-100 mt-2">
                                                         {/* Show STOP ALL only if EVERYONE has permission. If even one student lacks permission, show ALLOW ALL. */}
