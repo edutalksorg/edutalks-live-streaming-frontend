@@ -49,17 +49,17 @@ const TournamentPreview: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin h-12 w-12 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div>
             </div>
         );
     }
 
     if (!tournament) {
         return (
-            <div className="min-h-screen bg-gray-50 p-8 text-center">
-                <p>Tournament not found.</p>
-                <button onClick={() => navigate(-1)} className="mt-4 text-indigo-600 hover:underline flex items-center gap-2 mx-auto justify-center">
+            <div className="min-h-screen bg-background p-8 text-center">
+                <p className="text-accent-gray italic">Tournament not found.</p>
+                <button onClick={() => navigate(-1)} className="mt-4 text-primary hover:underline flex items-center gap-2 mx-auto justify-center font-bold uppercase tracking-widest text-xs">
                     <FaArrowLeft /> Go Back
                 </button>
             </div>
@@ -71,16 +71,16 @@ const TournamentPreview: React.FC = () => {
         : (tournament.questions || []);
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 md:p-10">
+        <div className="min-h-screen bg-background p-4 md:p-10">
             <div className="max-w-4xl mx-auto">
                 <button
                     onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 transition-colors mb-6"
+                    className="flex items-center gap-2 text-accent-gray hover:text-primary transition-colors mb-6 font-bold uppercase tracking-widest text-xs"
                 >
                     <FaArrowLeft /> Back
                 </button>
 
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
+                <div className="bg-surface rounded-2xl shadow-xl overflow-hidden mb-8 border border-surface-border">
                     <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white">
                         <div className="flex items-center gap-4 mb-4">
                             <FaTrophy className="text-4xl text-yellow-400" />
@@ -110,19 +110,19 @@ const TournamentPreview: React.FC = () => {
                     </div>
 
                     <div className="p-8">
-                        <div className="flex items-center gap-3 mb-8 border-b pb-4">
-                            <FaQuestionCircle className="text-indigo-600 text-2xl" />
-                            <h2 className="text-2xl font-bold text-gray-800">Test Questions</h2>
+                        <div className="flex items-center gap-3 mb-8 border-b border-surface-border pb-4">
+                            <FaQuestionCircle className="text-primary text-2xl" />
+                            <h2 className="text-2xl font-bold text-accent-white italic uppercase tracking-tight">Test Questions</h2>
                         </div>
 
                         <div className="space-y-8">
                             {questions.map((q, idx) => (
-                                <div key={q.id || idx} className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                                <div key={q.id || idx} className="bg-surface-dark/50 rounded-xl p-6 border border-surface-border">
                                     <div className="flex justify-between items-start mb-4">
-                                        <h3 className="text-lg font-bold text-gray-800">
+                                        <h3 className="text-lg font-bold text-accent-white italic tracking-tight">
                                             Q{idx + 1}. {q.question}
                                         </h3>
-                                        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">
+                                        <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/20">
                                             {q.marks} Marks
                                         </span>
                                     </div>
@@ -130,17 +130,17 @@ const TournamentPreview: React.FC = () => {
                                         {q.options.map((opt, optIdx) => (
                                             <div
                                                 key={optIdx}
-                                                className={`p-3 rounded-lg border flex items-center gap-3 ${optIdx === q.correct_answer
-                                                    ? 'bg-green-50 border-green-200 text-green-700'
-                                                    : 'bg-white border-gray-200 text-gray-600'
+                                                className={`p-3 rounded-lg border flex items-center gap-3 transition-all ${optIdx === q.correct_answer
+                                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                                    : 'bg-surface border-surface-border text-accent-gray'
                                                     }`}
                                             >
-                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${optIdx === q.correct_answer ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400'
+                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${optIdx === q.correct_answer ? 'bg-emerald-500 text-white' : 'bg-surface-dark text-accent-gray border border-surface-border'
                                                     }`}>
                                                     {String.fromCharCode(65 + optIdx)}
                                                 </div>
-                                                {opt}
-                                                {optIdx === q.correct_answer && <FaCheckCircle className="ml-auto" />}
+                                                <span className="font-medium">{opt}</span>
+                                                {optIdx === q.correct_answer && <FaCheckCircle className="ml-auto text-emerald-500" />}
                                             </div>
                                         ))}
                                     </div>

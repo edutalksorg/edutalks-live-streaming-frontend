@@ -44,15 +44,23 @@ const LiveClassRoom: React.FC = () => {
     const [client, setClient] = useState<IAgoraRTCClient | null>(null);
     const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
     const [localVideoTrack, setLocalVideoTrack] = useState<ICameraVideoTrack | null>(null);
-    const [micOn, setMicOn] = useState(false);
+    // Initialize state from localStorage if available, default to false
+    const [micOn, setMicOn] = useState(() => {
+        const saved = localStorage.getItem('nexus_mic_state');
+        return saved !== null ? saved === 'true' : false;
+    });
     const micOnRef = useRef(micOn);
     useEffect(() => { micOnRef.current = micOn; }, [micOn]);
+
     // Track students who are explicitly blocked from screen sharing
     const [blockedScreenShareStudents, setBlockedScreenShareStudents] = useState<Set<string>>(new Set());
     const blockedScreenShareStudentsRef = useRef(blockedScreenShareStudents);
     useEffect(() => { blockedScreenShareStudentsRef.current = blockedScreenShareStudents; }, [blockedScreenShareStudents]);
 
-    const [cameraOn, setCameraOn] = useState(false);
+    const [cameraOn, setCameraOn] = useState(() => {
+        const saved = localStorage.getItem('nexus_camera_state');
+        return saved !== null ? saved === 'true' : false;
+    });
     const cameraOnRef = useRef(cameraOn);
     useEffect(() => { cameraOnRef.current = cameraOn; }, [cameraOn]);
 
@@ -276,6 +284,10 @@ const LiveClassRoom: React.FC = () => {
 
                 // Auto-enable media as specified
                 try {
+                    // Update preference to ON since they just got approved
+                    localStorage.setItem('nexus_mic_state', 'true');
+                    localStorage.setItem('nexus_camera_state', 'true');
+
                     if (!micOnRef.current) await toggleMic(true, true);
                     await toggleCamera(true); // Force camera ON (won't toggle if already on)
                 } catch (e) { console.error(e); }
@@ -409,7 +421,11 @@ const LiveClassRoom: React.FC = () => {
                 // Auto-enable media as specified (mimicking hand raise approval)
                 (async () => {
                     try {
-                        if (!micOnRef.current) await toggleMic(true);
+                        // Update preference to ON since they just got permission
+                        localStorage.setItem('nexus_mic_state', 'true');
+                        localStorage.setItem('nexus_camera_state', 'true');
+
+                        if (!micOnRef.current) await toggleMic(true, true); // Force ON
                         await toggleCamera(true); // Force camera ON (won't toggle if already on)
                     } catch (e) { console.error(e); }
                 })();
@@ -978,15 +994,27 @@ const LiveClassRoom: React.FC = () => {
                     if (remoteUser.hasVideo) await handleUserPublished(remoteUser, "video");
                 });
 
-                // Auto-enable media logic
+                // Auto-enable media logic respecting persisted state
                 try {
                     const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
                     setLocalAudioTrack(audioTrack);
                     localAudioTrackRef.current = audioTrack; // Sync ref
                     setLocalVideoTrack(videoTrack);
                     localVideoTrackRef.current = videoTrack; // Sync ref
-                    setMicOn(true);
-                    setCameraOn(true);
+
+                    // Respect the initialized state (from localStorage)
+                    // Explicitly read from storage to avoid closure staleness
+                    const storedMic = localStorage.getItem('nexus_mic_state') === 'true';
+                    const storedCamera = localStorage.getItem('nexus_camera_state') === 'true';
+                    console.log(`[Agora Init] Restoring media state. Mic: ${storedMic}, Camera: ${storedCamera}`);
+
+                    await audioTrack.setEnabled(storedMic);
+                    // Update state to match (in case of drift)
+                    setMicOn(storedMic);
+
+                    await videoTrack.setEnabled(storedCamera);
+                    setCameraOn(storedCamera);
+
                     await agoraClient.publish([audioTrack, videoTrack]);
                     // videoTrack.play('local-player'); // Rely on ref in JSX
                 } catch (e) {
@@ -1084,6 +1112,7 @@ const LiveClassRoom: React.FC = () => {
         if (currentTrack) {
             await currentTrack.setEnabled(newMicState);
             setMicOn(newMicState);
+            localStorage.setItem('nexus_mic_state', String(newMicState));
 
             if (newMicState && clientRef.current) {
                 try {
@@ -1106,6 +1135,7 @@ const LiveClassRoom: React.FC = () => {
                 localAudioTrackRef.current = track; // Sync ref immediately
                 await clientRef.current?.publish(track);
                 setMicOn(true);
+                localStorage.setItem('nexus_mic_state', 'true');
             } catch (e) {
                 console.error("Error creating audio track:", e);
                 showToast("Could not access microphone.", 'error');
@@ -1136,6 +1166,7 @@ const LiveClassRoom: React.FC = () => {
                 const newCameraState = forceOn ? true : !currentCameraOn;
                 await currentTrack.setEnabled(newCameraState);
                 setCameraOn(newCameraState);
+                localStorage.setItem('nexus_camera_state', String(newCameraState));
 
                 if (newCameraState && clientRef.current) {
                     try {
@@ -1157,6 +1188,7 @@ const LiveClassRoom: React.FC = () => {
                     localVideoTrackRef.current = track; // Sync ref immediately
                     await clientRef.current?.publish(track);
                     setCameraOn(true);
+                    localStorage.setItem('nexus_camera_state', 'true');
                 } catch (e: any) {
                     console.error("Error creating video track:", e);
                     if (e.code === 'NOT_READABLE' || e.code === 'PERMISSION_DENIED') {

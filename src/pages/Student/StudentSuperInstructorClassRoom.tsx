@@ -42,8 +42,15 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
     // Agora State
     const [client, setClient] = useState<IAgoraRTCClient | null>(null);
     const [localVideoTrack, setLocalVideoTrack] = useState<ICameraVideoTrack | null>(null);
-    const [micOn, setMicOn] = useState(false);
-    const [cameraOn, setCameraOn] = useState(false);
+    // Initialize state from localStorage if available, default to false (safe default)
+    const [micOn, setMicOn] = useState(() => {
+        const saved = localStorage.getItem('nexus_mic_state');
+        return saved !== null ? saved === 'true' : false;
+    });
+    const [cameraOn, setCameraOn] = useState(() => {
+        const saved = localStorage.getItem('nexus_camera_state');
+        return saved !== null ? saved === 'true' : false;
+    });
     const cameraOnRef = useRef(cameraOn);
     useEffect(() => { cameraOnRef.current = cameraOn; }, [cameraOn]);
 
@@ -801,14 +808,36 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                     if (remoteUser.hasVideo) await handleUserPublished(remoteUser, "video");
                 });
 
-                // Auto-enable media logic
+                // Auto-enable media logic based on persisted preferences
                 try {
+
+
                     const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+
                     localAudioTrackRef.current = audioTrack; // Sync ref
                     setLocalVideoTrack(videoTrack);
-                    setMicOn(true);
-                    setCameraOn(true);
+
+                    // Respect the persisted state
+                    // Explicitly read from storage to avoid closure staleness
+                    const storedMicRef = localStorage.getItem('nexus_mic_state') === 'true';
+                    const storedCameraRef = localStorage.getItem('nexus_camera_state') === 'true';
+                    console.log(`[Agora Init] Restoring media state. Mic: ${storedMicRef}, Camera: ${storedCameraRef}`);
+
+                    await audioTrack.setEnabled(storedMicRef);
+                    setMicOn(storedMicRef);
+
+                    await videoTrack.setEnabled(storedCameraRef);
+                    setCameraOn(storedCameraRef);
+
+                    // Only publish if enabled? 
+                    // Actually Agora recommends publishing tracks, but disabling them if muted.
+                    // However, for privacy, we might want to not publish at all if completely off?
+                    // Standard practice: Publish the tracks, but their 'enabled' state controls flow.
+                    // But if we want to save bandwidth/resources, maybe only publish if on.
+                    // Let's stick to standard: Publish, but setEnabled(false) if preferred off.
+
                     await agoraClient.publish([audioTrack, videoTrack]);
+
                 } catch (e) {
                     console.warn("Failed to auto-enable media:", e);
                 }
@@ -853,6 +882,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                 const newMicState = !currentMicOn;
                 await localAudioTrackRef.current.setEnabled(newMicState);
                 setMicOn(newMicState);
+                localStorage.setItem('nexus_mic_state', String(newMicState));
 
                 // Ensure published if turning on, Unpublish if turning off
                 if (newMicState && client) {
@@ -875,6 +905,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                 localAudioTrackRef.current = track; // Sync Ref
                 await client?.publish(track);
                 setMicOn(true);
+                localStorage.setItem('nexus_mic_state', 'true');
             }
         } catch (err) {
             console.error("Toggle Mic Error:", err);
@@ -892,6 +923,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
             const newCameraState = forceOn ? true : !cameraOn;
             await localVideoTrack.setEnabled(newCameraState);
             setCameraOn(newCameraState);
+            localStorage.setItem('nexus_camera_state', String(newCameraState));
 
             // Ensure published if turning on, Unpublish if turning off
             if (newCameraState && client) {
@@ -914,6 +946,7 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
             setLocalVideoTrack(track);
             await client?.publish(track);
             setCameraOn(true);
+            localStorage.setItem('nexus_camera_state', 'true');
         }
     };
 

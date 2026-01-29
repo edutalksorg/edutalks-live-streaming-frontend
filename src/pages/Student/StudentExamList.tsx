@@ -105,19 +105,19 @@ const StudentExamList: React.FC = () => {
                                     {exam.description || 'Standard tactical assessment protocol.'}
                                 </p>
 
-                                <div className="grid grid-cols-2 gap-4 mb-8">
-                                    <div className="bg-surface-light border border-surface-border p-4 rounded-2xl flex items-center gap-3">
-                                        <div className="p-2.5 bg-primary/10 rounded-xl text-primary"><FaClock size={14} /></div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-accent-gray uppercase tracking-widest opacity-50">Duration</p>
-                                            <p className="text-sm font-black text-accent-white italic tracking-tighter">{exam.duration}M</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                                    <div className="bg-surface-light border border-surface-border p-3 rounded-2xl flex items-center gap-2">
+                                        <div className="p-2 bg-primary/10 rounded-xl text-primary flex-shrink-0"><FaClock size={12} /></div>
+                                        <div className="min-w-0">
+                                            <p className="text-[9px] font-black text-accent-gray uppercase tracking-widest opacity-50 truncate">Duration</p>
+                                            <p className="text-xs font-black text-accent-white italic tracking-tighter truncate">{exam.duration}M</p>
                                         </div>
                                     </div>
-                                    <div className="bg-surface-light border border-surface-border p-4 rounded-2xl flex items-center gap-3">
-                                        <div className="p-2.5 bg-accent-blue/10 rounded-xl text-accent-blue"><FaClipboardCheck size={14} /></div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-accent-gray uppercase tracking-widest opacity-50">Execution</p>
-                                            <p className="text-sm font-black text-accent-white italic tracking-tighter">{exam.attempt_count}/{exam.attempts_allowed}</p>
+                                    <div className="bg-surface-light border border-surface-border p-3 rounded-2xl flex items-center gap-2">
+                                        <div className="p-2 bg-accent-blue/10 rounded-xl text-accent-blue flex-shrink-0"><FaClipboardCheck size={12} /></div>
+                                        <div className="min-w-0">
+                                            <p className="text-[9px] font-black text-accent-gray uppercase tracking-widest opacity-50 truncate">Execution</p>
+                                            <p className="text-xs font-black text-accent-white italic tracking-tighter truncate">{exam.attempt_count}/{exam.attempts_allowed}</p>
                                         </div>
                                     </div>
                                 </div>

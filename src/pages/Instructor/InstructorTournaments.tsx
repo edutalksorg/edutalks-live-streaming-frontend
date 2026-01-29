@@ -107,15 +107,15 @@ const InstructorTournaments: React.FC = () => {
     };
 
     const getStatusBadge = (status: string) => {
-        const styles = {
-            DRAFT: 'bg-gray-100 text-gray-700',
-            UPCOMING: 'bg-blue-100 text-blue-700',
-            LIVE: 'bg-green-100 text-green-700',
-            COMPLETED: 'bg-orange-100 text-orange-700',
-            RESULT_PUBLISHED: 'bg-purple-100 text-purple-700'
+        const styles: Record<string, string> = {
+            DRAFT: 'bg-surface-light text-accent-gray border border-surface-border',
+            UPCOMING: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+            LIVE: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+            COMPLETED: 'bg-orange-500/10 text-orange-400 border border-orange-500/20',
+            RESULT_PUBLISHED: 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
         };
         return (
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${styles[status as keyof typeof styles]}`}>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${styles[status] || styles.DRAFT}`}>
                 {status.replace('_', ' ')}
             </span>
         );
@@ -135,14 +135,14 @@ const InstructorTournaments: React.FC = () => {
         const canPublishResults = isOwner && (tournament.status === 'COMPLETED' || (tournament.status === 'LIVE' && isPastExam));
 
         return (
-            <div className="bg-white dark:bg-surface-dark rounded-lg shadow-md hover:shadow-xl transition-all duration-300 border-l-4 border-yellow-500 overflow-hidden">
+            <div className="bg-surface rounded-lg shadow-md hover:shadow-xl transition-all duration-300 border-l-4 border-yellow-500 overflow-hidden border border-surface-border">
                 <div className="p-6">
                     <div className="flex justify-between items-start mb-3">
                         <h3 className="text-xl font-bold text-accent-white">{tournament.name}</h3>
                         {getStatusBadge(tournament.status)}
                     </div>
 
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{tournament.description}</p>
+                    <p className="text-accent-gray text-sm mb-4">{tournament.description}</p>
 
                     <div className="grid grid-cols-2 gap-3 mb-4">
                         <div className="flex items-center gap-2 text-sm">
@@ -175,34 +175,34 @@ const InstructorTournaments: React.FC = () => {
                         </div>
                     )}
 
-                    <div className="mb-4 text-[11px] space-y-3 bg-gray-50 dark:bg-surface-light/20 p-3 rounded-lg border border-gray-100 dark:border-surface-border">
+                    <div className="mb-4 text-[11px] space-y-3 bg-surface-dark/50 p-3 rounded-lg border border-surface-border">
                         <div className="space-y-1">
                             <span className="font-black uppercase tracking-widest text-primary/60 block mb-1">Registration Window</span>
-                            <div className="flex justify-between items-center text-gray-600 dark:text-gray-400">
+                            <div className="flex justify-between items-center text-accent-gray">
                                 <span>Starts:</span>
                                 <span className="font-bold">{new Date(tournament.registration_start).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                             </div>
-                            <div className="flex justify-between items-center text-gray-600 dark:text-gray-400">
+                            <div className="flex justify-between items-center text-accent-gray">
                                 <span>Ends:</span>
                                 <span className="font-bold">{new Date(tournament.registration_end).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                             </div>
                         </div>
-                        <div className="h-[1px] bg-gray-200 dark:bg-surface-border"></div>
+                        <div className="h-[1px] bg-surface-border"></div>
                         <div className="space-y-1">
                             <span className="font-black uppercase tracking-widest text-indigo-500/60 block mb-1">Examination Window</span>
-                            <div className="flex justify-between items-center text-gray-600 dark:text-gray-400">
+                            <div className="flex justify-between items-center text-accent-gray">
                                 <span>Starts:</span>
-                                <span className="font-bold text-indigo-600 dark:text-indigo-400">{new Date(tournament.exam_start).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                                <span className="font-bold text-indigo-400">{new Date(tournament.exam_start).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                             </div>
-                            <div className="flex justify-between items-center text-gray-600 dark:text-gray-400">
+                            <div className="flex justify-between items-center text-accent-gray">
                                 <span>Ends:</span>
-                                <span className="font-bold text-indigo-600 dark:text-indigo-400">{new Date(tournament.exam_end).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                                <span className="font-bold text-indigo-400">{new Date(tournament.exam_end).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="flex gap-2 flex-wrap">
-                        {isOwner && canEdit && (
+                        {!!(isOwner && canEdit) && (
                             <button
                                 onClick={() => handleEdit(tournament)}
                                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
@@ -211,7 +211,7 @@ const InstructorTournaments: React.FC = () => {
                             </button>
                         )}
 
-                        {isOwner && canPublish && (
+                        {!!(isOwner && canPublish) && (
                             <button
                                 onClick={() => handlePublish(tournament.id)}
                                 className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition"
@@ -220,7 +220,7 @@ const InstructorTournaments: React.FC = () => {
                             </button>
                         )}
 
-                        {isOwner && canDelete && (
+                        {!!(isOwner && canDelete) && (
                             <button
                                 onClick={() => handleDelete(tournament.id)}
                                 className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
@@ -229,7 +229,7 @@ const InstructorTournaments: React.FC = () => {
                             </button>
                         )}
 
-                        {isOwner && canPublishResults && (
+                        {!!(isOwner && canPublishResults) && (
                             <button
                                 onClick={() => handlePublishResults(tournament.id)}
                                 className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition"
@@ -238,7 +238,7 @@ const InstructorTournaments: React.FC = () => {
                             </button>
                         )}
 
-                        {(tournament.status === 'LIVE' || (isPastExam && tournament.status !== 'RESULT_PUBLISHED')) && (
+                        {!!(tournament.status === 'LIVE' || (isPastExam && tournament.status !== 'RESULT_PUBLISHED')) && (
                             <button
                                 onClick={() => navigate(`/instructor/tournament-monitor/${tournament.id}`)}
                                 className="flex items-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 transition"
@@ -247,7 +247,7 @@ const InstructorTournaments: React.FC = () => {
                             </button>
                         )}
 
-                        {(tournament.status === 'COMPLETED' || tournament.status === 'RESULT_PUBLISHED' || isPastExam) && (
+                        {!!(tournament.status === 'COMPLETED' || tournament.status === 'RESULT_PUBLISHED' || isPastExam) && (
                             <button
                                 onClick={() => navigate(`/instructor/tournament-leaderboard/${tournament.id}`)}
                                 className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
@@ -256,7 +256,7 @@ const InstructorTournaments: React.FC = () => {
                             </button>
                         )}
 
-                        {!isOwner && tournament.status === 'UPCOMING' && (
+                        {!!(!isOwner && tournament.status === 'UPCOMING') && (
                             <button
                                 onClick={() => navigate(`/instructor/tournament-preview/${tournament.id}`)}
                                 className="flex items-center gap-2 border-2 border-gray-400 text-gray-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition"
@@ -291,7 +291,7 @@ const InstructorTournaments: React.FC = () => {
             {loading && (
                 <div className="text-center py-12">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-yellow-500 border-t-transparent"></div>
-                    <p className="mt-4 text-gray-600 dark:text-gray-400">Loading tournaments...</p>
+                    <p className="mt-4 text-accent-gray">Loading tournaments...</p>
                 </div>
             )}
 
