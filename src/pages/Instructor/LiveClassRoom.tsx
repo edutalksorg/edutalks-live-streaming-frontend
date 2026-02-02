@@ -517,86 +517,7 @@ const LiveClassRoom: React.FC = () => {
             }
         });
 
-        // --- NEW: Screen Share Permission Handlers ---
-        socket.on('force_stop_screen_share', async (data) => {
-            console.log('[Socket] force_stop_screen_share received', data);
-            const sid = String(data.studentId);
 
-            // Remove permission for this student (both instructor and students need this update)
-            setStudentsWithScreenSharePermission(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(sid);
-                console.log('[Permission State] Removed permission for student:', sid, 'Remaining:', Array.from(newSet));
-                return newSet;
-            });
-            setBlockedScreenShareStudents(prev => new Set(prev).add(sid));
-
-            if (String(user?.id) === sid) {
-                // Check if currently sharing using Reft to avoid stale closures
-                if (isScreenSharingRef.current) {
-                    console.log('[Screen Share] Force stopping (individual)...');
-                    try {
-                        const track = localScreenTrackRef.current;
-                        if (track) {
-                            await client?.unpublish(track);
-                            track.stop();
-                            track.close();
-                        }
-                    } catch (err) {
-                        console.error("Error force stopping screen share:", err);
-                    }
-                    setLocalScreenTrack(null);
-                    setIsScreenSharing(false);
-                    setScreenSharerUid(null);
-
-                    // Republish camera if needed
-                    if (localVideoTrackRef.current && cameraOnRef.current) {
-                        await client?.publish(localVideoTrackRef.current);
-                    }
-
-                    socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
-                    showToast("Instructor has stopped your screen share.", 'warning');
-                }
-            }
-        });
-
-        socket.on('force_stop_all_screen_share', async () => {
-            console.log('[Socket] force_stop_all_screen_share received');
-            // Clear all permissions for everyone (instructor needs this to update UI)
-            setStudentsWithScreenSharePermission(new Set());
-            console.log('[Permission State] Cleared all screen share permissions');
-
-            if (!isInstructorRef.current) {
-                // Students only: lock screen sharing and stop if currently sharing
-                setScreenLocked(true);
-                setBlockedScreenShareStudents(prev => new Set(prev).add(String(user?.id)));
-
-                if (isScreenSharingRef.current) {
-                    console.log('[Screen Share] Force stopping (all)...');
-                    try {
-                        const track = localScreenTrackRef.current;
-                        if (track) {
-                            await client?.unpublish(track);
-                            track.stop();
-                            track.close();
-                        }
-                    } catch (err) {
-                        console.error("Error force stopping all screen shares:", err);
-                    }
-                    setLocalScreenTrack(null);
-                    setIsScreenSharing(false);
-                    setScreenSharerUid(null);
-
-                    // Republish camera if needed
-                    if (localVideoTrackRef.current && cameraOnRef.current) {
-                        await client?.publish(localVideoTrackRef.current);
-                    }
-
-                    socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
-                    showToast("Instructor has stopped all screen sharing.", 'warning');
-                }
-            }
-        });
 
         socket.on('grant_screen_share_permission', (data) => {
             console.log('[Socket] grant_screen_share_permission received', data);
@@ -1982,10 +1903,10 @@ const LiveClassRoom: React.FC = () => {
                 {
                     showTray && (
                         <div className="absolute inset-0 z-[60] flex items-end justify-end p-2 md:p-8 pointer-events-none">
-                            <div className="w-full max-w-sm h-3/4 bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden pointer-events-auto animate-in slide-in-from-right duration-500">
-                                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">{showTray} Panel</h3>
-                                    <button onClick={() => setShowTray(null)} className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-300">×</button>
+                            <div className="w-full max-w-sm h-3/4 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden pointer-events-auto animate-in slide-in-from-right duration-500">
+                                <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">{showTray} Panel</h3>
+                                    <button onClick={() => setShowTray(null)} className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600">×</button>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto">
@@ -2001,12 +1922,12 @@ const LiveClassRoom: React.FC = () => {
                                                     </div>
                                                 ))}
                                             </div>
-                                            <form onSubmit={sendMessage} className="p-4 border-t border-slate-100 flex gap-2">
+                                            <form onSubmit={sendMessage} className="p-4 border-t border-slate-100 dark:border-slate-700 flex gap-2">
                                                 <input
                                                     value={chatMsg}
                                                     onChange={(e) => setChatMsg(e.target.value)}
                                                     placeholder="Type message..."
-                                                    className="flex-1 bg-slate-100 px-4 py-2 rounded-xl text-xs focus:ring-2 ring-blue-500 outline-none"
+                                                    className="flex-1 bg-white dark:!bg-slate-700 px-4 py-2 rounded-xl text-xs text-slate-900 dark:text-white dark:placeholder-slate-300 focus:ring-2 ring-blue-500 outline-none transition-colors border border-transparent dark:border-slate-600"
                                                 />
                                                 <button className="bg-blue-600 text-white p-2 px-4 rounded-xl text-[10px] font-bold uppercase">Send</button>
                                             </form>

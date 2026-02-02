@@ -1816,10 +1816,10 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                 {
                     showTray && (
                         <div className="absolute inset-0 z-[60] flex items-end justify-end p-8 pointer-events-none">
-                            <div className="w-full max-w-sm h-3/4 bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden pointer-events-auto animate-in slide-in-from-right duration-500">
-                                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">{showTray} Panel</h3>
-                                    <button onClick={() => setShowTray(null)} className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-300">×</button>
+                            <div className="w-full max-w-sm h-3/4 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden pointer-events-auto animate-in slide-in-from-right duration-500">
+                                <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">{showTray} Panel</h3>
+                                    <button onClick={() => setShowTray(null)} className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600">×</button>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto">
@@ -1849,7 +1849,7 @@ const SuperInstructorLiveClassRoom: React.FC = () => {
                                                     onChange={(e) => setChatMsg(e.target.value)}
                                                     placeholder="Type message..."
                                                     disabled={chatLocked && !isInstructor}
-                                                    className="flex-1 bg-white border border-slate-200 px-4 py-3 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:ring-2 ring-blue-500 outline-none disabled:opacity-50"
+                                                    className="flex-1 bg-white dark:!bg-slate-700 border border-slate-200 dark:border-slate-600 px-4 py-3 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-300 focus:ring-2 ring-blue-500 outline-none disabled:opacity-50 transition-colors"
                                                 />
                                                 <button
                                                     type="submit"
