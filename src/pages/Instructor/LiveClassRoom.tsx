@@ -247,7 +247,7 @@ const LiveClassRoom: React.FC = () => {
         });
         socket.on('screen_share_status', (data) => {
             console.log("Sync: Screen share status updated", data);
-            
+
             if (data.allowed) {
                 // Immediate update for starting
                 setIsScreenSharing(true);
@@ -259,7 +259,7 @@ const LiveClassRoom: React.FC = () => {
                 // Keep the user excluded from grid for a moment while track reverts to camera
                 setTimeout(() => {
                     setScreenSharerUid(prev => (prev === Number(data.studentId) ? null : prev));
-                }, 2000); 
+                }, 2000);
             }
         });
 
@@ -1155,9 +1155,7 @@ const LiveClassRoom: React.FC = () => {
                 setIsScreenSharing(false);
                 setScreenSharerUid(null);
 
-                if (localVideoTrack && cameraOn) {
-                    await client?.publish(localVideoTrack);
-                }
+
 
                 // Set grace period
                 isLocalSharingEndingRef.current = true;
@@ -1170,6 +1168,15 @@ const LiveClassRoom: React.FC = () => {
                     setRecordingProtected(false);
                     socketRef.current?.emit('toggle_recording_protection', { classId: id, active: false });
                     showToast("Screen Recording Protection Auto-Disabled", "info");
+                }
+
+                // FIX: Use Refs to avoid stale closure if called from socket
+                if (localVideoTrackRef.current && cameraOnRef.current) {
+                    try {
+                        await clientRef.current?.publish(localVideoTrackRef.current);
+                    } catch (e) {
+                        console.warn("[Screen Share Stop] Failed to republish camera:", e);
+                    }
                 }
             } catch (err) {
                 console.error("Error stopping screen share:", err);

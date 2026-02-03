@@ -899,8 +899,13 @@ const StudentSuperInstructorClassRoom: React.FC = () => {
                 isLocalSharingEndingRef.current = true;
                 setTimeout(() => { isLocalSharingEndingRef.current = false; }, 2000);
 
-                if (localVideoTrack && cameraOn) {
-                    await client?.publish(localVideoTrack);
+                // Use Refs to avoid stale closure
+                if (localVideoTrackRef.current && cameraOnRef.current) {
+                    try {
+                        await clientRef.current?.publish(localVideoTrackRef.current);
+                    } catch (e) {
+                        console.warn("Republish camera error:", e);
+                    }
                 }
 
                 socketRef.current?.emit('share_screen', { classId: id, studentId: user?.id, allowed: false });
