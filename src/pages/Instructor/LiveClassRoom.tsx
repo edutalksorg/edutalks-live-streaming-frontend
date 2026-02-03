@@ -217,20 +217,7 @@ const LiveClassRoom: React.FC = () => {
         });
 
         // --- NEW: Handle Remote Screen Share State ---
-        socket.on('screen_share_status', (data) => {
-            console.log("[Socket] Received screen_share_status:", data);
-            if (data.allowed) {
-                // Someone started sharing
-                setScreenSharerUid(Number(data.studentId));
-                setIsScreenSharing(true);
-            } else {
-                // Stopped sharing
-                if (Number(data.studentId) === screenSharerUid) {
-                    setScreenSharerUid(null);
-                    setIsScreenSharing(false);
-                }
-            }
-        });
+
 
         socket.on('recording_protection_status', (data) => {
             setRecordingProtected(data.active);
@@ -259,10 +246,21 @@ const LiveClassRoom: React.FC = () => {
             whiteboardRef.current?.clearCanvas(false);
         });
         socket.on('screen_share_status', (data) => {
-            setIsScreenSharing(data.allowed);
-            setScreenSharerUid(data.allowed ? Number(data.studentId) : null);
-            if (data.allowed) setShowWhiteboard(false);
             console.log("Sync: Screen share status updated", data);
+            
+            if (data.allowed) {
+                // Immediate update for starting
+                setIsScreenSharing(true);
+                setScreenSharerUid(Number(data.studentId));
+                setShowWhiteboard(false);
+            } else {
+                // Delayed update for stopping to allow track switching
+                setIsScreenSharing(false);
+                // Keep the user excluded from grid for a moment while track reverts to camera
+                setTimeout(() => {
+                    setScreenSharerUid(prev => (prev === Number(data.studentId) ? null : prev));
+                }, 2000); 
+            }
         });
 
         socket.on('hand_raised', (data) => setHandsRaised(prev => {
